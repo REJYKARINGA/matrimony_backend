@@ -13,6 +13,14 @@ return new class extends Migration
     {
         // Check if username column exists and drop it
         if (Schema::hasColumn('users', 'username')) {
+            // Drop the unique index first using raw SQL for better SQLite compatibility
+            try {
+                \DB::statement('DROP INDEX IF EXISTS users_username_unique');
+            } catch (\Exception $e) {
+                // If the index doesn't exist or can't be dropped separately, continue
+            }
+
+            // Now drop the column
             Schema::table('users', function (Blueprint $table) {
                 $table->dropColumn('username');
             });
