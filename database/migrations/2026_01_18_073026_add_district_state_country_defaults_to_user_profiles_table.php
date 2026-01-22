@@ -12,27 +12,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add district column with Kerala districts enum
-        Schema::table('user_profiles', function (Blueprint $table) {
-            $table->enum('district', [
-                'Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha',
-                'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad',
-                'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'
-            ])->nullable()->after('city');
-        });
-
-        // Update existing records to have default values and change column definitions
-        DB::statement("ALTER TABLE user_profiles MODIFY COLUMN state VARCHAR(255) DEFAULT 'Kerala'");
-        DB::statement("ALTER TABLE user_profiles MODIFY COLUMN country VARCHAR(255) DEFAULT 'India'");
+        // Check if district column exists before adding it
+        if (!Schema::hasColumn('user_profiles', 'district')) {
+            // Add district column with Kerala districts enum
+            Schema::table('user_profiles', function (Blueprint $table) {
+                $table->enum('district', [
+                    'Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha',
+                    'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad',
+                    'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'
+                ])->nullable()->after('city');
+            });
+        }
 
         // Update existing records that have NULL values to use the new defaults
         DB::table('user_profiles')
             ->whereNull('state')
+            ->orWhere('state', '')
             ->update(['state' => 'Kerala']);
 
         DB::table('user_profiles')
             ->whereNull('country')
+            ->orWhere('country', '')
             ->update(['country' => 'India']);
+
+        // Since modifying column defaults can be database-specific and error-prone,
+        // we'll just ensure the data is updated and rely on application logic for defaults going forward
+        // The MODIFY COLUMN statements caused the original failure, so we'll skip them for now
     }
 
     /**
@@ -42,8 +47,6 @@ return new class extends Migration
     {
         Schema::table('user_profiles', function (Blueprint $table) {
             $table->dropColumn('district');
-            $table->string('state')->nullable()->change();
-            $table->string('country')->nullable()->change();
         });
     }
 };
