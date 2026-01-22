@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('password_reset_tokens', function (Blueprint $table) {
-            $table->timestamp('updated_at')->nullable();
-        });
+        // Check if the column already exists before adding it
+        if (!Schema::hasColumn('password_reset_tokens', 'updated_at')) {
+            Schema::table('password_reset_tokens', function (Blueprint $table) {
+                $table->timestamp('updated_at')->nullable();
+            });
+        }
     }
 
     /**

@@ -11,19 +11,35 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop the existing password_reset_tokens table
-        Schema::dropIfExists('password_reset_tokens');
+        // Check if the table exists and has the expected columns
+        if (Schema::hasTable('password_reset_tokens')) {
+            // Check if the additional columns already exist
+            $columns = Schema::getColumnListing('password_reset_tokens');
 
-        // Create the new password_reset_tokens table with the required structure
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->index();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->timestamp('used_at')->nullable();
-            $table->timestamp('verified_at')->nullable();
-        });
+            // Add columns if they don't exist rather than dropping and recreating
+            if (!in_array('used_at', $columns)) {
+                Schema::table('password_reset_tokens', function (Blueprint $table) {
+                    $table->timestamp('used_at')->nullable();
+                });
+            }
+
+            if (!in_array('verified_at', $columns)) {
+                Schema::table('password_reset_tokens', function (Blueprint $table) {
+                    $table->timestamp('verified_at')->nullable();
+                });
+            }
+        } else {
+            // If the table doesn't exist, create it with all required columns
+            Schema::create('password_reset_tokens', function (Blueprint $table) {
+                $table->id();
+                $table->string('email')->index();
+                $table->string('token');
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('expires_at')->nullable();
+                $table->timestamp('used_at')->nullable();
+                $table->timestamp('verified_at')->nullable();
+            });
+        }
     }
 
     /**
