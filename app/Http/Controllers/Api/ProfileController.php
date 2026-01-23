@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
@@ -70,6 +71,24 @@ class ProfileController extends Controller
                 'error' => 'Validation failed',
                 'messages' => $validator->errors()
             ], 422);
+        }
+
+        // Age validation: Female must be at least 18 years old, Male must be at least 21 years old
+        if ($request->filled('date_of_birth') && $request->filled('gender')) {
+            $dateOfBirth = Carbon::parse($request->date_of_birth);
+            $age = $dateOfBirth->age;
+
+            if ($request->gender === 'female' && $age < 18) {
+                return response()->json([
+                    'error' => 'Age restriction',
+                    'messages' => ['date_of_birth' => ['Female users must be at least 18 years old to register']]
+                ], 422);
+            } elseif ($request->gender === 'male' && $age < 21) {
+                return response()->json([
+                    'error' => 'Age restriction',
+                    'messages' => ['date_of_birth' => ['Male users must be at least 21 years old to register']]
+                ], 422);
+            }
         }
 
         // Check if profile exists
