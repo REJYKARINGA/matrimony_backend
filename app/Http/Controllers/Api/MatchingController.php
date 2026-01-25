@@ -22,58 +22,58 @@ class MatchingController extends Controller
         $query = User::with(['userProfile', 'profilePhotos'])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
-            ->whereHas('userProfile', function($q) {
+            ->whereHas('userProfile', function ($q) {
                 $q->where('is_active_verified', true);
             });
 
 
         // Apply preferences filter
-        // if ($preferences) {
-        //     if ($preferences->min_age) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
-        //         });
-        //     }
+        if ($preferences) {
+            if ($preferences->min_age) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
+                });
+            }
 
-        //     if ($preferences->max_age) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
-        //         });
-        //     }
+            if ($preferences->max_age) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
+                });
+            }
 
-        //     if ($preferences->min_height) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->where('height', '>=', $preferences->min_height);
-        //         });
-        //     }
+            if ($preferences->min_height) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('height', '>=', $preferences->min_height);
+                });
+            }
 
-        //     if ($preferences->max_height) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->where('height', '<=', $preferences->max_height);
-        //         });
-        //     }
+            if ($preferences->max_height) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('height', '<=', $preferences->max_height);
+                });
+            }
 
-        //     if ($preferences->religion) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->where('religion', $preferences->religion);
-        //         });
-        //     }
+            if ($preferences->religion) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('religion', $preferences->religion);
+                });
+            }
 
-        //     if ($preferences->caste) {
-        //         $query->whereHas('userProfile', function ($q) use ($preferences) {
-        //             $q->where('caste', $preferences->caste);
-        //         });
-        //     }
-        // }
+            if ($preferences->caste) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('caste', $preferences->caste);
+                });
+            }
+        }
 
-        // // Exclude already matched or interested users
-        // $query->whereDoesntHave('matchesAsUser1', function ($q) use ($user) {
-        //     $q->where('user2_id', $user->id);
-        // })->whereDoesntHave('matchesAsUser2', function ($q) use ($user) {
-        //     $q->where('user1_id', $user->id);
-        // })->whereDoesntHave('interestsSent', function ($q) use ($user) {
-        //     // Exclude users who have received interest from current user
-        // });
+        // Exclude already matched or interested users
+        $query->whereDoesntHave('matchesAsUser1', function ($q) use ($user) {
+            $q->where('user2_id', $user->id);
+        })->whereDoesntHave('matchesAsUser2', function ($q) use ($user) {
+            $q->where('user1_id', $user->id);
+        })->whereDoesntHave('interestsSent', function ($q) use ($user) {
+            // Exclude users who have received interest from current user
+        });
 
         $suggestions = $query->paginate(10);
 
@@ -183,6 +183,7 @@ class MatchingController extends Controller
         // Create notification for the receiver
         Notification::create([
             'user_id' => $targetUser->id,
+            'sender_id' => $currentUser->id,
             'type' => 'interest',
             'title' => 'New Interest Received',
             'message' => "{$currentUser->userProfile->first_name} {$currentUser->userProfile->last_name} showed interest in your profile",
@@ -230,6 +231,76 @@ class MatchingController extends Controller
 
         return response()->json([
             'interests' => $interests
+        ]);
+    }
+
+    /**
+     * Accept a received interest
+     */
+    public function acceptInterest($interestId, Request $request)
+    {
+        $user = $request->user();
+        $interest = InterestSent::where('id', $interestId)
+            ->where('receiver_id', $user->id)
+            ->first();
+
+        if (!$interest) {
+            return response()->json(['error' => 'Interest not found'], 404);
+        }
+
+        if ($interest->status !== 'pending') {
+            return response()->json(['error' => 'Interest is not pending'], 400);
+        }
+
+        $interest->update([
+            'status' => 'accepted',
+            'responded_at' => now()
+        ]);
+
+        // Create a match
+        \App\Models\UserMatch::updateOrCreate([
+            'user1_id' => min($interest->sender_id, $interest->receiver_id),
+            'user2_id' => max($interest->sender_id, $interest->receiver_id),
+        ]);
+
+        // Notify the sender
+        Notification::create([
+            'user_id' => $interest->sender_id,
+            'sender_id' => $user->id,
+            'type' => 'match',
+            'title' => 'Interest Accepted!',
+            'message' => "{$user->userProfile->first_name} accepted your interest request. It's a match!",
+            'reference_id' => $interest->id
+        ]);
+
+        return response()->json([
+            'message' => 'Interest accepted and match created',
+            'interest' => $interest
+        ]);
+    }
+
+    /**
+     * Reject a received interest
+     */
+    public function rejectInterest($interestId, Request $request)
+    {
+        $user = $request->user();
+        $interest = InterestSent::where('id', $interestId)
+            ->where('receiver_id', $user->id)
+            ->first();
+
+        if (!$interest) {
+            return response()->json(['error' => 'Interest not found'], 404);
+        }
+
+        $interest->update([
+            'status' => 'rejected',
+            'responded_at' => now()
+        ]);
+
+        return response()->json([
+            'message' => 'Interest rejected',
+            'interest' => $interest
         ]);
     }
 }

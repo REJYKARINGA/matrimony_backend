@@ -17,19 +17,25 @@ class MessageController extends Controller
     {
         $user = $request->user();
 
-        // Get all conversations for the user
-        $conversations = Message::where(function($query) use ($user) {
-            $query->where('sender_id', $user->id)
-                  ->orWhere('receiver_id', $user->id);
-        })
-        ->with([
-            'sender:id,email',
-            'sender.userProfile:first_name,last_name,profile_picture',
-            'receiver:id,email',
-            'receiver.userProfile:first_name,last_name,profile_picture'
-        ])
-        ->orderBy('sent_at', 'desc')
-        ->paginate(20);
+        // Subquery to get the latest message ID for each conversation
+        $latestMessageIds = Message::selectRaw('MAX(id) as id')
+            ->where(function ($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('receiver_id', $user->id);
+            })
+            ->groupByRaw('CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END', [$user->id])
+            ->pluck('id');
+
+        // Fetch valid conversation messages using the IDs from the subquery
+        $conversations = Message::whereIn('id', $latestMessageIds)
+            ->with([
+                'sender:id,email',
+                'sender.userProfile:user_id,first_name,last_name,profile_picture',
+                'receiver:id,email',
+                'receiver.userProfile:user_id,first_name,last_name,profile_picture'
+            ])
+            ->orderBy('sent_at', 'desc')
+            ->paginate(20);
 
         return response()->json([
             'conversations' => $conversations
@@ -63,12 +69,12 @@ class MessageController extends Controller
         }
 
         // Check if users are matched before allowing messaging
-        $isMatched = \App\Models\UserMatch::where(function($query) use ($sender, $receiver) {
+        $isMatched = \App\Models\UserMatch::where(function ($query) use ($sender, $receiver) {
             $query->where('user1_id', $sender->id)
-                  ->where('user2_id', $receiver->id);
-        })->orWhere(function($query) use ($sender, $receiver) {
+                ->where('user2_id', $receiver->id);
+        })->orWhere(function ($query) use ($sender, $receiver) {
             $query->where('user1_id', $receiver->id)
-                  ->where('user2_id', $sender->id);
+                ->where('user2_id', $sender->id);
         })->exists();
 
         if (!$isMatched) {
@@ -86,6 +92,7 @@ class MessageController extends Controller
         // Create notification for the receiver
         \App\Models\Notification::create([
             'user_id' => $receiver->id,
+            'sender_id' => $sender->id,
             'type' => 'message',
             'title' => 'New Message',
             'message' => "You have received a new message from {$sender->userProfile->first_name}",
@@ -112,23 +119,32 @@ class MessageController extends Controller
             ], 404);
         }
 
-        $messages = Message::where(function($query) use ($currentUser, $otherUser) {
-            $query->where(function($q) use ($currentUser, $otherUser) {
+        // Mark unread messages from this user as read
+        Message::where('sender_id', $otherUser->id)
+            ->where('receiver_id', $currentUser->id)
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+
+        $messages = Message::where(function ($query) use ($currentUser, $otherUser) {
+            $query->where(function ($q) use ($currentUser, $otherUser) {
                 $q->where('sender_id', $currentUser->id)
-                  ->where('receiver_id', $otherUser->id);
-            })->orWhere(function($q) use ($currentUser, $otherUser) {
+                    ->where('receiver_id', $otherUser->id);
+            })->orWhere(function ($q) use ($currentUser, $otherUser) {
                 $q->where('sender_id', $otherUser->id)
-                  ->where('receiver_id', $currentUser->id);
+                    ->where('receiver_id', $currentUser->id);
             });
         })
-        ->with([
-            'sender:id,email',
-            'sender.userProfile:first_name,last_name,profile_picture',
-            'receiver:id,email',
-            'receiver.userProfile:first_name,last_name,profile_picture'
-        ])
-        ->orderBy('sent_at', 'asc')
-        ->get();
+            ->with([
+                'sender:id,email',
+                'sender.userProfile:first_name,last_name,profile_picture',
+                'receiver:id,email',
+                'receiver.userProfile:first_name,last_name,profile_picture'
+            ])
+            ->orderBy('sent_at', 'asc')
+            ->get();
 
         return response()->json([
             'messages' => $messages
@@ -162,6 +178,22 @@ class MessageController extends Controller
 
         return response()->json([
             'message' => 'Message marked as read'
+        ]);
+    }
+
+    /**
+     * Get unread message count
+     */
+    public function getUnreadCount(Request $request)
+    {
+        $user = $request->user();
+
+        $unreadCount = Message::where('receiver_id', $user->id)
+            ->where('is_read', false)
+            ->count();
+
+        return response()->json([
+            'unread_count' => $unreadCount
         ]);
     }
 }

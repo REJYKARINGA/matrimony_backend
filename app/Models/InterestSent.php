@@ -9,6 +9,7 @@ use App\Models\User;
 class InterestSent extends Model
 {
     protected $table = 'interests_sent';
+    public $timestamps = false;
     protected $fillable = [
         'sender_id',
         'receiver_id',

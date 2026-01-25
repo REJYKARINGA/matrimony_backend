@@ -10,6 +10,10 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\EngagementPosterController;
 use App\Http\Controllers\Api\SuggestionController;
+use App\Http\Controllers\Api\ShortlistController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileViewController;
+use App\Events\TestEvent;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +28,10 @@ use App\Http\Controllers\Api\SuggestionController;
 
 // Public authentication routes
 Route::prefix('auth')->group(function () {
+    Route::get('/test-broadcast', function () {
+        broadcast(new TestEvent('Hello from Reverb!'));
+        return response()->json(['message' => 'Event broadcasted!']);
+    });
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
@@ -56,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/photos', [ProfileController::class, 'uploadProfilePhoto']);
         Route::put('/photos/{photoId}/primary', [ProfileController::class, 'setPrimaryPhoto']);
         Route::delete('/photos/{photoId}', [ProfileController::class, 'deleteProfilePhoto']);
+        Route::get('/visitors', [ProfileViewController::class, 'getVisitors']);
+        Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
         Route::get('/{id}', [ProfileController::class, 'show']);
         Route::get('/', [ProfileController::class, 'index']);
     });
@@ -68,11 +78,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/interest/{userId}', [MatchingController::class, 'sendInterest']);
         Route::get('/interests/sent', [MatchingController::class, 'getSentInterests']);
         Route::get('/interests/received', [MatchingController::class, 'getReceivedInterests']);
+        Route::post('/interest/{interestId}/accept', [MatchingController::class, 'acceptInterest']);
+        Route::post('/interest/{interestId}/reject', [MatchingController::class, 'rejectInterest']);
+    });
+
+    // Shortlist routes
+    Route::prefix('shortlist')->group(function () {
+        Route::get('/', [ShortlistController::class, 'index']);
+        Route::post('/', [ShortlistController::class, 'store']);
+        Route::delete('/{shortlistedUserId}', [ShortlistController::class, 'destroy']);
+        Route::get('/check/{shortlistedUserId}', [ShortlistController::class, 'check']);
     });
 
     // Messaging routes
     Route::prefix('messages')->group(function () {
         Route::get('/', [MessageController::class, 'index']);
+        Route::get('/unread-count', [MessageController::class, 'getUnreadCount']);
         Route::post('/', [MessageController::class, 'store']);
         Route::get('/{userId}', [MessageController::class, 'getMessagesWithUser']);
         Route::put('/{id}/read', [MessageController::class, 'markAsRead']);
@@ -90,4 +111,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Suggestion routes
     Route::apiResource('suggestions', SuggestionController::class);
+
+    // Notification routes
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
 });

@@ -9,8 +9,10 @@ use App\Models\User;
 class Notification extends Model
 {
     protected $table = 'notifications';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
+        'sender_id',
         'type',
         'title',
         'message',
@@ -25,10 +27,18 @@ class Notification extends Model
     ];
 
     /**
-     * Relationship with user
+     * Relationship with user (receiver)
      */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relationship with sender
+     */
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id');
     }
 }

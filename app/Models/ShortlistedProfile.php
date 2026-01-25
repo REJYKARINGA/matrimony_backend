@@ -9,6 +9,7 @@ use App\Models\User;
 class ShortlistedProfile extends Model
 {
     protected $table = 'shortlisted_profiles';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
         'shortlisted_user_id',

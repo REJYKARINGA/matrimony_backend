@@ -99,10 +99,26 @@ class ProfileController extends Controller
             ['user_id' => $user->id],
             array_merge(
                 $request->only([
-                    'first_name', 'last_name', 'date_of_birth', 'gender', 'height',
-                    'weight', 'marital_status', 'religion', 'caste', 'sub_caste',
-                    'mother_tongue', 'profile_picture', 'bio', 'education',
-                    'occupation', 'annual_income', 'city', 'district', 'state', 'country'
+                    'first_name',
+                    'last_name',
+                    'date_of_birth',
+                    'gender',
+                    'height',
+                    'weight',
+                    'marital_status',
+                    'religion',
+                    'caste',
+                    'sub_caste',
+                    'mother_tongue',
+                    'profile_picture',
+                    'bio',
+                    'education',
+                    'occupation',
+                    'annual_income',
+                    'city',
+                    'district',
+                    'state',
+                    'country'
                 ]),
                 ['user_id' => $user->id]
             )
@@ -157,10 +173,23 @@ class ProfileController extends Controller
         $familyDetails = FamilyDetail::updateOrCreate(
             ['user_id' => $user->id],
             $request->only([
-                'father_name', 'father_occupation', 'mother_name', 'mother_occupation',
-                'siblings', 'family_type', 'family_status', 'family_location',
-                'elder_sister', 'elder_brother', 'younger_sister', 'younger_brother',
-                'twin_type', 'father_alive', 'mother_alive', 'guardian', 'show'
+                'father_name',
+                'father_occupation',
+                'mother_name',
+                'mother_occupation',
+                'siblings',
+                'family_type',
+                'family_status',
+                'family_location',
+                'elder_sister',
+                'elder_brother',
+                'younger_sister',
+                'younger_brother',
+                'twin_type',
+                'father_alive',
+                'mother_alive',
+                'guardian',
+                'show'
             ])
         );
 
@@ -211,8 +240,18 @@ class ProfileController extends Controller
         $preferences = Preference::updateOrCreate(
             ['user_id' => $user->id],
             array_intersect_key($data, array_flip([
-                'min_age', 'max_age', 'min_height', 'max_height', 'marital_status',
-                'religion', 'caste', 'education', 'occupation', 'min_income', 'max_income', 'preferred_locations'
+                'min_age',
+                'max_age',
+                'min_height',
+                'max_height',
+                'marital_status',
+                'religion',
+                'caste',
+                'education',
+                'occupation',
+                'min_income',
+                'max_income',
+                'preferred_locations'
             ]))
         );
 
@@ -360,14 +399,30 @@ class ProfileController extends Controller
             ], 404);
         }
 
+        // Check interest status
+        $viewingUser = request()->user();
+
         // Record profile view
-        \App\Models\ProfileView::create([
-            'viewer_id' => request()->user()->id,
-            'viewed_profile_id' => $id
-        ]);
+        if ($viewingUser && $viewingUser->id != $id) {
+            \App\Models\ProfileView::create([
+                'viewer_id' => $viewingUser->id,
+                'viewed_profile_id' => $id,
+                'viewed_at' => now(),
+            ]);
+        }
+
+        $interestSent = \App\Models\InterestSent::where('sender_id', $viewingUser->id)
+            ->where('receiver_id', $id)
+            ->first();
+
+        $interestReceived = \App\Models\InterestSent::where('sender_id', $id)
+            ->where('receiver_id', $viewingUser->id)
+            ->first();
 
         return response()->json([
-            'user' => $user
+            'user' => $user,
+            'interest_sent' => $interestSent,
+            'interest_received' => $interestReceived
         ]);
     }
 
@@ -385,7 +440,7 @@ class ProfileController extends Controller
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users
             ->whereNull('deleted_at') // Exclude soft deleted users
-            ->whereHas('userProfile', function($q) {
+            ->whereHas('userProfile', function ($q) {
                 $q->where('is_active_verified', true);
             });
 
@@ -393,37 +448,37 @@ class ProfileController extends Controller
         // Apply preferences filter if available
         if ($preferences) {
             if ($preferences->min_age) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
                 });
             }
 
             if ($preferences->max_age) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
                 });
             }
 
             if ($preferences->min_height) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->where('height', '>=', $preferences->min_height);
                 });
             }
 
             if ($preferences->max_height) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->where('height', '<=', $preferences->max_height);
                 });
             }
 
             if ($preferences->religion) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->where('religion', $preferences->religion);
                 });
             }
 
             if ($preferences->caste) {
-                $query->whereHas('userProfile', function($q) use ($preferences) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->where('caste', $preferences->caste);
                 });
             }
