@@ -138,9 +138,11 @@ class MatchingController extends Controller
         })
             ->with([
                 'user1:id,email',
-                'user1.userProfile:first_name,last_name,profile_picture',
+                'user1.userProfile',
+                'user1.profilePhotos',
                 'user2:id,email',
-                'user2.userProfile:first_name,last_name,profile_picture'
+                'user2.userProfile',
+                'user2.profilePhotos'
             ])
             ->paginate(10);
 
@@ -206,7 +208,8 @@ class MatchingController extends Controller
         $interests = InterestSent::where('sender_id', $user->id)
             ->with([
                 'receiver:id,email',
-                'receiver.userProfile:first_name,last_name,profile_picture'
+                'receiver.userProfile',
+                'receiver.profilePhotos'
             ])
             ->paginate(10);
 
@@ -225,7 +228,8 @@ class MatchingController extends Controller
         $interests = InterestSent::where('receiver_id', $user->id)
             ->with([
                 'sender:id,email',
-                'sender.userProfile:first_name,last_name,profile_picture'
+                'sender.userProfile',
+                'sender.profilePhotos'
             ])
             ->paginate(10);
 
