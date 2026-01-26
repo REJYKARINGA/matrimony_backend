@@ -62,8 +62,10 @@ class ProfileController extends Controller
             'annual_income' => 'sometimes|numeric',
             'city' => 'sometimes|string|max:255',
             'district' => 'sometimes|string|in:Thiruvananthapuram,Kollam,Pathanamthitta,Alappuzha,Kottayam,Idukki,Ernakulam,Thrissur,Palakkad,Malappuram,Kozhikode,Wayanad,Kannur,Kasaragod',
+            'county' => 'nullable|string|max:255',
             'state' => 'sometimes|string|max:255',
             'country' => 'sometimes|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
         ]);
 
         if ($validator->fails()) {
@@ -117,8 +119,10 @@ class ProfileController extends Controller
                     'annual_income',
                     'city',
                     'district',
+                    'county',
                     'state',
-                    'country'
+                    'country',
+                    'postal_code'
                 ]),
                 ['user_id' => $user->id]
             )
