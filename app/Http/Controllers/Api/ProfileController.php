@@ -212,9 +212,12 @@ class ProfileController extends Controller
 
         $data = $request->all();
 
-        // Handle preferred_locations if sent as JSON string
+        // Handle preferred_locations and caste if sent as JSON string
         if (isset($data['preferred_locations']) && is_string($data['preferred_locations'])) {
             $data['preferred_locations'] = json_decode($data['preferred_locations'], true);
+        }
+        if (isset($data['caste']) && is_string($data['caste']) && (str_starts_with($data['caste'], '[') || str_starts_with($data['caste'], '{'))) {
+            $data['caste'] = json_decode($data['caste'], true);
         }
 
         $validator = Validator::make($data, [
@@ -224,7 +227,7 @@ class ProfileController extends Controller
             'max_height' => 'sometimes|integer|min:100|max:250',
             'marital_status' => 'sometimes|string|in:never_married,divorced,widowed',
             'religion' => 'sometimes|string|max:255',
-            'caste' => 'sometimes|string|max:255',
+            'caste' => 'sometimes|array',
             'education' => 'sometimes|string|max:255',
             'occupation' => 'sometimes|string|max:255',
             'min_income' => 'sometimes|numeric|min:0',

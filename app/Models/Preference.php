@@ -32,6 +32,7 @@ class Preference extends Model
         'max_height' => 'integer',
         'min_income' => 'decimal:2',
         'max_income' => 'decimal:2',
+        'caste' => 'array',
         'preferred_locations' => 'array', // JSON array
     ];
 

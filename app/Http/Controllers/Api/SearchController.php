@@ -24,6 +24,12 @@ class SearchController extends Controller
 
         $categories = [];
 
+        // Calculate user age for global ceiling (not showing older than user)
+        $userAge = null;
+        if ($user->userProfile && $user->userProfile->date_of_birth) {
+            $userAge = \Carbon\Carbon::parse($user->userProfile->date_of_birth)->age;
+        }
+
         // Define which fields we want to show as cards
         $fields = [
             'religion' => ['title' => 'Religion Match', 'icon' => 'religion'],
@@ -34,10 +40,18 @@ class SearchController extends Controller
         ];
 
         foreach ($fields as $field => $meta) {
-            $value = $preferences->$field;
+            $value = $preferences->$field ?? $user->userProfile->$field ?? null;
             if ($value) {
-                $count = User::whereHas('userProfile', function ($q) use ($field, $value, $user) {
-                    $q->where($field, $value);
+                $count = User::whereHas('userProfile', function ($q) use ($field, $value, $user, $userAge) {
+                    if ($field === 'caste' && is_array($value)) {
+                        $q->whereIn($field, $value);
+                    } else {
+                        $q->where($field, $value);
+                    }
+
+                    if ($userAge) {
+                        $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                    }
 
                     // Filter by gender
                     $userProfile = $user->userProfile;
@@ -53,10 +67,14 @@ class SearchController extends Controller
                     ->count();
 
                 if ($count > 0) {
+                    $valDisplay = $value;
+                    if ($field === 'caste' && is_array($value)) {
+                        $valDisplay = implode(', ', array_slice($value, 0, 2)) . (count($value) > 2 ? '...' : '');
+                    }
                     $categories[] = [
                         'field' => $field,
                         'title' => $meta['title'],
-                        'value' => $value,
+                        'value' => $valDisplay,
                         'count' => $count,
                         'icon' => $meta['icon']
                     ];
@@ -101,8 +119,12 @@ class SearchController extends Controller
         // Location Match (based on District)
         if (is_array($preferences->preferred_locations) && count($preferences->preferred_locations) > 0) {
             $locations = $preferences->preferred_locations;
-            $count = User::whereHas('userProfile', function ($q) use ($locations, $user) {
+            $count = User::whereHas('userProfile', function ($q) use ($locations, $user, $userAge) {
                 $q->whereIn('district', $locations);
+
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
 
                 // Filter by gender
                 $userProfile = $user->userProfile;
@@ -131,8 +153,12 @@ class SearchController extends Controller
         // Additional: Same District Match (Even if not in preferences)
         $myDistrict = $user->userProfile->district ?? null;
         if ($myDistrict && (!is_array($preferences->preferred_locations) || !in_array($myDistrict, $preferences->preferred_locations))) {
-            $count = User::whereHas('userProfile', function ($q) use ($myDistrict, $user) {
+            $count = User::whereHas('userProfile', function ($q) use ($myDistrict, $user, $userAge) {
                 $q->where('district', $myDistrict);
+
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
 
                 // Filter by gender
                 $userProfile = $user->userProfile;
@@ -167,8 +193,11 @@ class SearchController extends Controller
             $count = User::join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
                 ->where('users.status', 'active')
-                ->whereHas('userProfile', function ($q) {
+                ->whereHas('userProfile', function ($q) use ($userAge) {
                     $q->where('is_active_verified', true);
+                    if ($userAge) {
+                        $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                    }
                 })
                 ->whereNotNull('user_profiles.latitude')
                 ->whereNotNull('user_profiles.longitude')
@@ -196,6 +225,119 @@ class SearchController extends Controller
             }
         }
 
+        // Height Match
+        if ($preferences->min_height || $preferences->max_height) {
+            $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
+                if ($preferences->min_height)
+                    $q->where('height', '>=', $preferences->min_height);
+                if ($preferences->max_height)
+                    $q->where('height', '<=', $preferences->max_height);
+
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
+
+                $userProfile = $user->userProfile;
+                if ($userProfile && $userProfile->gender) {
+                    $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+                    if ($oppositeGender)
+                        $q->where('gender', $oppositeGender);
+                }
+            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+
+            if ($count > 0) {
+                $categories[] = [
+                    'field' => 'height',
+                    'title' => 'Height Match',
+                    'value' => ($preferences->min_height ?? 'Any') . ' - ' . ($preferences->max_height ?? 'Any') . ' cm',
+                    'count' => $count,
+                    'icon' => 'height'
+                ];
+            }
+        }
+
+        // Income Match
+        if ($preferences->min_income) {
+            $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
+                $q->where('annual_income', '>=', $preferences->min_income);
+
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
+
+                $userProfile = $user->userProfile;
+                if ($userProfile && $userProfile->gender) {
+                    $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+                    if ($oppositeGender)
+                        $q->where('gender', $oppositeGender);
+                }
+            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+
+            if ($count > 0) {
+                $categories[] = [
+                    'field' => 'income',
+                    'title' => 'Income Match',
+                    'value' => 'Above ₹' . number_format($preferences->min_income / 100000, 1) . ' Lakh',
+                    'count' => $count,
+                    'icon' => 'payments'
+                ];
+            }
+        }
+
+        // Mother Tongue Match
+        $myTongue = $user->userProfile->mother_tongue ?? null;
+        if ($myTongue) {
+            $count = User::whereHas('userProfile', function ($q) use ($myTongue, $user, $userAge) {
+                $q->where('mother_tongue', $myTongue);
+
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
+
+                $userProfile = $user->userProfile;
+                if ($userProfile && $userProfile->gender) {
+                    $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+                    if ($oppositeGender)
+                        $q->where('gender', $oppositeGender);
+                }
+            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+
+            if ($count > 0) {
+                $categories[] = [
+                    'field' => 'mother_tongue',
+                    'title' => 'Language Match',
+                    'value' => $myTongue,
+                    'count' => $count,
+                    'icon' => 'translate'
+                ];
+            }
+        }
+
+        // New Members (Joined in last 7 days)
+        $count = User::where('created_at', '>=', now()->subDays(7))
+            ->whereHas('userProfile', function ($q) use ($user, $userAge) {
+                if ($userAge) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
+
+                $userProfile = $user->userProfile;
+                if ($userProfile && $userProfile->gender) {
+                    $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+                    if ($oppositeGender)
+                        $q->where('gender', $oppositeGender);
+                }
+            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+
+        if ($count > 0) {
+            $categories[] = [
+                'field' => 'new_members',
+                'title' => 'New Members',
+                'value' => 'Joined this week',
+                'count' => $count,
+                'icon' => 'person_add'
+            ];
+        }
+
         return response()->json([
             'categories' => $categories
         ]);
@@ -207,11 +349,23 @@ class SearchController extends Controller
     public function search(Request $request)
     {
         $user = $request->user();
+
+        // Calculate user age for global ceiling
+        $userAge = null;
+        if ($user->userProfile && $user->userProfile->date_of_birth) {
+            $userAge = \Carbon\Carbon::parse($user->userProfile->date_of_birth)->age;
+        }
+
         $query = User::with(['userProfile', 'profilePhotos'])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
-            ->whereHas('userProfile', function ($q) {
+            ->whereHas('userProfile', function ($q) use ($userAge, $request) {
                 $q->where('is_active_verified', true);
+
+                // UNLESS this is a specific age search, don't show older than me
+                if ($userAge && $request->field != 'age' && !$request->filled('min_age') && !$request->filled('max_age')) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
             });
 
         // Filter by gender (show opposite gender)
@@ -232,8 +386,15 @@ class SearchController extends Controller
         }
 
         if ($request->filled('caste')) {
-            $query->whereHas('userProfile', function ($q) use ($request) {
-                $q->where('caste', $request->caste);
+            $casteValue = $request->caste;
+            $query->whereHas('userProfile', function ($q) use ($casteValue) {
+                if (is_array($casteValue)) {
+                    $q->whereIn('caste', $casteValue);
+                } else if (is_string($casteValue) && str_contains($casteValue, ',')) {
+                    $q->whereIn('caste', explode(',', $casteValue));
+                } else {
+                    $q->where('caste', $casteValue);
+                }
             });
         }
 
@@ -282,6 +443,31 @@ class SearchController extends Controller
                 } else {
                     $q->where('district', 'LIKE', "%{$location}%");
                 }
+            });
+        }
+
+        if ($request->filled('field') && $request->field == 'new_members') {
+            $query->where('users.created_at', '>=', now()->subDays(7));
+        }
+
+        if ($request->filled('field') && $request->field == 'mother_tongue') {
+            $query->whereHas('userProfile', function ($q) use ($user) {
+                $q->where('mother_tongue', $user->userProfile->mother_tongue);
+            });
+        }
+
+        if ($request->filled('field') && $request->field == 'income') {
+            $query->whereHas('userProfile', function ($q) use ($user) {
+                $q->where('annual_income', '>=', $user->preferences->min_income ?? 0);
+            });
+        }
+
+        if ($request->filled('field') && $request->field == 'height') {
+            $query->whereHas('userProfile', function ($q) use ($user) {
+                if ($user->preferences->min_height)
+                    $q->where('height', '>=', $user->preferences->min_height);
+                if ($user->preferences->max_height)
+                    $q->where('height', '<=', $user->preferences->max_height);
             });
         }
 
