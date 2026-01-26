@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\ShortlistController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileViewController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\LocationController;
 use App\Events\TestEvent;
 
 /*
@@ -108,6 +110,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Engagement Poster routes
     Route::apiResource('engagement-posters', EngagementPosterController::class);
+
+    // Search routes
+    Route::prefix('search')->group(function () {
+        Route::get('/preference-matches', [SearchController::class, 'getPreferenceMatches']);
+        Route::get('/', [SearchController::class, 'search']);
+    });
+
+    // Location routes
+    Route::prefix('location')->group(function () {
+        Route::post('/update', [LocationController::class, 'updateLocation']);
+        Route::get('/nearby', [LocationController::class, 'getNearbyUsers']);
+    });
 
     // Suggestion routes
     Route::apiResource('suggestions', SuggestionController::class);

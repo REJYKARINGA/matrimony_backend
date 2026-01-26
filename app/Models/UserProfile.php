@@ -31,6 +31,9 @@ class UserProfile extends Model
         'district',
         'state',
         'country',
+        'latitude',
+        'longitude',
+        'location_updated_at',
     ];
 
     protected $casts = [
@@ -38,6 +41,9 @@ class UserProfile extends Model
         'height' => 'integer',
         'weight' => 'integer',
         'annual_income' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'location_updated_at' => 'datetime',
     ];
 
     /**
