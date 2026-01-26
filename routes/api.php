@@ -135,4 +135,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
     });
+
+    // Payment routes
+    Route::prefix('payment')->group(function () {
+        Route::get('/wallet/balance', [App\Http\Controllers\Api\PaymentController::class, 'getWalletBalance']);
+        Route::post('/create-order', [App\Http\Controllers\Api\PaymentController::class, 'createOrder']);
+        Route::post('/verify', [App\Http\Controllers\Api\PaymentController::class, 'verifyPayment']);
+        Route::post('/unlock-contact-wallet', [App\Http\Controllers\Api\PaymentController::class, 'unlockContactWithWallet']);
+        Route::get('/check-unlock/{userId}', [App\Http\Controllers\Api\PaymentController::class, 'checkContactUnlock']);
+        Route::get('/transactions', [App\Http\Controllers\Api\PaymentController::class, 'getTransactionHistory']);
+    });
 });
