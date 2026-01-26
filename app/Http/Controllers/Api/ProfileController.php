@@ -232,6 +232,7 @@ class ProfileController extends Controller
             'occupation' => 'sometimes|string|max:255',
             'min_income' => 'sometimes|numeric|min:0',
             'max_income' => 'sometimes|numeric|min:0',
+            'max_distance' => 'sometimes|integer|min:1|max:500',
             'preferred_locations' => 'sometimes|array',
             'preferred_locations.*' => 'string|max:255',
         ]);
@@ -258,6 +259,7 @@ class ProfileController extends Controller
                 'occupation',
                 'min_income',
                 'max_income',
+                'max_distance',
                 'preferred_locations'
             ]))
         );

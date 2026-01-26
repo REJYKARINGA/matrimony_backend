@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Preference;
+use App\Models\DiscoveryStat;
 
 class SearchController extends Controller
 {
@@ -23,6 +24,9 @@ class SearchController extends Controller
         }
 
         $categories = [];
+
+        // Fetch click stats for sorting
+        $stats = DiscoveryStat::pluck('click_count', 'category')->toArray();
 
         // Calculate user age for global ceiling (not showing older than user)
         $userAge = null;
@@ -188,7 +192,7 @@ class SearchController extends Controller
         if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
             $lat = $user->userProfile->latitude;
             $lon = $user->userProfile->longitude;
-            $radius = 50; // 50km
+            $radius = $preferences->max_distance ?? 50; // Use preference or default 50km
 
             $count = User::join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
@@ -217,8 +221,8 @@ class SearchController extends Controller
             if ($count > 0) {
                 $categories[] = [
                     'field' => 'near_me_gps',
-                    'title' => 'Near Me (GPS)',
-                    'value' => 'Within 50 km',
+                    'title' => 'Near Me (Distance)',
+                    'value' => "Within $radius km",
                     'count' => $count,
                     'icon' => 'near_me'
                 ];
@@ -338,9 +342,41 @@ class SearchController extends Controller
             ];
         }
 
+        // --- TRENDING SORTING LOGIC ---
+        // Sort categories based on click stats (Higher counts first)
+        usort($categories, function ($a, $b) use ($stats) {
+            $countA = $stats[$a['field']] ?? 0;
+            $countB = $stats[$b['field']] ?? 0;
+
+            // If counts are equal, keep existing order
+            if ($countA == $countB)
+                return 0;
+
+            return ($countA > $countB) ? -1 : 1;
+        });
+
         return response()->json([
             'categories' => $categories
         ]);
+    }
+
+    /**
+     * Log a click on a discovery card for trending sorting
+     */
+    public function logDiscoveryClick(Request $request)
+    {
+        $request->validate([
+            'category' => 'required|string|max:255'
+        ]);
+
+        $stat = DiscoveryStat::firstOrCreate(
+            ['category' => $request->category],
+            ['click_count' => 0]
+        );
+
+        $stat->increment('click_count');
+
+        return response()->json(['success' => true]);
     }
 
     /**

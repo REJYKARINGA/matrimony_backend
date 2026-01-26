@@ -114,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Search routes
     Route::prefix('search')->group(function () {
         Route::get('/preference-matches', [SearchController::class, 'getPreferenceMatches']);
+        Route::post('/log-click', [SearchController::class, 'logDiscoveryClick']);
         Route::get('/', [SearchController::class, 'search']);
     });
 
