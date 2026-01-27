@@ -34,7 +34,7 @@ class TestUsersSeeder extends Seeder
                 $user = User::create([
                     'email' => $email,
                     'phone' => $faker->phoneNumber,
-                    'password_hash' => Hash::make('password'),
+                    'password' => Hash::make('password'),
                     'role' => 'user',
                     'status' => 'active',
                     'email_verified' => true,
@@ -62,7 +62,7 @@ class TestUsersSeeder extends Seeder
                     'district' => $faker->randomElement(['Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod']),
                     'state' => 'Kerala',
                     'country' => 'India',
-                    'is_active_verified' => $faker->boolean(80), // 80% chance verified
+                    'is_active_verified' => true,
                 ]);
 
                 // Create family details
