@@ -237,6 +237,12 @@ class ProfileController extends Controller
         if (isset($data['caste']) && is_string($data['caste']) && (str_starts_with($data['caste'], '[') || str_starts_with($data['caste'], '{'))) {
             $data['caste'] = json_decode($data['caste'], true);
         }
+        if (isset($data['education']) && is_string($data['education']) && (str_starts_with($data['education'], '[') || str_starts_with($data['education'], '{'))) {
+            $data['education'] = json_decode($data['education'], true);
+        }
+        if (isset($data['occupation']) && is_string($data['occupation']) && (str_starts_with($data['occupation'], '[') || str_starts_with($data['occupation'], '{'))) {
+            $data['occupation'] = json_decode($data['occupation'], true);
+        }
 
         $validator = Validator::make($data, [
             'min_age' => 'sometimes|integer|min:18|max:100',
@@ -246,8 +252,8 @@ class ProfileController extends Controller
             'marital_status' => 'sometimes|string|in:never_married,divorced,widowed',
             'religion' => 'sometimes|string|max:255',
             'caste' => 'sometimes|array',
-            'education' => 'sometimes|string|max:255',
-            'occupation' => 'sometimes|string|max:255',
+            'education' => 'sometimes|array',
+            'occupation' => 'sometimes|array',
             'min_income' => 'sometimes|numeric|min:0',
             'max_income' => 'sometimes|numeric|min:0',
             'max_distance' => 'sometimes|integer|min:1|max:500',
