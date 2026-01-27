@@ -93,45 +93,63 @@ class ProfileController extends Controller
             }
         }
 
-        // Check if profile exists
-        $profileExists = UserProfile::where('user_id', $user->id)->exists();
+        // Find existing profile or create new instance
+        $userProfile = UserProfile::firstOrNew(['user_id' => $user->id]);
 
-        // Update or create user profile
-        $userProfile = UserProfile::updateOrCreate(
-            ['user_id' => $user->id],
-            array_merge(
-                $request->only([
-                    'first_name',
-                    'last_name',
-                    'date_of_birth',
-                    'gender',
-                    'height',
-                    'weight',
-                    'marital_status',
-                    'religion',
-                    'caste',
-                    'sub_caste',
-                    'mother_tongue',
-                    'profile_picture',
-                    'bio',
-                    'education',
-                    'occupation',
-                    'annual_income',
-                    'city',
-                    'district',
-                    'county',
-                    'state',
-                    'country',
-                    'postal_code'
-                ]),
-                ['user_id' => $user->id]
-            )
-        );
+        // Access the old (current) profile data before update for comparison if needed, 
+        // but getDirty() works on the model instance after fill().
 
-        // If profile existed (update), set is_active_verified to false
-        if ($profileExists) {
-            $userProfile->update(['is_active_verified' => false]);
+        $data = $request->only([
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'height',
+            'weight',
+            'marital_status',
+            'religion',
+            'caste',
+            'sub_caste',
+            'mother_tongue',
+            'profile_picture',
+            'bio',
+            'education',
+            'occupation',
+            'annual_income',
+            'city',
+            'district',
+            'county',
+            'state',
+            'country',
+            'postal_code'
+        ]);
+
+        $userProfile->fill($data);
+
+        // Check if there are any changes
+        if ($userProfile->isDirty()) {
+            // Get the keys of the attributes that have changed
+            $changes = array_keys($userProfile->getDirty());
+
+            // If the profile is already unverified and has stored changes, merge them
+            if ($userProfile->exists && !$userProfile->is_active_verified && !empty($userProfile->changed_fields)) {
+                $existingChanges = $userProfile->changed_fields;
+                // Ensure existingChanges is an array (handled by cast, but safe check)
+                if (is_array($existingChanges)) {
+                    $changes = array_unique(array_merge($existingChanges, $changes));
+                }
+            }
+
+            // Update the changed_fields and set is_active_verified to false
+            $userProfile->changed_fields = array_values($changes);
+            $userProfile->is_active_verified = false;
+        } elseif (!$userProfile->exists) {
+            // New profile creation
+            $userProfile->is_active_verified = false;
+            $userProfile->changed_fields = null; // Or all fields? Keeping null for new profiles.
         }
+
+        $userProfile->save();
 
         return response()->json([
             'message' => 'Profile updated successfully',

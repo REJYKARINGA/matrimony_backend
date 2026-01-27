@@ -36,6 +36,8 @@ class UserProfile extends Model
         'latitude',
         'longitude',
         'location_updated_at',
+        'is_active_verified',
+        'changed_fields',
     ];
 
     protected $casts = [
@@ -46,6 +48,8 @@ class UserProfile extends Model
         'latitude' => 'float',
         'longitude' => 'float',
         'location_updated_at' => 'datetime',
+        'is_active_verified' => 'boolean',
+        'changed_fields' => 'array',
     ];
 
     /**
