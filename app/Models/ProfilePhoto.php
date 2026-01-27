@@ -26,6 +26,20 @@ class ProfilePhoto extends Model
         'verification_date' => 'datetime',
     ];
 
+    protected $appends = ['full_photo_url'];
+
+    /**
+     * Get the full URL for the photo
+     */
+    public function getFullPhotoUrlAttribute()
+    {
+        if (!$this->photo_url)
+            return null;
+        if (str_starts_with($this->photo_url, 'http'))
+            return $this->photo_url;
+        return config('app.url') . $this->photo_url;
+    }
+
     /**
      * Relationship with user
      */

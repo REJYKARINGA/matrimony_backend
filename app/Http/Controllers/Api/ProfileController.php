@@ -354,7 +354,7 @@ class ProfileController extends Controller
 
             return response()->json([
                 'message' => 'Photo uploaded successfully',
-                'photo' => $photo
+                'photo' => $photo->setAppends(['full_photo_url'])
             ]);
         }
 

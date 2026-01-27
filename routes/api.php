@@ -42,6 +42,25 @@ Route::prefix('auth')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 
+// Image proxy route to bypass CORS for Flutter Web
+Route::get('images/proxy', function (Request $request) {
+    $path = $request->query('path');
+    if (!$path)
+        return response()->json(['error' => 'Path is required'], 400);
+
+    // Clean the path
+    $path = str_replace(['http://localhost:8000/storage/', '/storage/'], '', $path);
+
+    if (!Storage::disk('public')->exists($path)) {
+        return response()->json(['error' => 'File not found: ' . $path], 404);
+    }
+
+    $file = Storage::disk('public')->get($path);
+    $type = Storage::disk('public')->mimeType($path);
+
+    return response($file)->header('Content-Type', $type);
+});
+
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/user', [AuthController::class, 'getUser']);
