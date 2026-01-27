@@ -26,6 +26,7 @@ class FamilyDetail extends Model
         'twin_type',
         'father_alive',
         'mother_alive',
+        'is_disabled',
         'guardian',
         'show',
     ];
@@ -38,6 +39,7 @@ class FamilyDetail extends Model
         'younger_brother' => 'integer',
         'father_alive' => 'boolean',
         'mother_alive' => 'boolean',
+        'is_disabled' => 'boolean',
         'show' => 'boolean',
     ];
 

@@ -180,6 +180,7 @@ class ProfileController extends Controller
             'twin_type' => 'sometimes|string|in:identical,fraternal',
             'father_alive' => 'sometimes|boolean',
             'mother_alive' => 'sometimes|boolean',
+            'is_disabled' => 'sometimes|boolean',
             'guardian' => 'sometimes|string|max:255',
             'show' => 'sometimes|boolean',
         ]);
@@ -210,6 +211,7 @@ class ProfileController extends Controller
                 'twin_type',
                 'father_alive',
                 'mother_alive',
+                'is_disabled',
                 'guardian',
                 'show'
             ])
