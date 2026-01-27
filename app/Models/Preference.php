@@ -35,6 +35,8 @@ class Preference extends Model
         'max_income' => 'decimal:2',
         'max_distance' => 'integer',
         'caste' => 'array',
+        'education' => 'array', // JSON array for multiple selections
+        'occupation' => 'array', // JSON array for multiple selections
         'preferred_locations' => 'array', // JSON array
     ];
 

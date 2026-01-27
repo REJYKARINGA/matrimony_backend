@@ -262,6 +262,13 @@ class ProfileController extends Controller
             ], 422);
         }
 
+        if (isset($data['education']) && is_array($data['education'])) {
+            \App\Models\Education::whereIn('id', $data['education'])->increment('popularity_count');
+        }
+        if (isset($data['occupation']) && is_array($data['occupation'])) {
+            \App\Models\Occupation::whereIn('id', $data['occupation'])->increment('popularity_count');
+        }
+
         // Update or create preferences
         $preferences = Preference::updateOrCreate(
             ['user_id' => $user->id],
