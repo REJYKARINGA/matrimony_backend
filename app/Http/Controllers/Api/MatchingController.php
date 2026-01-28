@@ -137,10 +137,10 @@ class MatchingController extends Controller
                 ->orWhere('user2_id', $user->id);
         })
             ->with([
-                'user1:id,email',
+                'user1:id,email,matrimony_id',
                 'user1.userProfile',
                 'user1.profilePhotos',
-                'user2:id,email',
+                'user2:id,email,matrimony_id',
                 'user2.userProfile',
                 'user2.profilePhotos'
             ])
@@ -207,7 +207,7 @@ class MatchingController extends Controller
 
         $interests = InterestSent::where('sender_id', $user->id)
             ->with([
-                'receiver:id,email',
+                'receiver:id,email,matrimony_id',
                 'receiver.userProfile',
                 'receiver.profilePhotos'
             ])
@@ -227,7 +227,7 @@ class MatchingController extends Controller
 
         $interests = InterestSent::where('receiver_id', $user->id)
             ->with([
-                'sender:id,email',
+                'sender:id,email,matrimony_id',
                 'sender.userProfile',
                 'sender.profilePhotos'
             ])

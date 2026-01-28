@@ -34,6 +34,7 @@ class User extends Model
 
     protected $table = 'users';
     protected $fillable = [
+        'matrimony_id',
         'email',
         'phone',
         'password',
@@ -43,6 +44,36 @@ class User extends Model
         'phone_verified',
         'last_login',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (!$user->matrimony_id) {
+                $user->matrimony_id = static::generateMatrimonyId();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique matrimony ID
+     */
+    public static function generateMatrimonyId()
+    {
+        $prefix = 'VM';
+        $number = rand(100000, 999999);
+        $matrimonyId = $prefix . $number;
+
+        // Check if exists and regenerate if necessary
+        while (static::where('matrimony_id', $matrimonyId)->exists()) {
+            $number = rand(100000, 999999);
+            $matrimonyId = $prefix . $number;
+        }
+
+        return $matrimonyId;
+    }
 
     protected $casts = [
         'email_verified' => 'boolean',
