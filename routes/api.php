@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProfileViewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PreferenceController;
+use App\Http\Controllers\Api\VerificationController;
 use App\Events\TestEvent;
 
 /*
@@ -164,6 +165,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/unlock-contact-wallet', [App\Http\Controllers\Api\PaymentController::class, 'unlockContactWithWallet']);
         Route::get('/check-unlock/{userId}', [App\Http\Controllers\Api\PaymentController::class, 'checkContactUnlock']);
         Route::get('/transactions', [App\Http\Controllers\Api\PaymentController::class, 'getTransactionHistory']);
+    });
+
+    // Verification routes
+    Route::prefix('verification')->group(function () {
+        Route::post('/submit', [VerificationController::class, 'submitVerification']);
+        Route::get('/status', [VerificationController::class, 'getStatus']);
     });
 
     // Preference options routes

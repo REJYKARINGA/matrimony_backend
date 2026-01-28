@@ -29,7 +29,7 @@ class ProfileController extends Controller
             ], 403);
         }
 
-        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos']);
+        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification']);
 
         return response()->json([
             'user' => $user

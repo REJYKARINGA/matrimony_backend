@@ -25,6 +25,7 @@ use App\Models\ActivityLog;
 use App\Models\AdminPermission;
 use App\Models\EngagementPoster;
 use App\Models\Suggestion;
+use App\Models\UserVerification;
 
 use Laravel\Sanctum\HasApiTokens;
 
@@ -279,6 +280,13 @@ class User extends Model
     public function respondedSuggestions()
     {
         return $this->hasMany(Suggestion::class, 'responded_by');
+    }
+    /**
+     * Relationship with user verification
+     */
+    public function verification(): HasOne
+    {
+        return $this->hasOne(UserVerification::class, 'user_id');
     }
 }
 
