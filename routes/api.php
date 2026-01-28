@@ -179,4 +179,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/occupation-options', [PreferenceController::class, 'getOccupationOptions']);
         Route::get('/all-options', [PreferenceController::class, 'getAllOptions']);
     });
+
+    // Admin routes
+    Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
+        Route::get('/verifications/pending', [App\Http\Controllers\Api\AdminController::class, 'getPendingVerifications']);
+        Route::post('/verifications/{id}/approve', [App\Http\Controllers\Api\AdminController::class, 'approveVerification']);
+        Route::post('/verifications/{id}/reject', [App\Http\Controllers\Api\AdminController::class, 'rejectVerification']);
+
+        // Users
+        Route::get('/users', [App\Http\Controllers\Api\AdminController::class, 'getUsers']);
+        Route::post('/users/{id}/toggle-block', [App\Http\Controllers\Api\AdminController::class, 'toggleBlockUser']);
+
+        // Reports
+        Route::get('/reports', [App\Http\Controllers\Api\AdminController::class, 'getReports']);
+        Route::post('/reports/{id}/resolve', [App\Http\Controllers\Api\AdminController::class, 'resolveReport']);
+
+        // Success Stories
+        Route::get('/success-stories', [App\Http\Controllers\Api\AdminController::class, 'getSuccessStories']);
+        Route::post('/success-stories/{id}/approve', [App\Http\Controllers\Api\AdminController::class, 'approveSuccessStory']);
+        Route::post('/success-stories/{id}/reject', [App\Http\Controllers\Api\AdminController::class, 'rejectSuccessStory']);
+
+        // Payments
+        Route::get('/payments', [App\Http\Controllers\Api\AdminController::class, 'getPayments']);
+    });
 });
