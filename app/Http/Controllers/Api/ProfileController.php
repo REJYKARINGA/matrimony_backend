@@ -431,7 +431,7 @@ class ProfileController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['userProfile', 'familyDetails', 'preferences', 'profilePhotos'])
+        $user = User::with(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification'])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
 
