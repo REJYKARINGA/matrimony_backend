@@ -190,6 +190,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [App\Http\Controllers\Api\AdminController::class, 'getUsers']);
         Route::post('/users/{id}/toggle-block', [App\Http\Controllers\Api\AdminController::class, 'toggleBlockUser']);
 
+        // User Profiles
+        Route::get('/user-profiles', [App\Http\Controllers\Api\AdminController::class, 'getUserProfiles']);
+
         // Reports
         Route::get('/reports', [App\Http\Controllers\Api\AdminController::class, 'getReports']);
         Route::post('/reports/{id}/resolve', [App\Http\Controllers\Api\AdminController::class, 'resolveReport']);

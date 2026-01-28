@@ -124,6 +124,35 @@ class AdminController extends Controller
     }
 
     /**
+     * Get all user profiles
+     */
+    public function getUserProfiles(Request $request)
+    {
+        $query = UserProfile::with('user')
+            ->join('users', 'user_profiles.user_id', '=', 'users.id')
+            ->where('users.role', '!=', 'admin');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('user_profiles.first_name', 'like', "%{$search}%")
+                    ->orWhere('user_profiles.last_name', 'like', "%{$search}%")
+                    ->orWhere('user_profiles.religion', 'like', "%{$search}%")
+                    ->orWhere('user_profiles.education', 'like', "%{$search}%")
+                    ->orWhere('user_profiles.occupation', 'like', "%{$search}%")
+                    ->orWhere('users.matrimony_id', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            });
+        }
+
+        $profiles = $query->select('user_profiles.*')
+            ->orderBy('user_profiles.created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json($profiles);
+    }
+
+    /**
      * Get all reports
      */
     public function getReports()
