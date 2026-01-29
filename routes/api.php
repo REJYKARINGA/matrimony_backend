@@ -182,6 +182,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin routes
     Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
+        // Dashboard
+        Route::get('/dashboard/stats', [App\Http\Controllers\Api\AdminController::class, 'getDashboardStats']);
+
         Route::get('/verifications/pending', [App\Http\Controllers\Api\AdminController::class, 'getPendingVerifications']);
         Route::post('/verifications/{id}/approve', [App\Http\Controllers\Api\AdminController::class, 'approveVerification']);
         Route::post('/verifications/{id}/reject', [App\Http\Controllers\Api\AdminController::class, 'rejectVerification']);

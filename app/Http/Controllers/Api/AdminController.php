@@ -223,4 +223,201 @@ class AdminController extends Controller
             ->paginate(20);
         return response()->json($payments);
     }
+
+    /**
+     * Get dashboard statistics
+     */
+    public function getDashboardStats()
+    {
+        try {
+            // User Statistics
+            $totalUsers = User::where('role', '!=', 'admin')->count();
+            $activeUsers = User::where('role', '!=', 'admin')
+                ->where('status', 'active')
+                ->count();
+            $blockedUsers = User::where('role', '!=', 'admin')
+                ->where('status', 'blocked')
+                ->count();
+
+            // User growth over last 12 months
+            $userGrowth = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $count = User::where('role', '!=', 'admin')
+                    ->whereYear('created_at', $month->year)
+                    ->whereMonth('created_at', $month->month)
+                    ->count();
+                $userGrowth[] = [
+                    'month' => $month->format('M Y'),
+                    'count' => $count
+                ];
+            }
+
+            // Verification Statistics
+            $pendingVerifications = UserVerification::where('status', 'pending')->count();
+            $approvedVerifications = UserVerification::where('status', 'verified')->count();
+            $rejectedVerifications = UserVerification::where('status', 'rejected')->count();
+
+            // Profile Statistics  
+            $totalProfiles = UserProfile::count();
+            $verifiedProfiles = UserProfile::where('is_active_verified', true)->count();
+            $maleProfiles = UserProfile::where('gender', 'male')->count();
+            $femaleProfiles = UserProfile::where('gender', 'female')->count();
+
+            // Match Statistics
+            try {
+                $totalMatches = DB::table('matches')->count();
+                $acceptedMatches = DB::table('matches')->where('status', 'accepted')->count();
+                $pendingMatches = DB::table('matches')->where('status', 'pending')->count();
+            } catch (\Exception $e) {
+                $totalMatches = 0;
+                $acceptedMatches = 0;
+                $pendingMatches = 0;
+            }
+
+            // Interest Statistics
+            try {
+                $totalInterests = DB::table('interests_sent')->count();
+                $acceptedInterests = DB::table('interests_sent')->where('status', 'accepted')->count();
+                $pendingInterests = DB::table('interests_sent')->where('status', 'pending')->count();
+            } catch (\Exception $e) {
+                $totalInterests = 0;
+                $acceptedInterests = 0;
+                $pendingInterests = 0;
+            }
+
+            // Report Statistics
+            try {
+                $totalReports = DB::table('reports')->count();
+                $pendingReports = DB::table('reports')->where('status', 'pending')->count();
+                $resolvedReports = DB::table('reports')->where('status', 'resolved')->count();
+            } catch (\Exception $e) {
+                $totalReports = 0;
+                $pendingReports = 0;
+                $resolvedReports = 0;
+            }
+
+            // Success Story Statistics
+            try {
+                $totalStories = DB::table('success_stories')->count();
+                $approvedStories = DB::table('success_stories')->where('is_approved', true)->count();
+                $pendingStories = DB::table('success_stories')->where('is_approved', false)->count();
+            } catch (\Exception $e) {
+                $totalStories = 0;
+                $approvedStories = 0;
+                $pendingStories = 0;
+            }
+
+            // Payment Statistics
+            try {
+                $totalPayments = DB::table('payments')->count();
+                $totalRevenue = DB::table('payments')->where('status', 'completed')->sum('amount') ?? 0;
+                $revenueThisMonth = DB::table('payments')
+                    ->where('status', 'completed')
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->sum('amount') ?? 0;
+
+                // Revenue over last 12 months
+                $revenueGrowth = [];
+                for ($i = 11; $i >= 0; $i--) {
+                    $month = now()->subMonths($i);
+                    $amount = DB::table('payments')
+                        ->where('status', 'completed')
+                        ->whereYear('created_at', $month->year)
+                        ->whereMonth('created_at', $month->month)
+                        ->sum('amount') ?? 0;
+                    $revenueGrowth[] = [
+                        'month' => $month->format('M Y'),
+                        'amount' => (float) $amount
+                    ];
+                }
+            } catch (\Exception $e) {
+                $totalPayments = 0;
+                $totalRevenue = 0;
+                $revenueThisMonth = 0;
+                $revenueGrowth = [];
+                for ($i = 11; $i >= 0; $i--) {
+                    $month = now()->subMonths($i);
+                    $revenueGrowth[] = [
+                        'month' => $month->format('M Y'),
+                        'amount' => 0
+                    ];
+                }
+            }
+
+            // Gender distribution
+            $genderDistribution = [
+                ['gender' => 'Male', 'count' => $maleProfiles],
+                ['gender' => 'Female', 'count' => $femaleProfiles],
+            ];
+
+            // Verification status distribution
+            $verificationDistribution = [
+                ['status' => 'Pending', 'count' => $pendingVerifications],
+                ['status' => 'Approved', 'count' => $approvedVerifications],
+                ['status' => 'Rejected', 'count' => $rejectedVerifications],
+            ];
+
+            // Match status distribution
+            $matchDistribution = [
+                ['status' => 'Accepted', 'count' => $acceptedMatches],
+                ['status' => 'Pending', 'count' => $pendingMatches],
+            ];
+
+            return response()->json([
+                'users' => [
+                    'total' => $totalUsers,
+                    'active' => $activeUsers,
+                    'blocked' => $blockedUsers,
+                    'growth' => $userGrowth,
+                ],
+                'verifications' => [
+                    'pending' => $pendingVerifications,
+                    'approved' => $approvedVerifications,
+                    'rejected' => $rejectedVerifications,
+                    'distribution' => $verificationDistribution,
+                ],
+                'profiles' => [
+                    'total' => $totalProfiles,
+                    'verified' => $verifiedProfiles,
+                    'male' => $maleProfiles,
+                    'female' => $femaleProfiles,
+                    'genderDistribution' => $genderDistribution,
+                ],
+                'matches' => [
+                    'total' => $totalMatches,
+                    'accepted' => $acceptedMatches,
+                    'pending' => $pendingMatches,
+                    'distribution' => $matchDistribution,
+                ],
+                'interests' => [
+                    'total' => $totalInterests,
+                    'accepted' => $acceptedInterests,
+                    'pending' => $pendingInterests,
+                ],
+                'reports' => [
+                    'total' => $totalReports,
+                    'pending' => $pendingReports,
+                    'resolved' => $resolvedReports,
+                ],
+                'successStories' => [
+                    'total' => $totalStories,
+                    'approved' => $approvedStories,
+                    'pending' => $pendingStories,
+                ],
+                'payments' => [
+                    'total' => $totalPayments,
+                    'totalRevenue' => (float) $totalRevenue,
+                    'revenueThisMonth' => (float) $revenueThisMonth,
+                    'revenueGrowth' => $revenueGrowth,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch dashboard statistics',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
