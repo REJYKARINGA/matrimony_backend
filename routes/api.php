@@ -207,5 +207,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Payments
         Route::get('/payments', [App\Http\Controllers\Api\AdminController::class, 'getPayments']);
+
+        // Option Management
+        Route::get('/education', [App\Http\Controllers\Api\AdminController::class, 'getEducations']);
+        Route::post('/education', [App\Http\Controllers\Api\AdminController::class, 'storeEducation']);
+        Route::put('/education/{id}', [App\Http\Controllers\Api\AdminController::class, 'updateEducation']);
+        Route::delete('/education/{id}', [App\Http\Controllers\Api\AdminController::class, 'deleteEducation']);
+
+        Route::get('/occupations', [App\Http\Controllers\Api\AdminController::class, 'getOccupations']);
+        Route::post('/occupations', [App\Http\Controllers\Api\AdminController::class, 'storeOccupation']);
+        Route::put('/occupations/{id}', [App\Http\Controllers\Api\AdminController::class, 'updateOccupation']);
+        Route::delete('/occupations/{id}', [App\Http\Controllers\Api\AdminController::class, 'deleteOccupation']);
     });
 });

@@ -128,7 +128,7 @@ class AdminController extends Controller
      */
     public function getUserProfiles(Request $request)
     {
-        $query = UserProfile::with('user')
+        $query = UserProfile::with(['user.verification'])
             ->join('users', 'user_profiles.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
 
@@ -419,5 +419,93 @@ class AdminController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // ==========================================
+    // Education Management
+    // ==========================================
+
+    public function getEducations(Request $request)
+    {
+        $query = \App\Models\Education::orderBy('created_at', 'desc');
+        if ($request->has('search')) {
+            $query->where('name', 'like', "%{$request->search}%");
+        }
+        return response()->json($query->paginate(15));
+    }
+
+    public function storeEducation(Request $request)
+    {
+        $request->validate(['name' => 'required|string|unique:education,name']);
+
+        $education = \App\Models\Education::create([
+            'name' => $request->name,
+            'is_active' => true,
+            'order_number' => 0,
+            'popularity_count' => 0
+        ]);
+
+        return response()->json(['message' => 'Education added', 'data' => $education]);
+    }
+
+    public function updateEducation(Request $request, $id)
+    {
+        $request->validate(['name' => 'required|string|unique:education,name,' . $id]);
+
+        $education = \App\Models\Education::findOrFail($id);
+        $education->update(['name' => $request->name]);
+
+        return response()->json(['message' => 'Education updated', 'data' => $education]);
+    }
+
+    public function deleteEducation($id)
+    {
+        $education = \App\Models\Education::findOrFail($id);
+        $education->delete();
+        return response()->json(['message' => 'Education deleted']);
+    }
+
+    // ==========================================
+    // Occupation Management
+    // ==========================================
+
+    public function getOccupations(Request $request)
+    {
+        $query = \App\Models\Occupation::orderBy('created_at', 'desc');
+        if ($request->has('search')) {
+            $query->where('name', 'like', "%{$request->search}%");
+        }
+        return response()->json($query->paginate(15));
+    }
+
+    public function storeOccupation(Request $request)
+    {
+        $request->validate(['name' => 'required|string|unique:occupations,name']);
+
+        $occupation = \App\Models\Occupation::create([
+            'name' => $request->name,
+            'is_active' => true,
+            'order_number' => 0,
+            'popularity_count' => 0
+        ]);
+
+        return response()->json(['message' => 'Occupation added', 'data' => $occupation]);
+    }
+
+    public function updateOccupation(Request $request, $id)
+    {
+        $request->validate(['name' => 'required|string|unique:occupations,name,' . $id]);
+
+        $occupation = \App\Models\Occupation::findOrFail($id);
+        $occupation->update(['name' => $request->name]);
+
+        return response()->json(['message' => 'Occupation updated', 'data' => $occupation]);
+    }
+
+    public function deleteOccupation($id)
+    {
+        $occupation = \App\Models\Occupation::findOrFail($id);
+        $occupation->delete();
+        return response()->json(['message' => 'Occupation deleted']);
     }
 }
