@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
@@ -57,7 +58,7 @@ Route::get('images/proxy', function (Request $request) {
     }
 
     $file = Storage::disk('public')->get($path);
-    $type = Storage::disk('public')->mimeType($path);
+    $type = Storage::mimeType(storage_path('app/public/' . $path));
 
     return response($file)->header('Content-Type', $type);
 });
@@ -195,6 +196,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // User Profiles
         Route::get('/user-profiles', [App\Http\Controllers\Api\AdminController::class, 'getUserProfiles']);
+
+        // Family Details
+        Route::get('/family-details', [App\Http\Controllers\Api\AdminController::class, 'getFamilyDetails']);
 
         // Reports
         Route::get('/reports', [App\Http\Controllers\Api\AdminController::class, 'getReports']);

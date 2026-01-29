@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\UserVerification;
 use App\Models\UserProfile;
 use App\Models\User;
+use App\Models\FamilyDetail;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -222,6 +223,37 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
         return response()->json($payments);
+    }
+
+    /**
+     * Get all family details
+     */
+    public function getFamilyDetails(Request $request)
+    {
+        $query = FamilyDetail::with(['user.userProfile'])
+            ->join('users', 'family_details.user_id', '=', 'users.id')
+            ->where('users.role', '!=', 'admin');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('father_name', 'like', "%{$search}%")
+                    ->orWhere('mother_name', 'like', "%{$search}%")
+                    ->orWhere('family_location', 'like', "%{$search}%")
+                    ->orWhere('father_occupation', 'like', "%{$search}%")
+                    ->orWhere('mother_occupation', 'like', "%{$search}%")
+                    ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
+                        $subQuery->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $familyDetails = $query->select('family_details.*', 'users.id as user_id', 'users.matrimony_id')
+            ->orderBy('family_details.created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json($familyDetails);
     }
 
     /**
