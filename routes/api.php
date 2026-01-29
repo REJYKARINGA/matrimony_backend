@@ -200,6 +200,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Family Details
         Route::get('/family-details', [App\Http\Controllers\Api\AdminController::class, 'getFamilyDetails']);
 
+        // Preferences
+        Route::get('/preferences', [App\Http\Controllers\Api\AdminController::class, 'getPreferences']);
+
         // Reports
         Route::get('/reports', [App\Http\Controllers\Api\AdminController::class, 'getReports']);
         Route::post('/reports/{id}/resolve', [App\Http\Controllers\Api\AdminController::class, 'resolveReport']);

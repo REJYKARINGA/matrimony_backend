@@ -8,6 +8,9 @@ use App\Models\UserVerification;
 use App\Models\UserProfile;
 use App\Models\User;
 use App\Models\FamilyDetail;
+use App\Models\Preference;
+use App\Models\Education;
+use App\Models\Occupation;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -254,6 +257,63 @@ class AdminController extends Controller
             ->paginate(15);
 
         return response()->json($familyDetails);
+    }
+
+    /**
+     * Get all preferences
+     */
+    public function getPreferences(Request $request)
+    {
+        $query = Preference::with(['user.userProfile'])
+            ->join('users', 'preferences.user_id', '=', 'users.id')
+            ->where('users.role', '!=', 'admin');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('religion', 'like', "%{$search}%")
+                    ->orWhere('marital_status', 'like', "%{$search}%")
+                    ->orWhere('min_age', 'like', "%{$search}%")
+                    ->orWhere('max_age', 'like', "%{$search}%")
+                    ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
+                        $subQuery->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $preferences = $query->select('preferences.*', 'users.id as user_id', 'users.matrimony_id')
+            ->orderBy('preferences.updated_at', 'desc')
+            ->paginate(15);
+
+        // Get all educations and occupations for mapping
+        $educations = Education::pluck('name', 'id');
+        $occupations = Occupation::pluck('name', 'id');
+
+        // Transform the data to include names instead of IDs
+        $preferences->getCollection()->transform(function ($preference) use ($educations, $occupations) {
+            // Convert education IDs to names
+            if (!empty($preference->education) && is_array($preference->education)) {
+                $preference->education_names = array_map(function ($id) use ($educations) {
+                    return $educations->get($id, "Unknown ID: $id");
+                }, $preference->education);
+            } else {
+                $preference->education_names = [];
+            }
+
+            // Convert occupation IDs to names
+            if (!empty($preference->occupation) && is_array($preference->occupation)) {
+                $preference->occupation_names = array_map(function ($id) use ($occupations) {
+                    return $occupations->get($id, "Unknown ID: $id");
+                }, $preference->occupation);
+            } else {
+                $preference->occupation_names = [];
+            }
+
+            return $preference;
+        });
+
+        return response()->json($preferences);
     }
 
     /**
