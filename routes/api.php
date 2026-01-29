@@ -225,5 +225,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/occupations', [App\Http\Controllers\Api\AdminController::class, 'storeOccupation']);
         Route::put('/occupations/{id}', [App\Http\Controllers\Api\AdminController::class, 'updateOccupation']);
         Route::delete('/occupations/{id}', [App\Http\Controllers\Api\AdminController::class, 'deleteOccupation']);
+
+        // Wallet Transactions
+        Route::get('/wallet/stats', [App\Http\Controllers\Api\AdminController::class, 'getWalletStats']);
+        Route::get('/wallet/transactions', [App\Http\Controllers\Api\AdminController::class, 'getWalletTransactions']);
     });
 });

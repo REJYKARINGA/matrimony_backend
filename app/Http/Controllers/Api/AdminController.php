@@ -11,6 +11,8 @@ use App\Models\FamilyDetail;
 use App\Models\Preference;
 use App\Models\Education;
 use App\Models\Occupation;
+use App\Models\Transaction;
+use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -599,5 +601,90 @@ class AdminController extends Controller
         $occupation = \App\Models\Occupation::findOrFail($id);
         $occupation->delete();
         return response()->json(['message' => 'Occupation deleted']);
+    }
+
+    // ==========================================
+    // Wallet Transaction Management
+    // ==========================================
+
+    /**
+     * Get wallet statistics
+     */
+    public function getWalletStats()
+    {
+        try {
+            $totalBalance = Wallet::sum('balance');
+            $totalRecharge = Transaction::where('type', 'wallet_recharge')
+                ->where('status', 'success')
+                ->sum('amount');
+            $totalSpent = Transaction::where('type', 'contact_unlock')
+                ->where('status', 'success')
+                ->sum('amount');
+            $totalTransactions = Transaction::count();
+
+            return response()->json([
+                'totalBalance' => (float) $totalBalance,
+                'totalRecharge' => (float) $totalRecharge,
+                'totalSpent' => (float) $totalSpent,
+                'totalTransactions' => $totalTransactions,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch wallet statistics',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get wallet transactions
+     */
+    public function getWalletTransactions(Request $request)
+    {
+        try {
+            $query = Transaction::with(['user.userProfile'])
+                ->join('users', 'transactions.user_id', '=', 'users.id')
+                ->where('users.role', '!=', 'admin');
+
+            // Search functionality
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('transactions.type', 'like', "%{$search}%")
+                        ->orWhere('transactions.status', 'like', "%{$search}%")
+                        ->orWhere('transactions.amount', 'like', "%{$search}%")
+                        ->orWhere('transactions.description', 'like', "%{$search}%")
+                        ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('user', function ($subQuery) use ($search) {
+                            $subQuery->where('email', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            // Filter functionality
+            if ($request->has('filter') && $request->filter !== 'all') {
+                $filter = $request->filter;
+                if (in_array($filter, ['wallet_recharge', 'contact_unlock'])) {
+                    $query->where('transactions.type', $filter);
+                } elseif (in_array($filter, ['success', 'pending', 'failed'])) {
+                    $query->where('transactions.status', $filter);
+                }
+            }
+
+            $transactions = $query->select('transactions.*')
+                ->orderBy('transactions.created_at', 'desc')
+                ->paginate(20);
+
+            return response()->json($transactions);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch wallet transactions',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
