@@ -16,7 +16,7 @@ class AdminController extends Controller
      */
     public function getPendingVerifications()
     {
-        $verifications = UserVerification::with('user.userProfile')
+        $verifications = UserVerification::with(['user.userProfile', 'user.profilePhotos'])
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
