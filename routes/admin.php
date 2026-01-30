@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AdminPromotionSettingController;
+use App\Http\Controllers\Api\AdminMediatorPromotionController;
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
     // Dashboard
@@ -50,4 +52,16 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Wallet Transactions
     Route::get('/wallet/stats', [AdminController::class, 'getWalletStats']);
     Route::get('/wallet/transactions', [AdminController::class, 'getWalletTransactions']);
+
+    // Promotion Settings
+    Route::get('/promotion-settings', [AdminPromotionSettingController::class, 'index']);
+    Route::post('/promotion-settings', [AdminPromotionSettingController::class, 'store']);
+    Route::put('/promotion-settings/{id}', [AdminPromotionSettingController::class, 'update']);
+    Route::delete('/promotion-settings/{id}', [AdminPromotionSettingController::class, 'destroy']);
+    Route::put('/promotion-settings/{id}/set-default', [AdminPromotionSettingController::class, 'setDefault']);
+
+    // Mediator Promotions
+    Route::get('/mediator-promotions', [AdminMediatorPromotionController::class, 'index']);
+    Route::put('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'update']);
+    Route::delete('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'destroy']);
 });
