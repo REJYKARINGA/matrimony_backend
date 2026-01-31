@@ -43,13 +43,19 @@ class AdminMediatorPromotionController extends Controller
             return response()->json(['error' => 'Validation failed', 'messages' => $validator->errors()], 422);
         }
 
-        // Update basic fields
-        if ($request->has('views_count'))
-            $promotion->views_count = $request->views_count;
-        if ($request->has('likes_count'))
-            $promotion->likes_count = $request->likes_count;
-        if ($request->has('comments_count'))
-            $promotion->comments_count = $request->comments_count;
+        // Update basic fields - strip commas in case they come from formatted inputs
+        if ($request->has('views_count')) {
+            $val = str_replace(',', '', (string) $request->views_count);
+            $promotion->views_count = intval($val);
+        }
+        if ($request->has('likes_count')) {
+            $val = str_replace(',', '', (string) $request->likes_count);
+            $promotion->likes_count = intval($val);
+        }
+        if ($request->has('comments_count')) {
+            $val = str_replace(',', '', (string) $request->comments_count);
+            $promotion->comments_count = intval($val);
+        }
         if ($request->has('status'))
             $promotion->status = $request->status;
 
@@ -75,7 +81,9 @@ class AdminMediatorPromotionController extends Controller
                     $finalMultiplier = min($finalMultiplier, $commentsMultiplier);
                 }
 
-                $promotion->calculated_payout = $finalMultiplier * $setting->payout_amount;
+                $totalEarned = $finalMultiplier * $setting->payout_amount;
+                // Pending payout is total earned minus what has already been paid
+                $promotion->calculated_payout = max(0, $totalEarned - $promotion->total_paid_amount);
             }
         }
 
@@ -84,7 +92,10 @@ class AdminMediatorPromotionController extends Controller
             $promotion->calculated_payout = $request->calculated_payout;
         }
 
-        if ($request->has('status') && $request->status === 'paid' && !$promotion->paid_at) {
+        if ($request->has('status') && $request->status === 'paid') {
+            // When marking as paid, add the pending calculated_payout to total_paid_amount
+            $promotion->total_paid_amount += $promotion->calculated_payout;
+            $promotion->calculated_payout = 0;
             $promotion->paid_at = now();
         }
 

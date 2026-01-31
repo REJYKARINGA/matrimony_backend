@@ -63,10 +63,12 @@ class MediatorPromotionController extends Controller
             'promotion_setting_id' => $setting ? $setting->id : null,
             'platform' => $request->platform,
             'link' => $request->link,
+            'username' => $request->username,
             'status' => 'pending',
             'views_count' => $stats['views'] ?? 0,
             'likes_count' => $stats['likes'] ?? 0,
             'comments_count' => $stats['comments'] ?? 0,
+            'total_paid_amount' => 0,
             'calculated_payout' => 0,
         ]);
 
@@ -84,18 +86,24 @@ class MediatorPromotionController extends Controller
 
     private function calculatePayout($promotion, $setting)
     {
-        $meetsRequirements = $promotion->views_count >= $setting->views_required;
+        if ($setting->views_required > 0) {
+            $viewsMultiplier = floor($promotion->views_count / $setting->views_required);
+            $finalMultiplier = $viewsMultiplier;
 
-        if ($setting->is_likes_enabled) {
-            $meetsRequirements = $meetsRequirements && ($promotion->likes_count >= $setting->likes_required);
-        }
+            if ($setting->is_likes_enabled && $setting->likes_required > 0) {
+                $likesMultiplier = floor($promotion->likes_count / $setting->likes_required);
+                $finalMultiplier = min($finalMultiplier, $likesMultiplier);
+            }
 
-        if ($setting->is_comments_enabled) {
-            $meetsRequirements = $meetsRequirements && ($promotion->comments_count >= $setting->comments_required);
-        }
+            if ($setting->is_comments_enabled && $setting->comments_required > 0) {
+                $commentsMultiplier = floor($promotion->comments_count / $setting->comments_required);
+                $finalMultiplier = min($finalMultiplier, $commentsMultiplier);
+            }
 
-        if ($meetsRequirements) {
-            $promotion->calculated_payout = $setting->payout_amount;
+            $totalEarned = $finalMultiplier * $setting->payout_amount;
+
+            // Calculate pending payout (Total earned - what has already been paid)
+            $promotion->calculated_payout = max(0, $totalEarned - $promotion->total_paid_amount);
             $promotion->save();
         }
     }

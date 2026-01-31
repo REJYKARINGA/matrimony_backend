@@ -16,17 +16,20 @@ class MediatorPromotion extends Model
         'promotion_setting_id',
         'platform',
         'link',
+        'username',
         'views_count',
         'likes_count',
         'comments_count',
         'status',
         'calculated_payout',
+        'total_paid_amount',
         'paid_at',
     ];
 
     protected $casts = [
         'paid_at' => 'datetime',
         'calculated_payout' => 'decimal:2',
+        'total_paid_amount' => 'decimal:2',
     ];
 
     public function user()
