@@ -63,5 +63,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Mediator Promotions
     Route::get('/mediator-promotions', [AdminMediatorPromotionController::class, 'index']);
     Route::put('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'update']);
+    Route::post('/mediator-promotions/{id}/payout', [AdminMediatorPromotionController::class, 'processPayout']);
     Route::delete('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'destroy']);
 });

@@ -124,4 +124,90 @@ class AdminMediatorPromotionController extends Controller
             'message' => 'Promotion deleted successfully'
         ]);
     }
+
+    /**
+     * Process Payout via Razorpay
+     */
+    public function processPayout($id)
+    {
+        $promotion = MediatorPromotion::with('user')->find($id);
+
+        if (!$promotion) {
+            return response()->json(['error' => 'Promotion not found'], 404);
+        }
+
+        if ($promotion->calculated_payout <= 0) {
+            return response()->json(['error' => 'No pending payout amount'], 400);
+        }
+
+        $user = $promotion->user;
+        if (!$user) {
+            return response()->json(['error' => 'Mediator user not found'], 404);
+        }
+
+        // Check if Razorpay Payouts is enabled
+        if (!config('services.razorpay.key_id')) {
+            return response()->json(['error' => 'Razorpay Payouts is not configured'], 500);
+        }
+
+        try {
+            $payoutService = new \App\Services\RazorpayPayoutService();
+
+            $bankAccount = $user->primaryBankAccount;
+
+            if (!$bankAccount) {
+                return response()->json(['error' => 'Mediator has not provided bank details'], 400);
+            }
+
+            // Ensure Fund Account exists
+            if (!$bankAccount->razorpay_fund_account_id) {
+                // Create Contact & Fund Account on the fly
+                $contact = $payoutService->createContact(
+                    $user->name ?: 'Mediator',
+                    $user->email,
+                    $user->phone ?: '9999999999',
+                    'user_' . $user->id
+                );
+
+                $fundAccount = $payoutService->createFundAccount(
+                    $contact->id,
+                    $bankAccount->account_name,
+                    $bankAccount->account_number,
+                    $bankAccount->ifsc_code
+                );
+
+                $bankAccount->razorpay_fund_account_id = $fundAccount->id;
+                $bankAccount->save();
+            }
+
+            // Create Payout
+            $payout = $payoutService->createPayout(
+                $bankAccount->razorpay_fund_account_id,
+                $promotion->calculated_payout,
+                'INR',
+                'IMPS',
+                'payout',
+                'Payout for Promotion #' . $promotion->id
+            );
+
+            // If we are here, payout request accepted
+            // Update promotion status locally
+            // Ideally we should wait for webhook, but for now mark as paid
+            $promotion->total_paid_amount += $promotion->calculated_payout;
+            $promotion->calculated_payout = 0;
+            $promotion->status = 'paid';
+            $promotion->paid_at = now();
+            $promotion->save();
+
+            return response()->json([
+                'message' => 'Payout initiated successfully',
+                'payout_id' => $payout->id,
+                'promotion' => $promotion
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Payout Failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Payout failed: ' . $e->getMessage()], 500);
+        }
+    }
 }

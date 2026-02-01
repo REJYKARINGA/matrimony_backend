@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MediatorPromotion;
 use App\Models\PromotionSetting;
+use App\Models\Transaction;
 use App\Services\SocialMediaStatsService;
 use Illuminate\Support\Facades\Validator;
+use App\Services\RazorpayPayoutService;
+use Illuminate\Support\Facades\Log;
 
 class MediatorPromotionController extends Controller
 {
@@ -106,5 +109,221 @@ class MediatorPromotionController extends Controller
             $promotion->calculated_payout = max(0, $totalEarned - $promotion->total_paid_amount);
             $promotion->save();
         }
+    }
+
+    /**
+     * Get all bank accounts for the merchant
+     */
+    public function getBankAccounts(Request $request)
+    {
+        return response()->json([
+            'bank_accounts' => $request->user()->bankAccounts()->orderBy('is_primary', 'desc')->get()
+        ]);
+    }
+
+    /**
+     * Add a new bank account
+     */
+    public function addBankAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'account_name' => 'required|string',
+            'account_number' => 'required|string',
+            'ifsc_code' => 'required|string|regex:/^[A-Z]{4}0[A-Z0-9]{6}$/',
+            'is_primary' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Validation failed', 'messages' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+        $razorpayFundAccountId = null;
+
+        // Register with RazorpayX if service enabled
+        if (config('services.razorpay.key_id')) {
+            try {
+                $payoutService = new RazorpayPayoutService();
+                $contact = $payoutService->createContact(
+                    $user->name ?: 'Mediator',
+                    $user->email,
+                    $user->phone ?: '9999999999',
+                    'user_' . $user->id
+                );
+                $fundAccount = $payoutService->createFundAccount(
+                    $contact->id,
+                    $request->account_name,
+                    $request->account_number,
+                    $request->ifsc_code
+                );
+                $razorpayFundAccountId = $fundAccount->id;
+            } catch (\Exception $e) {
+                Log::error('Failed to register Razorpay Fund Account: ' . $e->getMessage());
+            }
+        }
+
+        // If this is the first account, make it primary
+        $isFirst = $user->bankAccounts()->count() === 0;
+        $shouldBePrimary = $request->is_primary || $isFirst;
+
+        if ($shouldBePrimary) {
+            $user->bankAccounts()->update(['is_primary' => false]);
+        }
+
+        $bankAccount = $user->bankAccounts()->create([
+            'account_name' => $request->account_name,
+            'account_number' => $request->account_number,
+            'ifsc_code' => $request->ifsc_code,
+            'razorpay_fund_account_id' => $razorpayFundAccountId,
+            'is_primary' => $shouldBePrimary
+        ]);
+
+        return response()->json([
+            'message' => 'Bank account added successfully',
+            'bank_account' => $bankAccount
+        ]);
+    }
+
+    /**
+     * Set a bank account as primary
+     */
+    public function setPrimaryBankAccount(Request $request, $id)
+    {
+        $user = $request->user();
+        $account = $user->bankAccounts()->findOrFail($id);
+
+        $user->bankAccounts()->update(['is_primary' => false]);
+        $account->update(['is_primary' => true]);
+
+        return response()->json([
+            'message' => 'Primary bank account updated',
+            'bank_account' => $account
+        ]);
+    }
+
+    /**
+     * Delete a bank account
+     */
+    public function deleteBankAccount(Request $request, $id)
+    {
+        $user = $request->user();
+        $account = $user->bankAccounts()->findOrFail($id);
+
+        if ($account->is_primary) {
+            return response()->json(['error' => 'Cannot delete primary bank account'], 422);
+        }
+
+        $account->delete();
+
+        return response()->json([
+            'message' => 'Bank account deleted successfully'
+        ]);
+    }
+
+    /**
+     * Request payout for all eligible promotions
+     */
+    public function requestPayout(Request $request)
+    {
+        $user = $request->user();
+
+        // 1. Check for primary bank account
+        $primaryAccount = $user->bankAccounts()->where('is_primary', true)->first();
+        if (!$primaryAccount) {
+            return response()->json(['error' => 'No primary bank account found. Please add one in Bank Accounts tab.'], 422);
+        }
+
+        // 2. Recalculate all payouts to ensure DB is in sync with raw stats
+        $allPromotions = MediatorPromotion::where('user_id', $user->id)
+            ->with('setting')
+            ->get();
+
+        foreach ($allPromotions as $promo) {
+            if ($promo->setting) {
+                $this->calculatePayout($promo, $promo->setting);
+            }
+        }
+
+        // 3. Get total withdrawable amount
+        $promotions = MediatorPromotion::where('user_id', $user->id)
+            ->where('calculated_payout', '>', 0)
+            ->get();
+
+        $totalPayable = $promotions->sum('calculated_payout');
+
+        if ($totalPayable <= 0) {
+            return response()->json(['error' => 'No pending payouts available.'], 422);
+        }
+
+        $payoutId = null;
+        $status = 'pending';
+
+        // 4. Initiate RazorpayX Payout if config exist
+        if (config('services.razorpay.key_id')) {
+            try {
+                $payoutService = new RazorpayPayoutService();
+
+                // Ensure Fund Account exists
+                if (!$primaryAccount->razorpay_fund_account_id) {
+                    $contact = $payoutService->createContact(
+                        $user->name ?: 'Mediator',
+                        $user->email,
+                        $user->phone ?: '9999999999',
+                        'user_' . $user->id
+                    );
+                    $fundAccount = $payoutService->createFundAccount(
+                        $contact->id,
+                        $primaryAccount->account_name,
+                        $primaryAccount->account_number,
+                        $primaryAccount->ifsc_code
+                    );
+                    $primaryAccount->razorpay_fund_account_id = $fundAccount->id;
+                    $primaryAccount->save();
+                }
+
+                $payout = $payoutService->createPayout(
+                    $primaryAccount->razorpay_fund_account_id,
+                    $totalPayable,
+                    'INR',
+                    'IMPS',
+                    'payout',
+                    'Payout for User ' . $user->id
+                );
+
+                $payoutId = $payout->id;
+                $status = 'success';
+
+            } catch (\Exception $e) {
+                Log::error('Razorpay Payout Failed: ' . $e->getMessage());
+                return response()->json(['error' => 'Razorpay payout failed: ' . $e->getMessage()], 500);
+            }
+        }
+
+        // Record in Transactions
+        Transaction::create([
+            'user_id' => $user->id,
+            'type' => 'payout',
+            'amount' => $totalPayable,
+            'status' => $status,
+            'description' => 'Payout to ' . $primaryAccount->account_number . ($payoutId ? " (ID: $payoutId)" : " (Manual)"),
+            'razorpay_payment_id' => $payoutId
+        ]);
+
+        // 5. Update promotions
+        foreach ($promotions as $promo) {
+            $promo->total_paid_amount += $promo->calculated_payout;
+            $promo->calculated_payout = 0;
+            if ($status === 'success') {
+                $promo->status = 'paid';
+                $promo->paid_at = now();
+            }
+            $promo->save();
+        }
+
+        return response()->json([
+            'message' => $status === 'success' ? 'Payout initiated successfully' : 'Payout request submitted for manual processing',
+            'amount' => $totalPayable,
+            'status' => $status
+        ]);
     }
 }

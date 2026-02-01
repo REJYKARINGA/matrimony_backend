@@ -131,7 +131,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification']);
+        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount']);
 
         return response()->json([
             'user' => $user

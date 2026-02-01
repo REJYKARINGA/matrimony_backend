@@ -288,5 +288,21 @@ class User extends Model
     {
         return $this->hasOne(UserVerification::class, 'user_id');
     }
+
+    /**
+     * Relationship with bank accounts
+     */
+    public function bankAccounts(): HasMany
+    {
+        return $this->hasMany(BankAccount::class, 'user_id');
+    }
+
+    /**
+     * Get primary bank account
+     */
+    public function primaryBankAccount(): HasOne
+    {
+        return $this->hasOne(BankAccount::class, 'user_id')->where('is_primary', true);
+    }
 }
 

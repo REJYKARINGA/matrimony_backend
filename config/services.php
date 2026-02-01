@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'razorpay' => [
+        'key_id' => env('RAZORPAYX_KEY_ID'),
+        'key_secret' => env('RAZORPAYX_KEY_SECRET'),
+        'account_number' => env('RAZORPAYX_ACCOUNT_NUMBER'),
+        'base_url' => env('RAZORPAY_BASE_URL', 'https://api.razorpay.com/v1/'),
+    ],
+
 ];
