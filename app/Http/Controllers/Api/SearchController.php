@@ -392,16 +392,22 @@ class SearchController extends Controller
         }
 
         $isIdSearch = $request->filled('matrimony_id');
+        $userProfile = $user->userProfile;
 
         $query = User::with(['userProfile', 'profilePhotos'])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
-            ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch) {
+            ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch, $userProfile) {
                 $q->where('is_active_verified', true);
 
                 // UNLESS this is a specific age search or ID search, don't show older than me
                 if (!$isIdSearch && $userAge && $request->field != 'age' && !$request->filled('min_age') && !$request->filled('max_age')) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                }
+
+                // Strictly enforce same religion
+                if ($userProfile && $userProfile->religion) {
+                    $q->where('religion', $userProfile->religion);
                 }
             });
 
@@ -409,16 +415,13 @@ class SearchController extends Controller
             $query->where('matrimony_id', 'LIKE', '%' . $request->matrimony_id . '%');
         }
 
-        // Filter by gender (show opposite gender) - Skip if searching by ID
-        if (!$isIdSearch) {
-            $userProfile = $user->userProfile;
-            if ($userProfile && $userProfile->gender) {
-                $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
-                if ($oppositeGender) {
-                    $query->whereHas('userProfile', function ($q) use ($oppositeGender) {
-                        $q->where('gender', $oppositeGender);
-                    });
-                }
+        // Filter by gender (show opposite gender) - Strictly enforced
+        if ($userProfile && $userProfile->gender) {
+            $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+            if ($oppositeGender) {
+                $query->whereHas('userProfile', function ($q) use ($oppositeGender) {
+                    $q->where('gender', $oppositeGender);
+                });
             }
         }
 
