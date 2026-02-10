@@ -131,6 +131,9 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Update last login whenever the app is opened/user info is fetched
+        $user->update(['last_login' => now()]);
+
         $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount']);
 
         return response()->json([
