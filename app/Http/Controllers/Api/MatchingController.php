@@ -154,6 +154,25 @@ class MatchingController extends Controller
             ])
             ->paginate(10);
 
+        // Add distance calculation
+        if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
+            $lat = $user->userProfile->latitude;
+            $lon = $user->userProfile->longitude;
+
+            $matches->getCollection()->transform(function ($match) use ($user, $lat, $lon) {
+                $otherUser = $match->user1_id === $user->id ? $match->user2 : $match->user1;
+                if ($otherUser && $otherUser->userProfile && $otherUser->userProfile->latitude) {
+                    $otherUser->distance = $this->calculateDistance(
+                        $lat,
+                        $lon,
+                        $otherUser->userProfile->latitude,
+                        $otherUser->userProfile->longitude
+                    );
+                }
+                return $match;
+            });
+        }
+
         return response()->json([
             'matches' => $matches
         ]);
@@ -221,6 +240,24 @@ class MatchingController extends Controller
             ])
             ->paginate(10);
 
+        // Add distance calculation
+        if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
+            $lat = $user->userProfile->latitude;
+            $lon = $user->userProfile->longitude;
+
+            $interests->getCollection()->transform(function ($interest) use ($lat, $lon) {
+                if ($interest->receiver && $interest->receiver->userProfile && $interest->receiver->userProfile->latitude) {
+                    $interest->receiver->distance = $this->calculateDistance(
+                        $lat,
+                        $lon,
+                        $interest->receiver->userProfile->latitude,
+                        $interest->receiver->userProfile->longitude
+                    );
+                }
+                return $interest;
+            });
+        }
+
         return response()->json([
             'interests' => $interests
         ]);
@@ -240,6 +277,24 @@ class MatchingController extends Controller
                 'sender.profilePhotos'
             ])
             ->paginate(10);
+
+        // Add distance calculation
+        if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
+            $lat = $user->userProfile->latitude;
+            $lon = $user->userProfile->longitude;
+
+            $interests->getCollection()->transform(function ($interest) use ($lat, $lon) {
+                if ($interest->sender && $interest->sender->userProfile && $interest->sender->userProfile->latitude) {
+                    $interest->sender->distance = $this->calculateDistance(
+                        $lat,
+                        $lon,
+                        $interest->sender->userProfile->latitude,
+                        $interest->sender->userProfile->longitude
+                    );
+                }
+                return $interest;
+            });
+        }
 
         return response()->json([
             'interests' => $interests
@@ -314,5 +369,23 @@ class MatchingController extends Controller
             'message' => 'Interest rejected',
             'interest' => $interest
         ]);
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // km
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 }
