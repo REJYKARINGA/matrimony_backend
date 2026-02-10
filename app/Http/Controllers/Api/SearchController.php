@@ -36,7 +36,6 @@ class SearchController extends Controller
 
         // Define which fields we want to show as cards
         $fields = [
-            'religion' => ['title' => 'Religion Match', 'icon' => 'religion'],
             'caste' => ['title' => 'Caste Match', 'icon' => 'caste'],
             'occupation' => ['title' => 'Occupation Match', 'icon' => 'work'],
             'education' => ['title' => 'Education Match', 'icon' => 'school'],
