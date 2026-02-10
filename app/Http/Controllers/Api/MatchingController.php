@@ -20,12 +20,20 @@ class MatchingController extends Controller
         $preferences = $user->preferences;
 
         $query = User::with(['userProfile', 'profilePhotos'])
-            ->where('id', '!=', $user->id)
-            ->where('status', 'active')
+            ->where('users.id', '!=', $user->id)
+            ->where('users.status', 'active')
             ->whereHas('userProfile', function ($q) {
                 $q->where('is_active_verified', true);
             });
 
+        // Add distance calculation if current user has location
+        if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
+            $lat = $user->userProfile->latitude;
+            $lon = $user->userProfile->longitude;
+            $query->select('users.*')
+                ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                ->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(user_profiles.latitude)) * cos(radians(user_profiles.longitude) - radians(?)) + sin(radians(?)) * sin(radians(user_profiles.latitude)))) AS distance", [$lat, $lon, $lat]);
+        }
 
         // Apply preferences filter
         if ($preferences) {
@@ -75,7 +83,7 @@ class MatchingController extends Controller
             // Exclude users who have received interest from current user
         });
 
-        $suggestions = $query->paginate(10);
+        $suggestions = $query->latest('users.created_at')->paginate(10);
 
         return response()->json([
             'suggestions' => $suggestions
