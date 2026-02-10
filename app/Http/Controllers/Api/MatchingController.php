@@ -74,16 +74,20 @@ class MatchingController extends Controller
             }
         }
 
-        // Exclude already matched or interested users
-        $query->whereDoesntHave('matchesAsUser1', function ($q) use ($user) {
-            $q->where('user2_id', $user->id);
-        })->whereDoesntHave('matchesAsUser2', function ($q) use ($user) {
-            $q->where('user1_id', $user->id);
-        })->whereDoesntHave('interestsSent', function ($q) use ($user) {
-            // Exclude users who have received interest from current user
-        });
+        // Exclude users who have already received interest or are blocked/blocked by
+        $excludedUserIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
+        $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
+        $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
 
-        $suggestions = $query->latest('users.created_at')->paginate(10);
+        $allExcludedIds = array_unique(array_merge([$user->id], $excludedUserIds, $blockedUserIds, $blockedMeIds));
+
+        $query->whereNotIn('users.id', $allExcludedIds);
+
+        // Primary sort by login date (not time) so we can randomize within the day 
+        // to provide fresh content on every refresh while keeping active users on top.
+        $suggestions = $query->orderByRaw('DATE(users.last_login) DESC')
+            ->inRandomOrder()
+            ->paginate(12);
 
         return response()->json([
             'suggestions' => $suggestions
