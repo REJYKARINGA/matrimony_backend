@@ -166,6 +166,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/unlock-contact-wallet', [App\Http\Controllers\Api\PaymentController::class, 'unlockContactWithWallet']);
         Route::get('/check-unlock/{userId}', [App\Http\Controllers\Api\PaymentController::class, 'checkContactUnlock']);
         Route::get('/transactions', [App\Http\Controllers\Api\PaymentController::class, 'getTransactionHistory']);
+        Route::get('/today-unlock-count', [App\Http\Controllers\Api\PaymentController::class, 'getTodayUnlockCount']);
     });
 
     // Verification routes

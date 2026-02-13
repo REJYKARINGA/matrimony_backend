@@ -213,4 +213,17 @@ class PaymentController extends Controller
             'transactions' => $transactions
         ]);
     }
+
+    public function getTodayUnlockCount(Request $request)
+    {
+        $user = $request->user();
+
+        $count = ContactUnlock::where('user_id', $user->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->count();
+
+        return response()->json([
+            'count' => $count
+        ]);
+    }
 }
