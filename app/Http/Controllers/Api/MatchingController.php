@@ -72,6 +72,12 @@ class MatchingController extends Controller
                     $q->where('caste', $preferences->caste);
                 });
             }
+
+            if ($preferences->marital_status) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('marital_status', $preferences->marital_status);
+                });
+            }
         }
 
         // Exclude users who have already received interest or are blocked/blocked by
