@@ -255,6 +255,9 @@ class ProfileController extends Controller
         if (isset($data['caste_ids']) && is_string($data['caste_ids'])) {
             $data['caste_ids'] = json_decode($data['caste_ids'], true);
         }
+        if (isset($data['sub_caste_ids']) && is_string($data['sub_caste_ids'])) {
+            $data['sub_caste_ids'] = json_decode($data['sub_caste_ids'], true);
+        }
         if (isset($data['education_ids']) && is_string($data['education_ids'])) {
             $data['education_ids'] = json_decode($data['education_ids'], true);
         }
@@ -276,6 +279,7 @@ class ProfileController extends Controller
             'marital_status' => 'sometimes|string|in:never_married,divorced,nikkah_divorced,widowed',
             'religion_id' => 'nullable|exists:religions,id',
             'caste_ids' => 'sometimes|array',
+            'sub_caste_ids' => 'sometimes|array',
             'education_ids' => 'sometimes|array',
             'occupation_ids' => 'sometimes|array',
             'min_income' => 'sometimes|numeric|min:0',
@@ -315,6 +319,7 @@ class ProfileController extends Controller
                 'marital_status',
                 'religion_id',
                 'caste_ids',
+                'sub_caste_ids',
                 'education_ids',
                 'occupation_ids',
                 'min_income',
@@ -583,6 +588,12 @@ class ProfileController extends Controller
             if ($preferences->caste_ids && is_array($preferences->caste_ids)) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->whereIn('caste_id', $preferences->caste_ids);
+                });
+            }
+
+            if ($preferences->sub_caste_ids && is_array($preferences->sub_caste_ids)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('sub_caste_id', $preferences->sub_caste_ids);
                 });
             }
 
