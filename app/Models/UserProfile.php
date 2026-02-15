@@ -21,14 +21,14 @@ class UserProfile extends Model
         'smoke',
         'alcohol',
         'marital_status',
-        'religion',
-        'caste',
-        'sub_caste',
+        'religion_id',
+        'caste_id',
+        'sub_caste_id',
         'mother_tongue',
         'profile_picture',
         'bio',
-        'education',
-        'occupation',
+        'education_id',
+        'occupation_id',
         'annual_income',
         'city',
         'district',
@@ -54,6 +54,11 @@ class UserProfile extends Model
         'location_updated_at' => 'datetime',
         'is_active_verified' => 'boolean',
         'changed_fields' => 'array',
+        'religion_id' => 'integer',
+        'caste_id' => 'integer',
+        'sub_caste_id' => 'integer',
+        'education_id' => 'integer',
+        'occupation_id' => 'integer',
     ];
 
     /**
@@ -62,5 +67,30 @@ class UserProfile extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function religionModel()
+    {
+        return $this->belongsTo(Religion::class, 'religion_id');
+    }
+
+    public function casteModel()
+    {
+        return $this->belongsTo(Caste::class, 'caste_id');
+    }
+
+    public function subCasteModel()
+    {
+        return $this->belongsTo(SubCaste::class, 'sub_caste_id');
+    }
+
+    public function educationModel()
+    {
+        return $this->belongsTo(Education::class, 'education_id');
+    }
+
+    public function occupationModel()
+    {
+        return $this->belongsTo(Occupation::class, 'occupation_id');
     }
 }

@@ -16,10 +16,10 @@ class Preference extends Model
         'min_height',
         'max_height',
         'marital_status',
-        'religion',
-        'caste',
-        'education',
-        'occupation',
+        'religion_id',
+        'caste_ids',
+        'education_ids',
+        'occupation_ids',
         'min_income',
         'max_income',
         'max_distance',
@@ -37,10 +37,11 @@ class Preference extends Model
         'min_income' => 'decimal:2',
         'max_income' => 'decimal:2',
         'max_distance' => 'integer',
-        'caste' => 'array',
-        'education' => 'array', // JSON array for multiple selections
-        'occupation' => 'array', // JSON array for multiple selections
-        'preferred_locations' => 'array', // JSON array
+        'religion_id' => 'integer',
+        'caste_ids' => 'array',
+        'education_ids' => 'array',
+        'occupation_ids' => 'array',
+        'preferred_locations' => 'array',
         'smoke' => 'array',
         'alcohol' => 'array',
     ];

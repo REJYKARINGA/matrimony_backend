@@ -29,7 +29,17 @@ class ProfileController extends Controller
             ], 403);
         }
 
-        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification']);
+        $user->load([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'familyDetails',
+            'preferences',
+            'profilePhotos',
+            'verification'
+        ]);
 
         return response()->json([
             'user' => $user
@@ -51,14 +61,14 @@ class ProfileController extends Controller
             'height' => 'sometimes|integer',
             'weight' => 'sometimes|integer',
             'marital_status' => 'sometimes|string|in:never_married,divorced,nikkah_divorced,widowed',
-            'religion' => 'sometimes|string|max:255',
-            'caste' => 'sometimes|string|max:255',
-            'sub_caste' => 'nullable|string|max:255',
+            'religion_id' => 'nullable|exists:religions,id',
+            'caste_id' => 'nullable|exists:castes,id',
+            'sub_caste_id' => 'nullable|exists:sub_castes,id',
             'mother_tongue' => 'sometimes|string|max:255',
             'profile_picture' => 'sometimes|string|max:255',
             'bio' => 'sometimes|string',
-            'education' => 'sometimes|string|max:255',
-            'occupation' => 'sometimes|string|max:255',
+            'education_id' => 'nullable|exists:education,id',
+            'occupation_id' => 'nullable|exists:occupations,id',
             'annual_income' => 'sometimes|numeric',
             'city' => 'sometimes|string|max:255',
             'district' => 'sometimes|string|in:Thiruvananthapuram,Kollam,Pathanamthitta,Alappuzha,Kottayam,Idukki,Ernakulam,Thrissur,Palakkad,Malappuram,Kozhikode,Wayanad,Kannur,Kasaragod',
@@ -110,14 +120,14 @@ class ProfileController extends Controller
             'height',
             'weight',
             'marital_status',
-            'religion',
-            'caste',
-            'sub_caste',
+            'religion_id',
+            'caste_id',
+            'sub_caste_id',
             'mother_tongue',
             'profile_picture',
             'bio',
-            'education',
-            'occupation',
+            'education_id',
+            'occupation_id',
             'annual_income',
             'city',
             'district',
@@ -242,14 +252,14 @@ class ProfileController extends Controller
         if (isset($data['preferred_locations']) && is_string($data['preferred_locations'])) {
             $data['preferred_locations'] = json_decode($data['preferred_locations'], true);
         }
-        if (isset($data['caste']) && is_string($data['caste']) && (str_starts_with($data['caste'], '[') || str_starts_with($data['caste'], '{'))) {
-            $data['caste'] = json_decode($data['caste'], true);
+        if (isset($data['caste_ids']) && is_string($data['caste_ids'])) {
+            $data['caste_ids'] = json_decode($data['caste_ids'], true);
         }
-        if (isset($data['education']) && is_string($data['education']) && (str_starts_with($data['education'], '[') || str_starts_with($data['education'], '{'))) {
-            $data['education'] = json_decode($data['education'], true);
+        if (isset($data['education_ids']) && is_string($data['education_ids'])) {
+            $data['education_ids'] = json_decode($data['education_ids'], true);
         }
-        if (isset($data['occupation']) && is_string($data['occupation']) && (str_starts_with($data['occupation'], '[') || str_starts_with($data['occupation'], '{'))) {
-            $data['occupation'] = json_decode($data['occupation'], true);
+        if (isset($data['occupation_ids']) && is_string($data['occupation_ids'])) {
+            $data['occupation_ids'] = json_decode($data['occupation_ids'], true);
         }
         if (isset($data['smoke']) && is_string($data['smoke']) && (str_starts_with($data['smoke'], '[') || str_starts_with($data['smoke'], '{'))) {
             $data['smoke'] = json_decode($data['smoke'], true);
@@ -264,10 +274,10 @@ class ProfileController extends Controller
             'min_height' => 'sometimes|integer|min:100|max:250',
             'max_height' => 'sometimes|integer|min:100|max:250',
             'marital_status' => 'sometimes|string|in:never_married,divorced,nikkah_divorced,widowed',
-            'religion' => 'sometimes|string|max:255',
-            'caste' => 'sometimes|array',
-            'education' => 'sometimes|array',
-            'occupation' => 'sometimes|array',
+            'religion_id' => 'nullable|exists:religions,id',
+            'caste_ids' => 'sometimes|array',
+            'education_ids' => 'sometimes|array',
+            'occupation_ids' => 'sometimes|array',
             'min_income' => 'sometimes|numeric|min:0',
             'max_income' => 'sometimes|numeric|min:0',
             'max_distance' => 'sometimes|integer|min:1|max:500',
@@ -287,11 +297,11 @@ class ProfileController extends Controller
             ], 422);
         }
 
-        if (isset($data['education']) && is_array($data['education'])) {
-            \App\Models\Education::whereIn('id', $data['education'])->increment('popularity_count');
+        if (isset($data['education_ids']) && is_array($data['education_ids'])) {
+            \App\Models\Education::whereIn('id', $data['education_ids'])->increment('popularity_count');
         }
-        if (isset($data['occupation']) && is_array($data['occupation'])) {
-            \App\Models\Occupation::whereIn('id', $data['occupation'])->increment('popularity_count');
+        if (isset($data['occupation_ids']) && is_array($data['occupation_ids'])) {
+            \App\Models\Occupation::whereIn('id', $data['occupation_ids'])->increment('popularity_count');
         }
 
         // Update or create preferences
@@ -303,10 +313,10 @@ class ProfileController extends Controller
                 'min_height',
                 'max_height',
                 'marital_status',
-                'religion',
-                'caste',
-                'education',
-                'occupation',
+                'religion_id',
+                'caste_ids',
+                'education_ids',
+                'occupation_ids',
                 'min_income',
                 'max_income',
                 'max_distance',
@@ -564,15 +574,27 @@ class ProfileController extends Controller
                 });
             }
 
-            if ($preferences->religion) {
+            if ($preferences->religion_id) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('religion', $preferences->religion);
+                    $q->where('religion_id', $preferences->religion_id);
                 });
             }
 
-            if ($preferences->caste) {
+            if ($preferences->caste_ids && is_array($preferences->caste_ids)) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('caste', $preferences->caste);
+                    $q->whereIn('caste_id', $preferences->caste_ids);
+                });
+            }
+
+            if ($preferences->education_ids && is_array($preferences->education_ids)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('education_id', $preferences->education_ids);
+                });
+            }
+
+            if ($preferences->occupation_ids && is_array($preferences->occupation_ids)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('occupation_id', $preferences->occupation_ids);
                 });
             }
 
