@@ -24,6 +24,9 @@ class Preference extends Model
         'max_income',
         'max_distance',
         'preferred_locations',
+        'drug_addiction',
+        'smoke',
+        'alcohol',
     ];
 
     protected $casts = [
@@ -38,6 +41,8 @@ class Preference extends Model
         'education' => 'array', // JSON array for multiple selections
         'occupation' => 'array', // JSON array for multiple selections
         'preferred_locations' => 'array', // JSON array
+        'smoke' => 'array',
+        'alcohol' => 'array',
     ];
 
     /**

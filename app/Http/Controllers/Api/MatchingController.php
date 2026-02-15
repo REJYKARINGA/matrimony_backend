@@ -78,6 +78,24 @@ class MatchingController extends Controller
                     $q->where('marital_status', $preferences->marital_status);
                 });
             }
+
+            if ($preferences->drug_addiction && $preferences->drug_addiction != 'any') {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('drug_addiction', $preferences->drug_addiction == 'yes');
+                });
+            }
+
+            if ($preferences->smoke && is_array($preferences->smoke)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('smoke', $preferences->smoke);
+                });
+            }
+
+            if ($preferences->alcohol && is_array($preferences->alcohol)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('alcohol', $preferences->alcohol);
+                });
+            }
         }
 
         // Exclude users who have already received interest or are blocked/blocked by

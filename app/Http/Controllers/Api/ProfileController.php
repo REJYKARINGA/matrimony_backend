@@ -50,7 +50,7 @@ class ProfileController extends Controller
             'gender' => 'sometimes|string|in:male,female,other',
             'height' => 'sometimes|integer',
             'weight' => 'sometimes|integer',
-            'marital_status' => 'sometimes|string|in:never_married,divorced,widowed',
+            'marital_status' => 'sometimes|string|in:never_married,divorced,nikkah_divorced,widowed',
             'religion' => 'sometimes|string|max:255',
             'caste' => 'sometimes|string|max:255',
             'sub_caste' => 'nullable|string|max:255',
@@ -66,6 +66,9 @@ class ProfileController extends Controller
             'state' => 'sometimes|string|max:255',
             'country' => 'sometimes|string|max:255',
             'postal_code' => 'nullable|string|max:20',
+            'drug_addiction' => 'sometimes|boolean',
+            'smoke' => 'sometimes|string|in:never,occasionally,regularly',
+            'alcohol' => 'sometimes|string|in:never,occasionally,regularly',
         ]);
 
         if ($validator->fails()) {
@@ -121,7 +124,10 @@ class ProfileController extends Controller
             'county',
             'state',
             'country',
-            'postal_code'
+            'postal_code',
+            'drug_addiction',
+            'smoke',
+            'alcohol'
         ]);
 
         $userProfile->fill($data);
@@ -245,13 +251,19 @@ class ProfileController extends Controller
         if (isset($data['occupation']) && is_string($data['occupation']) && (str_starts_with($data['occupation'], '[') || str_starts_with($data['occupation'], '{'))) {
             $data['occupation'] = json_decode($data['occupation'], true);
         }
+        if (isset($data['smoke']) && is_string($data['smoke']) && (str_starts_with($data['smoke'], '[') || str_starts_with($data['smoke'], '{'))) {
+            $data['smoke'] = json_decode($data['smoke'], true);
+        }
+        if (isset($data['alcohol']) && is_string($data['alcohol']) && (str_starts_with($data['alcohol'], '[') || str_starts_with($data['alcohol'], '{'))) {
+            $data['alcohol'] = json_decode($data['alcohol'], true);
+        }
 
         $validator = Validator::make($data, [
             'min_age' => 'sometimes|integer|min:18|max:100',
             'max_age' => 'sometimes|integer|min:18|max:100',
             'min_height' => 'sometimes|integer|min:100|max:250',
             'max_height' => 'sometimes|integer|min:100|max:250',
-            'marital_status' => 'sometimes|string|in:never_married,divorced,widowed',
+            'marital_status' => 'sometimes|string|in:never_married,divorced,nikkah_divorced,widowed',
             'religion' => 'sometimes|string|max:255',
             'caste' => 'sometimes|array',
             'education' => 'sometimes|array',
@@ -261,6 +273,11 @@ class ProfileController extends Controller
             'max_distance' => 'sometimes|integer|min:1|max:500',
             'preferred_locations' => 'sometimes|array',
             'preferred_locations.*' => 'string|max:255',
+            'drug_addiction' => 'sometimes|string|in:any,yes,no',
+            'smoke' => 'sometimes|array',
+            'smoke.*' => 'string|in:never,occasionally,regularly',
+            'alcohol' => 'sometimes|array',
+            'alcohol.*' => 'string|in:never,occasionally,regularly',
         ]);
 
         if ($validator->fails()) {
@@ -293,7 +310,10 @@ class ProfileController extends Controller
                 'min_income',
                 'max_income',
                 'max_distance',
-                'preferred_locations'
+                'preferred_locations',
+                'drug_addiction',
+                'smoke',
+                'alcohol'
             ]))
         );
 
@@ -553,6 +573,30 @@ class ProfileController extends Controller
             if ($preferences->caste) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
                     $q->where('caste', $preferences->caste);
+                });
+            }
+
+            if ($preferences->marital_status) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('marital_status', $preferences->marital_status);
+                });
+            }
+
+            if ($preferences->drug_addiction && $preferences->drug_addiction != 'any') {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('drug_addiction', $preferences->drug_addiction == 'yes');
+                });
+            }
+
+            if ($preferences->smoke && is_array($preferences->smoke)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('smoke', $preferences->smoke);
+                });
+            }
+
+            if ($preferences->alcohol && is_array($preferences->alcohol)) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereIn('alcohol', $preferences->alcohol);
                 });
             }
         }
