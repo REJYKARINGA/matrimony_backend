@@ -46,6 +46,10 @@ class SearchController extends Controller
             $value = $preferences->$field ?? $user->userProfile->$field ?? null;
             if ($value) {
                 $count = User::whereHas('userProfile', function ($q) use ($field, $value, $user, $userAge) {
+                    $q->where('is_active_verified', true);
+                    if ($user->userProfile && $user->userProfile->religion) {
+                        $q->where('religion', $user->userProfile->religion);
+                    }
                     if ($field === 'caste' && is_array($value)) {
                         $q->whereIn($field, $value);
                     } else {
@@ -88,6 +92,10 @@ class SearchController extends Controller
         // Age Match
         if ($preferences->min_age || $preferences->max_age) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 if ($preferences->min_age) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
                 }
@@ -123,6 +131,10 @@ class SearchController extends Controller
         if (is_array($preferences->preferred_locations) && count($preferences->preferred_locations) > 0) {
             $locations = $preferences->preferred_locations;
             $count = User::whereHas('userProfile', function ($q) use ($locations, $user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 $q->whereIn('district', $locations);
 
                 if ($userAge) {
@@ -157,6 +169,10 @@ class SearchController extends Controller
         $myDistrict = $user->userProfile->district ?? null;
         if ($myDistrict && (!is_array($preferences->preferred_locations) || !in_array($myDistrict, $preferences->preferred_locations))) {
             $count = User::whereHas('userProfile', function ($q) use ($myDistrict, $user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 $q->where('district', $myDistrict);
 
                 if ($userAge) {
@@ -196,8 +212,11 @@ class SearchController extends Controller
             $count = User::join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
                 ->where('users.status', 'active')
-                ->whereHas('userProfile', function ($q) use ($userAge) {
+                ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                     $q->where('is_active_verified', true);
+                    if ($user->userProfile && $user->userProfile->religion) {
+                        $q->where('religion', $user->userProfile->religion);
+                    }
                     if ($userAge) {
                         $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
                     }
@@ -231,6 +250,10 @@ class SearchController extends Controller
         // Height Match
         if ($preferences->min_height || $preferences->max_height) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 if ($preferences->min_height)
                     $q->where('height', '>=', $preferences->min_height);
                 if ($preferences->max_height)
@@ -262,6 +285,10 @@ class SearchController extends Controller
         // Income Match
         if ($preferences->min_income) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 $q->where('annual_income', '>=', $preferences->min_income);
 
                 if ($userAge) {
@@ -291,6 +318,10 @@ class SearchController extends Controller
         $myTongue = $user->userProfile->mother_tongue ?? null;
         if ($myTongue) {
             $count = User::whereHas('userProfile', function ($q) use ($myTongue, $user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 $q->where('mother_tongue', $myTongue);
 
                 if ($userAge) {
@@ -319,6 +350,10 @@ class SearchController extends Controller
         // New Members (Joined in last 7 days)
         $count = User::where('created_at', '>=', now()->subDays(7))
             ->whereHas('userProfile', function ($q) use ($user, $userAge) {
+                $q->where('is_active_verified', true);
+                if ($user->userProfile && $user->userProfile->religion) {
+                    $q->where('religion', $user->userProfile->religion);
+                }
                 if ($userAge) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
                 }
