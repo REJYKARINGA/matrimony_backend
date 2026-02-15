@@ -47,6 +47,9 @@ class AdminUserSeeder extends Seeder
                 'city' => 'New York',
                 'state' => 'NY',
                 'country' => 'USA',
+                'drug_addiction' => false,
+                'smoke' => 'never',
+                'alcohol' => 'never',
             ]);
         } else {
             $this->command->info('Admin user already exists. Skipping creation.');
@@ -60,43 +63,43 @@ class AdminUserSeeder extends Seeder
         if ($existingPlans === 0) {
             // Create sample subscription plans for testing
             \Illuminate\Support\Facades\DB::table('subscription_plans')->insert([
-            'name' => 'Premium Plan',
-            'duration_days' => 30,
-            'price' => 999.00,
-            'max_messages' => 100,
-            'max_contacts' => 50,
-            'can_view_contact' => 1,
-            'priority_listing' => 1,
-            'features' => json_encode(['Featured Profile', 'Priority Support', 'Advanced Search']),
-            'is_active' => 1,
-            'created_at' => now(),
-        ]);
+                'name' => 'Premium Plan',
+                'duration_days' => 30,
+                'price' => 999.00,
+                'max_messages' => 100,
+                'max_contacts' => 50,
+                'can_view_contact' => 1,
+                'priority_listing' => 1,
+                'features' => json_encode(['Featured Profile', 'Priority Support', 'Advanced Search']),
+                'is_active' => 1,
+                'created_at' => now(),
+            ]);
 
-        \Illuminate\Support\Facades\DB::table('subscription_plans')->insert([
-            'name' => 'Basic Plan',
-            'duration_days' => 15,
-            'price' => 499.00,
-            'max_messages' => 25,
-            'max_contacts' => 10,
-            'can_view_contact' => 0,
-            'priority_listing' => 0,
-            'features' => json_encode(['Standard Profile', 'Basic Search']),
-            'is_active' => 1,
-            'created_at' => now(),
-        ]);
+            \Illuminate\Support\Facades\DB::table('subscription_plans')->insert([
+                'name' => 'Basic Plan',
+                'duration_days' => 15,
+                'price' => 499.00,
+                'max_messages' => 25,
+                'max_contacts' => 10,
+                'can_view_contact' => 0,
+                'priority_listing' => 0,
+                'features' => json_encode(['Standard Profile', 'Basic Search']),
+                'is_active' => 1,
+                'created_at' => now(),
+            ]);
 
-        \Illuminate\Support\Facades\DB::table('subscription_plans')->insert([
-            'name' => 'Free Plan',
-            'duration_days' => 7,
-            'price' => 0.00,
-            'max_messages' => 5,
-            'max_contacts' => 3,
-            'can_view_contact' => 0,
-            'priority_listing' => 0,
-            'features' => json_encode(['Basic Profile']),
-            'is_active' => 1,
-            'created_at' => now(),
-        ]);
+            \Illuminate\Support\Facades\DB::table('subscription_plans')->insert([
+                'name' => 'Free Plan',
+                'duration_days' => 7,
+                'price' => 0.00,
+                'max_messages' => 5,
+                'max_contacts' => 3,
+                'can_view_contact' => 0,
+                'priority_listing' => 0,
+                'features' => json_encode(['Basic Profile']),
+                'is_active' => 1,
+                'created_at' => now(),
+            ]);
         } else {
             $this->command->info('Subscription plans already exist. Skipping creation.');
         }

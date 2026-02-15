@@ -95,7 +95,7 @@ class MatrimonySeeder extends Seeder
         // Create female users
         foreach ($females as $index => $female) {
             $email = 'rejy' . ($index + 1) . '@yopmail.com';
-            
+
             $userId = DB::table('users')->insertGetId([
                 'email' => $email,
                 'phone' => '+9198765432' . str_pad($index + 100, 2, '0', STR_PAD_LEFT),
@@ -129,6 +129,9 @@ class MatrimonySeeder extends Seeder
                 'city' => $female[9],
                 'state' => $female[10],
                 'country' => 'India',
+                'drug_addiction' => false,
+                'smoke' => 'never',
+                'alcohol' => 'never',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
@@ -161,6 +164,9 @@ class MatrimonySeeder extends Seeder
                 'min_income' => 500000.00,
                 'max_income' => 1500000.00,
                 'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
+                'drug_addiction' => 'any',
+                'smoke' => json_encode(['never']),
+                'alcohol' => json_encode(['never']),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
@@ -169,7 +175,7 @@ class MatrimonySeeder extends Seeder
         // Create male users
         foreach ($males as $index => $male) {
             $email = 'rejy' . ($index + 31) . '@yopmail.com'; // Males start from rejy31
-            
+
             $userId = DB::table('users')->insertGetId([
                 'email' => $email,
                 'phone' => '+9198765432' . str_pad($index + 130, 2, '0', STR_PAD_LEFT),
@@ -203,6 +209,9 @@ class MatrimonySeeder extends Seeder
                 'city' => $male[9],
                 'state' => $male[10],
                 'country' => 'India',
+                'drug_addiction' => false,
+                'smoke' => 'never',
+                'alcohol' => 'never',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
@@ -235,6 +244,9 @@ class MatrimonySeeder extends Seeder
                 'min_income' => 400000.00,
                 'max_income' => 1200000.00,
                 'preferred_locations' => json_encode([$male[9], $this->getRandomCity(), $this->getRandomCity()]),
+                'drug_addiction' => 'any',
+                'smoke' => json_encode(['never']),
+                'alcohol' => json_encode(['never']),
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
@@ -252,7 +264,7 @@ class MatrimonySeeder extends Seeder
                     'upload_date' => Carbon::now(),
                     'verification_date' => Carbon::now(),
                 ]);
-                
+
                 // Add a secondary photo for some users
                 if ($index % 6 === 0) {
                     DB::table('profile_photos')->insert([
@@ -272,12 +284,12 @@ class MatrimonySeeder extends Seeder
         for ($i = 0; $i < 10; $i++) {
             $senderIndex = rand(0, count($users) - 1);
             $receiverIndex = rand(0, count($users) - 1);
-            
+
             // Ensure sender and receiver are different
             while ($senderIndex === $receiverIndex) {
                 $receiverIndex = rand(0, count($users) - 1);
             }
-            
+
             DB::table('interests_sent')->insert([
                 'sender_id' => $users[$senderIndex]->id,
                 'receiver_id' => $users[$receiverIndex]->id,
@@ -291,12 +303,12 @@ class MatrimonySeeder extends Seeder
         for ($i = 0; $i < 5; $i++) {
             $user1Index = rand(0, count($users) - 1);
             $user2Index = rand(0, count($users) - 1);
-            
+
             // Ensure user1 and user2 are different
             while ($user1Index === $user2Index) {
                 $user2Index = rand(0, count($users) - 1);
             }
-            
+
             DB::table('matches')->insert([
                 'user1_id' => $users[$user1Index]->id,
                 'user2_id' => $users[$user2Index]->id,
@@ -311,12 +323,12 @@ class MatrimonySeeder extends Seeder
         for ($i = 0; $i < 5; $i++) {
             $senderIndex = rand(0, count($users) - 1);
             $receiverIndex = rand(0, count($users) - 1);
-            
+
             // Ensure sender and receiver are different
             while ($senderIndex === $receiverIndex) {
                 $receiverIndex = rand(0, count($users) - 1);
             }
-            
+
             DB::table('messages')->insert([
                 'sender_id' => $users[$senderIndex]->id,
                 'receiver_id' => $users[$receiverIndex]->id,
@@ -329,12 +341,12 @@ class MatrimonySeeder extends Seeder
         for ($i = 0; $i < 10; $i++) {
             $viewerIndex = rand(0, count($users) - 1);
             $viewedIndex = rand(0, count($users) - 1);
-            
+
             // Ensure viewer and viewed are different
             while ($viewerIndex === $viewedIndex) {
                 $viewedIndex = rand(0, count($users) - 1);
             }
-            
+
             DB::table('profile_views')->insert([
                 'viewer_id' => $users[$viewerIndex]->id,
                 'viewed_profile_id' => $users[$viewedIndex]->id,
@@ -346,12 +358,12 @@ class MatrimonySeeder extends Seeder
         for ($i = 0; $i < 8; $i++) {
             $userIndex = rand(0, count($users) - 1);
             $shortlistedIndex = rand(0, count($users) - 1);
-            
+
             // Ensure user and shortlisted are different
             while ($userIndex === $shortlistedIndex) {
                 $shortlistedIndex = rand(0, count($users) - 1);
             }
-            
+
             DB::table('shortlisted_profiles')->insert([
                 'user_id' => $users[$userIndex]->id,
                 'shortlisted_user_id' => $users[$shortlistedIndex]->id,
@@ -403,7 +415,7 @@ class MatrimonySeeder extends Seeder
         // Add some user subscriptions
         $plans = DB::table('subscription_plans')->get();
         $activeUsers = DB::table('users')->limit(10)->get();
-        
+
         foreach ($activeUsers as $user) {
             $randomPlan = $plans->random();
             DB::table('user_subscriptions')->insert([

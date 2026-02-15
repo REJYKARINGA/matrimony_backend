@@ -62,6 +62,9 @@ class TestUsersSeeder extends Seeder
                     'district' => $faker->randomElement(['Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam', 'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram', 'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod']),
                     'state' => 'Kerala',
                     'country' => 'India',
+                    'drug_addiction' => false,
+                    'smoke' => 'never',
+                    'alcohol' => 'never',
                     'is_active_verified' => true,
                 ]);
 
