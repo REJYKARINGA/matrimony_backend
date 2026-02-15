@@ -27,6 +27,10 @@ class AdminUserSeeder extends Seeder
                 'email_verified' => true,
             ]);
 
+            $religionId = \DB::table('religions')->where('name', 'Hindu')->value('id') ?? \DB::table('religions')->first()?->id;
+            $educationId = \DB::table('education')->where('name', 'Masters')->value('id') ?? \DB::table('education')->first()?->id;
+            $occupationId = \DB::table('occupations')->where('name', 'Software Engineer')->value('id') ?? \DB::table('occupations')->first()?->id;
+
             // Create a sample user profile for the admin
             \App\Models\UserProfile::create([
                 'user_id' => $admin->id,
@@ -37,12 +41,11 @@ class AdminUserSeeder extends Seeder
                 'height' => 175,
                 'weight' => 70,
                 'marital_status' => 'never_married',
-                'religion' => 'Hindu',
-                'caste' => 'General',
+                'religion_id' => $religionId,
                 'mother_tongue' => 'English',
                 'bio' => 'System Administrator',
-                'education' => 'Masters',
-                'occupation' => 'Software Engineer',
+                'education_id' => $educationId,
+                'occupation_id' => $occupationId,
                 'annual_income' => 1000000,
                 'city' => 'New York',
                 'state' => 'NY',

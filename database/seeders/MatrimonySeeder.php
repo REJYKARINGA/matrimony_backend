@@ -92,6 +92,17 @@ class MatrimonySeeder extends Seeder
             ['Pankaj', 'Chauhan', 'Hindu', 'Thakur', 'Chauhan', 'Hindi', 'Wildlife Photographer', 'M.Sc Zoology', 600000.00, 'Dehradun', 'Uttarakhand'],
         ];
 
+        // Fetch reference data for faster lookups
+        $religionsList = DB::table('religions')->pluck('id', 'name')->toArray();
+        $castesList = DB::table('castes')->get()->groupBy('religion_id')->map(function ($items) {
+            return $items->pluck('id', 'name')->toArray();
+        })->toArray();
+        $subCastesList = DB::table('sub_castes')->get()->groupBy('caste_id')->map(function ($items) {
+            return $items->pluck('id', 'name')->toArray();
+        })->toArray();
+        $educationsList = DB::table('education')->pluck('id', 'name')->toArray();
+        $occupationsList = DB::table('occupations')->pluck('id', 'name')->toArray();
+
         // Create female users
         foreach ($females as $index => $female) {
             $email = 'rejy' . ($index + 1) . '@yopmail.com';
@@ -108,6 +119,31 @@ class MatrimonySeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ]);
 
+            $religionId = $religionsList[$female[2]] ?? null;
+            $casteId = ($religionId && isset($castesList[$religionId])) ? ($castesList[$religionId][$female[3]] ?? null) : null;
+            $subCasteId = ($casteId && isset($subCastesList[$casteId])) ? ($subCastesList[$casteId][$female[4]] ?? null) : null;
+
+            // Education/Occupation lookup
+            $eduName = $female[7];
+            // Simple normalization for seeder data
+            if ($eduName == 'M.Tech Computer Science')
+                $eduName = 'M.Tech';
+            if ($eduName == 'M.Sc Nutrition')
+                $eduName = 'M.Sc';
+            if ($eduName == 'M.Sc Yoga')
+                $eduName = 'M.Sc';
+            if ($eduName == 'M.Sc Marine Biology')
+                $eduName = 'M.Sc';
+            if ($eduName == 'M.Sc Sports Science')
+                $eduName = 'M.Sc';
+            if ($eduName == 'M.Sc Wildlife Biology')
+                $eduName = 'M.Sc';
+            if ($eduName == 'M.Tech Data Science')
+                $eduName = 'M.Tech';
+
+            $educationId = $educationsList[$eduName] ?? ($educationsList['Graduate'] ?? null);
+            $occupationId = $occupationsList[$female[6]] ?? ($occupationsList['Other'] ?? null);
+
             DB::table('user_profiles')->insert([
                 'user_id' => $userId,
                 'first_name' => $female[0],
@@ -117,14 +153,14 @@ class MatrimonySeeder extends Seeder
                 'height' => rand(155, 168),
                 'weight' => rand(48, 62),
                 'marital_status' => 'never_married',
-                'religion' => $female[2],
-                'caste' => $female[3],
-                'sub_caste' => $female[4],
+                'religion_id' => $religionId,
+                'caste_id' => $casteId,
+                'sub_caste_id' => $subCasteId,
                 'mother_tongue' => $female[5],
                 'profile_picture' => 'https://example.com/profiles/' . strtolower($female[0]) . '.jpg',
                 'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
-                'education' => json_encode([$female[7]]),
-                'occupation' => json_encode([$female[6]]),
+                'education_id' => $educationId,
+                'occupation_id' => $occupationId,
                 'annual_income' => $female[8],
                 'city' => $female[9],
                 'state' => $female[10],
@@ -157,10 +193,11 @@ class MatrimonySeeder extends Seeder
                 'min_height' => 170,
                 'max_height' => 188,
                 'marital_status' => 'never_married',
-                'religion' => $female[2],
-                'caste' => $female[3],
-                'education' => json_encode(['Graduate']),
-                'occupation' => json_encode(['Any']),
+                'religion_id' => $religionId,
+                'caste_ids' => json_encode($casteId ? [$casteId] : []),
+                'sub_caste_ids' => json_encode($subCasteId ? [$subCasteId] : []),
+                'education_ids' => json_encode($educationId ? [$educationId] : []),
+                'occupation_ids' => json_encode($occupationId ? [$occupationId] : []),
                 'min_income' => 500000.00,
                 'max_income' => 1500000.00,
                 'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
@@ -188,6 +225,23 @@ class MatrimonySeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ]);
 
+            $religionId = $religionsList[$male[2]] ?? null;
+            $casteId = ($religionId && isset($castesList[$religionId])) ? ($castesList[$religionId][$male[3]] ?? null) : null;
+            $subCasteId = ($casteId && isset($subCastesList[$casteId])) ? ($subCastesList[$casteId][$male[4]] ?? null) : null;
+
+            // Education/Occupation lookup
+            $eduName = $male[7];
+            // Simple normalization for seeder data
+            if ($eduName == 'M.Tech Computer Science')
+                $eduName = 'M.Tech';
+            if ($eduName == 'BE Electronics')
+                $eduName = 'B.Tech/B.E';
+            if ($eduName == 'M.Tech Chemical')
+                $eduName = 'M.Tech';
+
+            $educationId = $educationsList[$eduName] ?? ($educationsList['Graduate'] ?? null);
+            $occupationId = $occupationsList[$male[6]] ?? ($occupationsList['Other'] ?? null);
+
             DB::table('user_profiles')->insert([
                 'user_id' => $userId,
                 'first_name' => $male[0],
@@ -197,14 +251,14 @@ class MatrimonySeeder extends Seeder
                 'height' => rand(170, 185),
                 'weight' => rand(65, 80),
                 'marital_status' => 'never_married',
-                'religion' => $male[2],
-                'caste' => $male[3],
-                'sub_caste' => $male[4],
+                'religion_id' => $religionId,
+                'caste_id' => $casteId,
+                'sub_caste_id' => $subCasteId,
                 'mother_tongue' => $male[5],
                 'profile_picture' => 'https://example.com/profiles/' . strtolower($male[0]) . '.jpg',
                 'bio' => $male[0] . ' is a ' . $male[6] . ' with a passion for his work.',
-                'education' => json_encode([$male[7]]),
-                'occupation' => json_encode([$male[6]]),
+                'education_id' => $educationId,
+                'occupation_id' => $occupationId,
                 'annual_income' => $male[8],
                 'city' => $male[9],
                 'state' => $male[10],
@@ -237,10 +291,11 @@ class MatrimonySeeder extends Seeder
                 'min_height' => 155,
                 'max_height' => 170,
                 'marital_status' => 'never_married',
-                'religion' => $male[2],
-                'caste' => $male[3],
-                'education' => json_encode(['Graduate']),
-                'occupation' => json_encode(['Any']),
+                'religion_id' => $religionId,
+                'caste_ids' => json_encode($casteId ? [$casteId] : []),
+                'sub_caste_ids' => json_encode($subCasteId ? [$subCasteId] : []),
+                'education_ids' => json_encode($educationId ? [$educationId] : []),
+                'occupation_ids' => json_encode($occupationId ? [$occupationId] : []),
                 'min_income' => 400000.00,
                 'max_income' => 1200000.00,
                 'preferred_locations' => json_encode([$male[9], $this->getRandomCity(), $this->getRandomCity()]),

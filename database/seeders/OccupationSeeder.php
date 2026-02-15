@@ -12,7 +12,9 @@ class OccupationSeeder extends Seeder
      */
     public function run(): void
     {
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         \DB::table('occupations')->truncate();
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $occupations = [
             ['name' => 'Software Engineer', 'is_active' => true, 'order_number' => 1],
