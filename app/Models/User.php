@@ -63,13 +63,13 @@ class User extends Model
      */
     public static function generateMatrimonyId()
     {
-        $prefix = 'VM';
-        $number = rand(100000, 999999);
+        $prefix = 'VE';
+        $number = rand(1000000, 9999999);
         $matrimonyId = $prefix . $number;
 
         // Check if exists and regenerate if necessary
         while (static::where('matrimony_id', $matrimonyId)->exists()) {
-            $number = rand(100000, 999999);
+            $number = rand(1000000, 9999999);
             $matrimonyId = $prefix . $number;
         }
 

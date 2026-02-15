@@ -19,5 +19,6 @@ class DatabaseSeeder extends Seeder
         $this->call(MatrimonySeeder::class);
         $this->call(EducationSeeder::class);
         $this->call(OccupationSeeder::class);
+        $this->call(MatrimonyIdSeeder::class);
     }
 }
