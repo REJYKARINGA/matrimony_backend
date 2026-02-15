@@ -179,6 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('preferences')->group(function () {
         Route::get('/education-options', [PreferenceController::class, 'getEducationOptions']);
         Route::get('/occupation-options', [PreferenceController::class, 'getOccupationOptions']);
+        Route::get('/religion-options', [PreferenceController::class, 'getReligionOptions']);
         Route::get('/all-options', [PreferenceController::class, 'getAllOptions']);
     });
 });

@@ -65,4 +65,22 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::put('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'update']);
     Route::post('/mediator-promotions/{id}/payout', [AdminMediatorPromotionController::class, 'processPayout']);
     Route::delete('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'destroy']);
+
+    // Religion Management
+    Route::get('/religions', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getReligions']);
+    Route::post('/religions', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createReligion']);
+    Route::put('/religions/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateReligion']);
+    Route::delete('/religions/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteReligion']);
+
+    // Caste Management
+    Route::get('/castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getCastes']);
+    Route::post('/castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createCaste']);
+    Route::put('/castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateCaste']);
+    Route::delete('/castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteCaste']);
+
+    // SubCaste Management
+    Route::get('/sub-castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getSubCastes']);
+    Route::post('/sub-castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createSubCaste']);
+    Route::put('/sub-castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateSubCaste']);
+    Route::delete('/sub-castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteSubCaste']);
 });

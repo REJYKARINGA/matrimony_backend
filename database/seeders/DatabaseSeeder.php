@@ -21,5 +21,6 @@ class DatabaseSeeder extends Seeder
         $this->call(OccupationSeeder::class);
         $this->call(MatrimonyIdSeeder::class);
         $this->call(LocationSeeder::class);
+        $this->call(ReligionCasteSeeder::class);
     }
 }
