@@ -46,7 +46,8 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'User registered successfully',
             'user' => $user,
-            'token' => $token
+            'token' => $token,
+            'has_profile' => false // Freshly registered users don't have a profile yet
         ], 201);
     }
 
@@ -80,12 +81,15 @@ class AuthController extends Controller
             'last_login' => now()
         ]);
 
+        $user->load('userProfile');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
             'user' => $user,
-            'token' => $token
+            'token' => $token,
+            'has_profile' => $user->userProfile()->exists()
         ]);
     }
 
@@ -137,7 +141,8 @@ class AuthController extends Controller
         $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount']);
 
         return response()->json([
-            'user' => $user
+            'user' => $user,
+            'has_profile' => $user->userProfile()->exists()
         ]);
     }
 
