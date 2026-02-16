@@ -74,4 +74,54 @@ class ProfileViewController extends Controller
 
         return response()->json(['message' => 'View recorded successfully']);
     }
+
+    /**
+     * Get profiles the current user has visited
+     */
+    public function getVisitedProfiles(Request $request)
+    {
+        $user = $request->user();
+
+        $visited = ProfileView::where('viewer_id', $user->id)
+            ->where('viewed_profile_id', '!=', $user->id)
+            ->with([
+                'viewedUser.userProfile.religionModel',
+                'viewedUser.userProfile.casteModel',
+                'viewedUser.userProfile.subCasteModel',
+                'viewedUser.userProfile.educationModel',
+                'viewedUser.userProfile.occupationModel'
+            ])
+            ->select('viewed_profile_id')
+            ->selectRaw('MAX(created_at) as last_viewed_at')
+            ->groupBy('viewed_profile_id')
+            ->orderBy('last_viewed_at', 'desc')
+            ->paginate(15);
+
+        return response()->json([
+            'visited' => $visited
+        ]);
+    }
+
+    /**
+     * Get profiles whose contact information the current user has unlocked
+     */
+    public function getContactViewed(Request $request)
+    {
+        $user = $request->user();
+
+        $unlocked = \App\Models\ContactUnlock::where('user_id', $user->id)
+            ->with([
+                'unlockedUser.userProfile.religionModel',
+                'unlockedUser.userProfile.casteModel',
+                'unlockedUser.userProfile.subCasteModel',
+                'unlockedUser.userProfile.educationModel',
+                'unlockedUser.userProfile.occupationModel'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json([
+            'unlocked' => $unlocked
+        ]);
+    }
 }

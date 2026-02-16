@@ -89,6 +89,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/photos/{photoId}/primary', [ProfileController::class, 'setPrimaryPhoto']);
         Route::delete('/photos/{photoId}', [ProfileController::class, 'deleteProfilePhoto']);
         Route::get('/visitors', [ProfileViewController::class, 'getVisitors']);
+        Route::get('/visited', [ProfileViewController::class, 'getVisitedProfiles']);
+        Route::get('/contact-viewed', [ProfileViewController::class, 'getContactViewed']);
         Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
         Route::get('/{id}', [ProfileController::class, 'show']);
         Route::get('/', [ProfileController::class, 'index']);

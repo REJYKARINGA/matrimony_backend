@@ -33,4 +33,12 @@ class ProfileView extends Model
     {
         return $this->belongsTo(User::class, 'viewed_profile_id');
     }
+
+    /**
+     * Alias for viewedProfile relationship to match controller usage
+     */
+    public function viewedUser()
+    {
+        return $this->belongsTo(User::class, 'viewed_profile_id');
+    }
 }
