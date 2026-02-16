@@ -429,7 +429,14 @@ class SearchController extends Controller
         $isIdSearch = $request->filled('matrimony_id');
         $userProfile = $user->userProfile;
 
-        $query = User::with(['userProfile', 'profilePhotos'])
+        $query = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'profilePhotos'
+        ])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
             ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch, $userProfile) {

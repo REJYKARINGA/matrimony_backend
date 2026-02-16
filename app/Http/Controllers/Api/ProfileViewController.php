@@ -20,7 +20,13 @@ class ProfileViewController extends Controller
         // Get unique visitors with their latest view time
         $visitors = ProfileView::where('viewed_profile_id', $user->id)
             ->where('viewer_id', '!=', $user->id) // Exclude self-views
-            ->with(['viewer.userProfile'])
+            ->with([
+                'viewer.userProfile.religionModel',
+                'viewer.userProfile.casteModel',
+                'viewer.userProfile.subCasteModel',
+                'viewer.userProfile.educationModel',
+                'viewer.userProfile.occupationModel'
+            ])
             ->select('viewer_id')
             ->selectRaw('MAX(created_at) as last_viewed_at')
             ->groupBy('viewer_id')

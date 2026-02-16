@@ -94,7 +94,13 @@ class AdminController extends Controller
      */
     public function getUsers(Request $request)
     {
-        $query = User::with('userProfile')
+        $query = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel'
+        ])
             ->where('role', '!=', 'admin');
 
         if ($request->has('search')) {
@@ -134,7 +140,14 @@ class AdminController extends Controller
      */
     public function getUserProfiles(Request $request)
     {
-        $query = UserProfile::with(['user.verification'])
+        $query = UserProfile::with([
+            'user.verification',
+            'religionModel',
+            'casteModel',
+            'subCasteModel',
+            'educationModel',
+            'occupationModel'
+        ])
             ->join('users', 'user_profiles.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
 
@@ -224,7 +237,13 @@ class AdminController extends Controller
      */
     public function getPayments()
     {
-        $payments = \App\Models\Payment::with(['user.userProfile'])
+        $payments = \App\Models\Payment::with([
+            'user.userProfile.religionModel',
+            'user.userProfile.casteModel',
+            'user.userProfile.subCasteModel',
+            'user.userProfile.educationModel',
+            'user.userProfile.occupationModel'
+        ])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
         return response()->json($payments);
@@ -235,7 +254,13 @@ class AdminController extends Controller
      */
     public function getFamilyDetails(Request $request)
     {
-        $query = FamilyDetail::with(['user.userProfile'])
+        $query = FamilyDetail::with([
+            'user.userProfile.religionModel',
+            'user.userProfile.casteModel',
+            'user.userProfile.subCasteModel',
+            'user.userProfile.educationModel',
+            'user.userProfile.occupationModel'
+        ])
             ->join('users', 'family_details.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
 
@@ -266,7 +291,13 @@ class AdminController extends Controller
      */
     public function getPreferences(Request $request)
     {
-        $query = Preference::with(['user.userProfile'])
+        $query = Preference::with([
+            'user.userProfile.religionModel',
+            'user.userProfile.casteModel',
+            'user.userProfile.subCasteModel',
+            'user.userProfile.educationModel',
+            'user.userProfile.occupationModel'
+        ])
             ->join('users', 'preferences.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
 
@@ -642,7 +673,13 @@ class AdminController extends Controller
     public function getWalletTransactions(Request $request)
     {
         try {
-            $query = Transaction::with(['user.userProfile'])
+            $query = Transaction::with([
+                'user.userProfile.religionModel',
+                'user.userProfile.casteModel',
+                'user.userProfile.subCasteModel',
+                'user.userProfile.educationModel',
+                'user.userProfile.occupationModel'
+            ])
                 ->join('users', 'transactions.user_id', '=', 'users.id')
                 ->where('users.role', '!=', 'admin');
 

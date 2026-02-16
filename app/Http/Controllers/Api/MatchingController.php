@@ -19,7 +19,14 @@ class MatchingController extends Controller
         $user = $request->user();
         $preferences = $user->preferences;
 
-        $query = User::with(['userProfile', 'profilePhotos'])
+        $query = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'profilePhotos'
+        ])
             ->where('users.id', '!=', $user->id)
             ->where('users.status', 'active')
             ->whereHas('userProfile', function ($q) {
@@ -174,10 +181,18 @@ class MatchingController extends Controller
         })
             ->with([
                 'user1',
-                'user1.userProfile',
+                'user1.userProfile.religionModel',
+                'user1.userProfile.casteModel',
+                'user1.userProfile.subCasteModel',
+                'user1.userProfile.educationModel',
+                'user1.userProfile.occupationModel',
                 'user1.profilePhotos',
                 'user2',
-                'user2.userProfile',
+                'user2.userProfile.religionModel',
+                'user2.userProfile.casteModel',
+                'user2.userProfile.subCasteModel',
+                'user2.userProfile.educationModel',
+                'user2.userProfile.occupationModel',
                 'user2.profilePhotos'
             ])
             ->paginate(10);
@@ -263,7 +278,11 @@ class MatchingController extends Controller
         $interests = InterestSent::where('sender_id', $user->id)
             ->with([
                 'receiver',
-                'receiver.userProfile',
+                'receiver.userProfile.religionModel',
+                'receiver.userProfile.casteModel',
+                'receiver.userProfile.subCasteModel',
+                'receiver.userProfile.educationModel',
+                'receiver.userProfile.occupationModel',
                 'receiver.profilePhotos'
             ])
             ->paginate(10);
@@ -301,7 +320,11 @@ class MatchingController extends Controller
         $interests = InterestSent::where('receiver_id', $user->id)
             ->with([
                 'sender',
-                'sender.userProfile',
+                'sender.userProfile.religionModel',
+                'sender.userProfile.casteModel',
+                'sender.userProfile.subCasteModel',
+                'sender.userProfile.educationModel',
+                'sender.userProfile.occupationModel',
                 'sender.profilePhotos'
             ])
             ->paginate(10);

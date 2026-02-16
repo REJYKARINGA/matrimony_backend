@@ -16,7 +16,14 @@ class UserController extends Controller
     {
         $users = User::where('status', 'active')
             ->whereNull('deleted_at') // Exclude soft deleted users
-            ->with(['userProfile', 'profilePhotos'])
+            ->with([
+                'userProfile.religionModel',
+                'userProfile.casteModel',
+                'userProfile.subCasteModel',
+                'userProfile.educationModel',
+                'userProfile.occupationModel',
+                'profilePhotos'
+            ])
             ->paginate(15);
 
         return response()->json([
@@ -37,7 +44,16 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['userProfile', 'familyDetails', 'preferences', 'profilePhotos'])
+        $user = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'familyDetails',
+            'preferences',
+            'profilePhotos'
+        ])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
 

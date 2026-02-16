@@ -466,7 +466,17 @@ class ProfileController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification'])
+        $user = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'familyDetails',
+            'preferences',
+            'profilePhotos',
+            'verification'
+        ])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
 
@@ -544,7 +554,14 @@ class ProfileController extends Controller
         // Get user's preferences to filter profiles
         $preferences = $user->preferences;
 
-        $query = User::with(['userProfile', 'profilePhotos'])
+        $query = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'profilePhotos'
+        ])
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users
             ->whereNull('deleted_at') // Exclude soft deleted users

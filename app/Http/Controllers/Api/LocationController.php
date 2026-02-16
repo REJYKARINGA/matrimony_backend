@@ -67,15 +67,22 @@ class LocationController extends Controller
         $lon = $userProfile->longitude;
 
         // Haversine formula to find nearby users
-        $query = User::with(['userProfile', 'profilePhotos'])
+        $query = User::with([
+            'userProfile.religionModel',
+            'userProfile.casteModel',
+            'userProfile.subCasteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+            'profilePhotos'
+        ])
             ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
             ->select('users.*')
             ->selectRaw("
                 (6371 * acos(
-                    cos(radians(?)) * 
-                    cos(radians(user_profiles.latitude)) * 
-                    cos(radians(user_profiles.longitude) - radians(?)) + 
-                    sin(radians(?)) * 
+                    cos(radians(?)) *
+                    cos(radians(user_profiles.latitude)) *
+                    cos(radians(user_profiles.longitude) - radians(?)) +
+                    sin(radians(?)) *
                     sin(radians(user_profiles.latitude))
                 )) AS distance
             ", [$lat, $lon, $lat])
