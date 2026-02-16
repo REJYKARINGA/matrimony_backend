@@ -5,6 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
+use App\Models\Religion;
+use App\Models\Caste;
+use App\Models\SubCaste;
+use App\Models\Education;
+use App\Models\Occupation;
 
 class Preference extends Model
 {
@@ -54,5 +59,45 @@ class Preference extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function religion()
+    {
+        return $this->belongsTo(Religion::class, 'religion_id');
+    }
+
+    protected $appends = ['religion_name', 'caste_names', 'sub_caste_names', 'education_names', 'occupation_names'];
+
+    public function getReligionNameAttribute()
+    {
+        return $this->religion?->name;
+    }
+
+    public function getCasteNamesAttribute()
+    {
+        if (empty($this->caste_ids))
+            return [];
+        return Caste::whereIn('id', $this->caste_ids)->pluck('name')->toArray();
+    }
+
+    public function getSubCasteNamesAttribute()
+    {
+        if (empty($this->sub_caste_ids))
+            return [];
+        return SubCaste::whereIn('id', $this->sub_caste_ids)->pluck('name')->toArray();
+    }
+
+    public function getEducationNamesAttribute()
+    {
+        if (empty($this->education_ids))
+            return [];
+        return Education::whereIn('id', $this->education_ids)->pluck('name')->toArray();
+    }
+
+    public function getOccupationNamesAttribute()
+    {
+        if (empty($this->occupation_ids))
+            return [];
+        return Occupation::whereIn('id', $this->occupation_ids)->pluck('name')->toArray();
     }
 }

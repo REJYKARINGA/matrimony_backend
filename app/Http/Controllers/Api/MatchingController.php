@@ -68,15 +68,15 @@ class MatchingController extends Controller
                 });
             }
 
-            if ($preferences->religion) {
+            if ($preferences->religion_id) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('religion', $preferences->religion);
+                    $q->where('religion_id', $preferences->religion_id);
                 });
             }
 
-            if ($preferences->caste) {
+            if ($preferences->caste_ids && is_array($preferences->caste_ids)) {
                 $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('caste', $preferences->caste);
+                    $q->whereIn('caste_id', $preferences->caste_ids);
                 });
             }
 

@@ -47,13 +47,13 @@ class SearchController extends Controller
             if ($value) {
                 $count = User::whereHas('userProfile', function ($q) use ($field, $value, $user, $userAge) {
                     $q->where('is_active_verified', true);
-                    if ($user->userProfile && $user->userProfile->religion) {
-                        $q->where('religion', $user->userProfile->religion);
+                    if ($user->userProfile && $user->userProfile->religion_id) {
+                        $q->where('religion_id', $user->userProfile->religion_id);
                     }
                     if ($field === 'caste' && is_array($value)) {
-                        $q->whereIn($field, $value);
+                        $q->whereIn($field . '_id', $value);
                     } else {
-                        $q->where($field, $value);
+                        $q->where($field . '_id', $value);
                     }
 
                     if ($userAge) {
@@ -93,8 +93,8 @@ class SearchController extends Controller
         if ($preferences->min_age || $preferences->max_age) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 if ($preferences->min_age) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
@@ -132,8 +132,8 @@ class SearchController extends Controller
             $locations = $preferences->preferred_locations;
             $count = User::whereHas('userProfile', function ($q) use ($locations, $user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 $q->whereIn('district', $locations);
 
@@ -170,8 +170,8 @@ class SearchController extends Controller
         if ($myDistrict && (!is_array($preferences->preferred_locations) || !in_array($myDistrict, $preferences->preferred_locations))) {
             $count = User::whereHas('userProfile', function ($q) use ($myDistrict, $user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 $q->where('district', $myDistrict);
 
@@ -214,8 +214,8 @@ class SearchController extends Controller
                 ->where('users.status', 'active')
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                     $q->where('is_active_verified', true);
-                    if ($user->userProfile && $user->userProfile->religion) {
-                        $q->where('religion', $user->userProfile->religion);
+                    if ($user->userProfile && $user->userProfile->religion_id) {
+                        $q->where('religion_id', $user->userProfile->religion_id);
                     }
                     if ($userAge) {
                         $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
@@ -251,8 +251,8 @@ class SearchController extends Controller
         if ($preferences->min_height || $preferences->max_height) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 if ($preferences->min_height)
                     $q->where('height', '>=', $preferences->min_height);
@@ -286,8 +286,8 @@ class SearchController extends Controller
         if ($preferences->min_income) {
             $count = User::whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 $q->where('annual_income', '>=', $preferences->min_income);
 
@@ -319,8 +319,8 @@ class SearchController extends Controller
         if ($myTongue) {
             $count = User::whereHas('userProfile', function ($q) use ($myTongue, $user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 $q->where('mother_tongue', $myTongue);
 
@@ -351,8 +351,8 @@ class SearchController extends Controller
         $count = User::where('created_at', '>=', now()->subDays(7))
             ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                 $q->where('is_active_verified', true);
-                if ($user->userProfile && $user->userProfile->religion) {
-                    $q->where('religion', $user->userProfile->religion);
+                if ($user->userProfile && $user->userProfile->religion_id) {
+                    $q->where('religion_id', $user->userProfile->religion_id);
                 }
                 if ($userAge) {
                     $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
@@ -448,8 +448,8 @@ class SearchController extends Controller
                 }
 
                 // Strictly enforce same religion
-                if ($userProfile && $userProfile->religion) {
-                    $q->where('religion', $userProfile->religion);
+                if ($userProfile && $userProfile->religion_id) {
+                    $q->where('religion_id', $userProfile->religion_id);
                 }
             });
 
@@ -467,34 +467,34 @@ class SearchController extends Controller
             }
         }
 
-        if ($request->filled('religion')) {
+        if ($request->filled('religion_id')) {
             $query->whereHas('userProfile', function ($q) use ($request) {
-                $q->where('religion', $request->religion);
+                $q->where('religion_id', $request->religion_id);
             });
         }
 
-        if ($request->filled('caste')) {
-            $casteValue = $request->caste;
+        if ($request->filled('caste_id')) {
+            $casteValue = $request->caste_id;
             $query->whereHas('userProfile', function ($q) use ($casteValue) {
                 if (is_array($casteValue)) {
-                    $q->whereIn('caste', $casteValue);
+                    $q->whereIn('caste_id', $casteValue);
                 } else if (is_string($casteValue) && str_contains($casteValue, ',')) {
-                    $q->whereIn('caste', explode(',', $casteValue));
+                    $q->whereIn('caste_id', explode(',', $casteValue));
                 } else {
-                    $q->where('caste', $casteValue);
+                    $q->where('caste_id', $casteValue);
                 }
             });
         }
 
-        if ($request->filled('occupation')) {
+        if ($request->filled('occupation_id')) {
             $query->whereHas('userProfile', function ($q) use ($request) {
-                $q->where('occupation', $request->occupation);
+                $q->where('occupation_id', $request->occupation_id);
             });
         }
 
-        if ($request->filled('education')) {
+        if ($request->filled('education_id')) {
             $query->whereHas('userProfile', function ($q) use ($request) {
-                $q->where('education', $request->education);
+                $q->where('education_id', $request->education_id);
             });
         }
 
