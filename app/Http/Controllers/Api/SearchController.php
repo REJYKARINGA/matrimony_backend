@@ -51,7 +51,9 @@ class SearchController extends Controller
                         $q->where('religion_id', $user->userProfile->religion_id);
                     }
                     if ($field === 'caste' && is_array($value)) {
-                        $q->whereIn($field . '_id', $value);
+                        $q->whereIn('caste_id', $value);
+                    } elseif ($field === 'marital_status') {
+                        $q->where('marital_status', $value);
                     } else {
                         $q->where($field . '_id', $value);
                     }
