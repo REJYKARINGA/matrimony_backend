@@ -74,7 +74,9 @@ class LocationController extends Controller
             'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
-            'profilePhotos'
+            'profilePhotos' => function ($q) {
+                $q->where('is_primary', true)->limit(1);
+            }
         ])
             ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
             ->select('users.*')

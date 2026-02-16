@@ -195,14 +195,18 @@ class MatchingController extends Controller
                 'user1.userProfile.subCasteModel',
                 'user1.userProfile.educationModel',
                 'user1.userProfile.occupationModel',
-                'user1.profilePhotos',
+                'user1.profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                },
                 'user2',
                 'user2.userProfile.religionModel',
                 'user2.userProfile.casteModel',
                 'user2.userProfile.subCasteModel',
                 'user2.userProfile.educationModel',
                 'user2.userProfile.occupationModel',
-                'user2.profilePhotos'
+                'user2.profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                }
             ])
             ->paginate(10);
 
@@ -301,7 +305,9 @@ class MatchingController extends Controller
                 'receiver.userProfile.subCasteModel',
                 'receiver.userProfile.educationModel',
                 'receiver.userProfile.occupationModel',
-                'receiver.profilePhotos'
+                'receiver.profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                }
             ])
             ->paginate(10);
 
@@ -354,7 +360,9 @@ class MatchingController extends Controller
                 'sender.userProfile.subCasteModel',
                 'sender.userProfile.educationModel',
                 'sender.userProfile.occupationModel',
-                'sender.profilePhotos'
+                'sender.profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                }
             ])
             ->paginate(10);
 

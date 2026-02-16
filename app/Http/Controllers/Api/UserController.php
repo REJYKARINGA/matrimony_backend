@@ -23,7 +23,9 @@ class UserController extends Controller
                 'userProfile.subCasteModel',
                 'userProfile.educationModel',
                 'userProfile.occupationModel',
-                'profilePhotos'
+                'profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                }
             ])
             ->paginate(15);
 
@@ -53,7 +55,9 @@ class UserController extends Controller
             'userProfile.occupationModel',
             'familyDetails',
             'preferences',
-            'profilePhotos'
+            'profilePhotos' => function ($q) {
+                $q->where('is_primary', true)->limit(1);
+            }
         ])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);

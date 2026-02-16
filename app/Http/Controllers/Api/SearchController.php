@@ -438,7 +438,9 @@ class SearchController extends Controller
             'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
-            'profilePhotos'
+            'profilePhotos' => function ($q) {
+                $q->where('is_primary', true)->limit(1);
+            }
         ])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
