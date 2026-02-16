@@ -9,6 +9,7 @@ use App\Models\UserMatch as MatchModel;
 use App\Models\InterestSent;
 use App\Models\Notification;
 use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Cache;
 
 class MatchingController extends Controller
 {
@@ -20,110 +21,117 @@ class MatchingController extends Controller
         $user = $request->user();
         $preferences = $user->preferences;
 
-        $query = User::with([
-            'userProfile.religionModel',
-            'userProfile.casteModel',
-            'userProfile.subCasteModel',
-            'userProfile.educationModel',
-            'userProfile.occupationModel',
-            'profilePhotos'
-        ])
+        // Cache suggestions for 2 minutes to reduce database load
+        // Cache key includes user ID and page number for proper pagination
+        $page = $request->page ?? 1;
+        $cacheKey = "suggestions_user_{$user->id}_page_{$page}";
+
+        return Cache::remember($cacheKey, 120, function () use ($user, $preferences, $request) {
+            $query = User::with([
+                'userProfile.religionModel',
+                'userProfile.casteModel',
+                'userProfile.subCasteModel',
+                'userProfile.educationModel',
+                'userProfile.occupationModel',
+                'profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                }
+            ])
+            ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
             ->where('users.id', '!=', $user->id)
             ->where('users.status', 'active')
             ->whereHas('userProfile', function ($q) {
                 $q->where('is_active_verified', true);
             });
 
-        // Add distance calculation if current user has location
-        if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
-            $lat = $user->userProfile->latitude;
-            $lon = $user->userProfile->longitude;
-            $query->select('users.*')
-                ->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
-                ->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(user_profiles.latitude)) * cos(radians(user_profiles.longitude) - radians(?)) + sin(radians(?)) * sin(radians(user_profiles.latitude)))) AS distance", [$lat, $lon, $lat]);
-        }
-
-        // Apply preferences filter
-        if ($preferences) {
-            if ($preferences->min_age) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
-                });
+            // Add distance calculation if current user has location
+            if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
+                $lat = $user->userProfile->latitude;
+                $lon = $user->userProfile->longitude;
+                $query->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                    ->selectRaw("users.*, (6371 * acos(cos(radians(?)) * cos(radians(user_profiles.latitude)) * cos(radians(user_profiles.longitude) - radians(?)) + sin(radians(?)) * sin(radians(user_profiles.latitude)))) AS distance", [$lat, $lon, $lat]);
             }
 
-            if ($preferences->max_age) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
-                });
+            // Apply preferences filter
+            if ($preferences) {
+                if ($preferences->min_age) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
+                    });
+                }
+
+                if ($preferences->max_age) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
+                    });
+                }
+
+                if ($preferences->min_height) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->where('height', '>=', $preferences->min_height);
+                    });
+                }
+
+                if ($preferences->max_height) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->where('height', '<=', $preferences->max_height);
+                    });
+                }
+
+                if ($preferences->religion_id) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->where('religion_id', $preferences->religion_id);
+                    });
+                }
+
+                if ($preferences->caste_ids && is_array($preferences->caste_ids)) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->whereIn('caste_id', $preferences->caste_ids);
+                    });
+                }
+
+                if ($preferences->marital_status) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->where('marital_status', $preferences->marital_status);
+                    });
+                }
+
+                if ($preferences->drug_addiction && $preferences->drug_addiction != 'any') {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->where('drug_addiction', $preferences->drug_addiction == 'yes');
+                    });
+                }
+
+                if ($preferences->smoke && is_array($preferences->smoke)) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->whereIn('smoke', $preferences->smoke);
+                    });
+                }
+
+                if ($preferences->alcohol && is_array($preferences->alcohol)) {
+                    $query->whereHas('userProfile', function ($q) use ($preferences) {
+                        $q->whereIn('alcohol', $preferences->alcohol);
+                    });
+                }
             }
 
-            if ($preferences->min_height) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('height', '>=', $preferences->min_height);
-                });
-            }
+            // Exclude users who have already received interest or are blocked/blocked by
+            $excludedUserIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
+            $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
+            $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
 
-            if ($preferences->max_height) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('height', '<=', $preferences->max_height);
-                });
-            }
+            $allExcludedIds = array_unique(array_merge([$user->id], $excludedUserIds, $blockedUserIds, $blockedMeIds));
 
-            if ($preferences->religion_id) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('religion_id', $preferences->religion_id);
-                });
-            }
+            $query->whereNotIn('users.id', $allExcludedIds);
 
-            if ($preferences->caste_ids && is_array($preferences->caste_ids)) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->whereIn('caste_id', $preferences->caste_ids);
-                });
-            }
+            // Primary sort by login date (not time) so we can randomize within the day
+            // to provide fresh content on every refresh while keeping active users on top.
+            $suggestions = $query->orderByRaw('DATE(users.last_login) DESC')
+                ->inRandomOrder()
+                ->paginate(12);
 
-            if ($preferences->marital_status) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('marital_status', $preferences->marital_status);
-                });
-            }
-
-            if ($preferences->drug_addiction && $preferences->drug_addiction != 'any') {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->where('drug_addiction', $preferences->drug_addiction == 'yes');
-                });
-            }
-
-            if ($preferences->smoke && is_array($preferences->smoke)) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->whereIn('smoke', $preferences->smoke);
-                });
-            }
-
-            if ($preferences->alcohol && is_array($preferences->alcohol)) {
-                $query->whereHas('userProfile', function ($q) use ($preferences) {
-                    $q->whereIn('alcohol', $preferences->alcohol);
-                });
-            }
-        }
-
-        // Exclude users who have already received interest or are blocked/blocked by
-        $excludedUserIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
-        $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
-        $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
-
-        $allExcludedIds = array_unique(array_merge([$user->id], $excludedUserIds, $blockedUserIds, $blockedMeIds));
-
-        $query->whereNotIn('users.id', $allExcludedIds);
-
-        // Primary sort by login date (not time) so we can randomize within the day
-        // to provide fresh content on every refresh while keeping active users on top.
-        $suggestions = $query->orderByRaw('DATE(users.last_login) DESC')
-            ->inRandomOrder()
-            ->paginate(12);
-
-        return response()->json([
-            'suggestions' => UserResource::collection($suggestions)
-        ]);
+            return UserResource::collection($suggestions);
+        });
     }
 
     /**
