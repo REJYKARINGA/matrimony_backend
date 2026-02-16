@@ -12,6 +12,7 @@ use App\Models\FamilyDetail;
 use App\Models\Preference;
 use App\Models\ProfilePhoto;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Resources\UserResource;
 
 class ProfileController extends Controller
 {
@@ -520,7 +521,7 @@ class ProfileController extends Controller
         }
 
         return response()->json([
-            'user' => $user,
+            'user' => new UserResource($user),
             'interest_sent' => $interestSent,
             'interest_received' => $interestReceived
         ]);
@@ -654,7 +655,7 @@ class ProfileController extends Controller
         $profiles = $query->paginate(10);
 
         return response()->json([
-            'profiles' => $profiles
+            'profiles' => UserResource::collection($profiles)
         ]);
     }
 }

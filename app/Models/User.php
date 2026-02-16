@@ -47,6 +47,20 @@ class User extends Model
     ];
 
     /**
+     * The attributes that should be hidden for arrays and JSON.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'role',
+        'status',
+        'email_verified',
+        'phone_verified',
+        'deleted_at',
+    ];
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted()

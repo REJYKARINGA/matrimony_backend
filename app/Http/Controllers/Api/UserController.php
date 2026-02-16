@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\BlockedUser;
+use App\Http\Resources\UserResource;
 
 class UserController extends Controller
 {
@@ -27,7 +28,7 @@ class UserController extends Controller
             ->paginate(15);
 
         return response()->json([
-            'users' => $users
+            'users' => UserResource::collection($users)
         ]);
     }
 
@@ -64,7 +65,7 @@ class UserController extends Controller
         }
 
         return response()->json([
-            'user' => $user
+            'user' => new UserResource($user)
         ]);
     }
 

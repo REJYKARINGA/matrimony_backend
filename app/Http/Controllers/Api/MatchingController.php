@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserMatch as MatchModel;
 use App\Models\InterestSent;
 use App\Models\Notification;
+use App\Http\Resources\UserResource;
 
 class MatchingController extends Controller
 {
@@ -114,14 +115,14 @@ class MatchingController extends Controller
 
         $query->whereNotIn('users.id', $allExcludedIds);
 
-        // Primary sort by login date (not time) so we can randomize within the day 
+        // Primary sort by login date (not time) so we can randomize within the day
         // to provide fresh content on every refresh while keeping active users on top.
         $suggestions = $query->orderByRaw('DATE(users.last_login) DESC')
             ->inRandomOrder()
             ->paginate(12);
 
         return response()->json([
-            'suggestions' => $suggestions
+            'suggestions' => UserResource::collection($suggestions)
         ]);
     }
 
@@ -217,7 +218,16 @@ class MatchingController extends Controller
         }
 
         return response()->json([
-            'matches' => $matches
+            'matches' => $matches->map(function ($match) use ($user) {
+                return [
+                    'id' => $match->id,
+                    'user1_id' => $match->user1_id,
+                    'user2_id' => $match->user2_id,
+                    'status' => $match->status,
+                    'created_at' => $match->created_at,
+                    'user' => new UserResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
+                ];
+            })
         ]);
     }
 
@@ -306,7 +316,18 @@ class MatchingController extends Controller
         }
 
         return response()->json([
-            'interests' => $interests
+            'interests' => $interests->map(function ($interest) {
+                return [
+                    'id' => $interest->id,
+                    'sender_id' => $interest->sender_id,
+                    'receiver_id' => $interest->receiver_id,
+                    'message' => $interest->message,
+                    'status' => $interest->status,
+                    'sent_at' => $interest->created_at,
+                    'responded_at' => $interest->responded_at,
+                    'receiver' => new UserResource($interest->receiver),
+                ];
+            })
         ]);
     }
 
@@ -348,7 +369,18 @@ class MatchingController extends Controller
         }
 
         return response()->json([
-            'interests' => $interests
+            'interests' => $interests->map(function ($interest) use ($user) {
+                return [
+                    'id' => $interest->id,
+                    'sender_id' => $interest->sender_id,
+                    'receiver_id' => $interest->receiver_id,
+                    'message' => $interest->message,
+                    'status' => $interest->status,
+                    'sent_at' => $interest->created_at,
+                    'responded_at' => $interest->responded_at,
+                    'sender' => new UserResource($interest->sender),
+                ];
+            })
         ]);
     }
 

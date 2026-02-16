@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Preference;
 use App\Models\DiscoveryStat;
+use App\Http\Resources\UserResource;
 
 class SearchController extends Controller
 {
@@ -582,7 +583,7 @@ class SearchController extends Controller
         }
 
         return response()->json([
-            'profiles' => $profiles
+            'profiles' => UserResource::collection($profiles)
         ]);
     }
 

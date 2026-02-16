@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\UserResource;
 
 class LocationController extends Controller
 {
@@ -108,7 +109,7 @@ class LocationController extends Controller
 
         return response()->json([
             'success' => true,
-            'profiles' => $nearbyUsers
+            'profiles' => UserResource::collection($nearbyUsers)
         ]);
     }
 }
