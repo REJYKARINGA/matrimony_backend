@@ -32,7 +32,7 @@ use App\Events\TestEvent;
 */
 
 // Public authentication routes
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
     Route::get('/test-broadcast', function () {
         broadcast(new TestEvent('Hello from Reverb!'));
         return response()->json(['message' => 'Event broadcasted!']);
@@ -45,7 +45,7 @@ Route::prefix('auth')->group(function () {
 });
 
 // Image proxy route to bypass CORS for Flutter Web
-Route::get('images/proxy', function (Request $request) {
+Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
     $path = $request->query('path');
     if (!$path)
         return response()->json(['error' => 'Path is required'], 400);

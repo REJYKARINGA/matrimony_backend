@@ -20,7 +20,7 @@ Route::get('/', function () {
 });
 
 // Test email route - Remove this in production
-Route::get('/test-email', function () {
+Route::middleware('throttle:2,2')->get('/test-email', function () {
     try {
         $testOtp = '123456';
 
