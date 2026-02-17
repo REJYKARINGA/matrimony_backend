@@ -487,8 +487,24 @@ class ProfileController extends Controller
             ], 404);
         }
 
-        // Check interest status
         $viewingUser = request()->user();
+
+        // Security Check: Only allow viewing if:
+        // 1. It is my own profile (I can always see my own data)
+        // 2. OR The profile is Active AND Verified (Publicly visible)
+        $isOwnProfile = $viewingUser && $viewingUser->id === $user->id;
+
+        if (!$isOwnProfile) {
+            $isActive = $user->status === 'active';
+            // Check if user has a profile and it is verified
+            $isVerified = $user->userProfile && $user->userProfile->is_active_verified;
+
+            if (!$isActive || !$isVerified) {
+                return response()->json([
+                    'error' => 'User not found or profile is not active'
+                ], 404);
+            }
+        }
 
         // Record profile view
         if ($viewingUser && $viewingUser->id != $id) {

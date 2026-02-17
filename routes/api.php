@@ -43,8 +43,9 @@ Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
     Route::middleware('throttle:5,5')->post('login', [AuthController::class, 'login']);
     Route::middleware('throttle:5,5')->post('forgot-password', [AuthController::class, 'forgotPassword']);
 
-    Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
-    Route::post('reset-password', [AuthController::class, 'resetPassword']);
+    // Extremely strict limits for OTP: 3 attempts per 5 minutes to stop brute-force
+    Route::middleware('throttle:3,5')->post('verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::middleware('throttle:3,5')->post('reset-password', [AuthController::class, 'resetPassword']);
 });
 
 // Image proxy route to bypass CORS for Flutter Web
@@ -95,7 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/visited', [ProfileViewController::class, 'getVisitedProfiles']);
         Route::get('/contact-viewed', [ProfileViewController::class, 'getContactViewed']);
         Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
-        Route::get('/{id}', [ProfileController::class, 'show']);
+        Route::get('/{id}', [ProfileController::class, 'show'])->middleware('throttle:10,1');
         Route::get('/', [ProfileController::class, 'index']);
     });
 
