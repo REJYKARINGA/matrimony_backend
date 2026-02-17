@@ -38,8 +38,11 @@ Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
         return response()->json(['message' => 'Event broadcasted!']);
     });
     Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+
+    // Strict limits for sensitive actions: 5 attempts per 5 minutes
+    Route::middleware('throttle:5,5')->post('login', [AuthController::class, 'login']);
+    Route::middleware('throttle:5,5')->post('forgot-password', [AuthController::class, 'forgotPassword']);
+
     Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
