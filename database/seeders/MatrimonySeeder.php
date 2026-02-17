@@ -486,13 +486,13 @@ class MatrimonySeeder extends Seeder
 
         // Add some payments
         $subscriptions = DB::table('user_subscriptions')->get();
-        foreach ($subscriptions as $subscription) {
+        foreach ($subscriptions as $index => $subscription) {
             DB::table('payments')->insert([
                 'user_id' => $subscription->user_id,
                 'subscription_id' => $subscription->id,
                 'amount' => $subscription->amount_paid,
                 'payment_method' => $this->getRandomPaymentMethod(),
-                'transaction_id' => 'TXN' . rand(100, 999),
+                'transaction_id' => 'TXN' . str_pad($index + 1000, 4, '0', STR_PAD_LEFT),
                 'status' => 'completed',
                 'payment_date' => Carbon::now(),
                 'created_at' => Carbon::now(),
