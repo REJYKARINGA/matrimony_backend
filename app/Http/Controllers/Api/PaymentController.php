@@ -123,8 +123,8 @@ class PaymentController extends Controller
                     'payment_method' => 'direct'
                 ]);
 
-                // Increment purchased_count for the referrer if the buyer was referred
-                $reference = Reference::where('referenced_user_id', $user->id)->first();
+                // Increment purchased_count for the mediator who brought in the profile being unlocked
+                $reference = Reference::where('referenced_user_id', $request->unlocked_user_id)->first();
                 if ($reference) {
                     $reference->increment('purchased_count');
                 }
@@ -188,8 +188,8 @@ class PaymentController extends Controller
             'description' => 'Contact unlock for user #' . $request->unlocked_user_id . ' (Wallet)'
         ]);
 
-        // Increment purchased_count for the referrer if the buyer was referred
-        $reference = Reference::where('referenced_user_id', $user->id)->first();
+        // Increment purchased_count for the mediator who brought in the profile being unlocked
+        $reference = Reference::where('referenced_user_id', $request->unlocked_user_id)->first();
         if ($reference) {
             $reference->increment('purchased_count');
         }
