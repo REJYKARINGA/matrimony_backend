@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\PasswordResetToken;
+use App\Models\Reference;
 
 class AuthController extends Controller
 {
@@ -22,7 +23,9 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'nullable|string|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:admin,staff,user',
+            'role' => 'required|string|in:admin,staff,user,mediator',
+            // Optional: a 6-letter mediator reference code
+            'reference_code' => 'nullable|string|size:6|exists:users,reference_code',
         ]);
 
         if ($validator->fails()) {
@@ -41,13 +44,27 @@ class AuthController extends Controller
             'email_verified' => false,
         ]);
 
+        // If a reference code was provided, link this user to the mediator
+        if ($request->filled('reference_code')) {
+            $referrer = User::where('reference_code', $request->reference_code)->first();
+            if ($referrer) {
+                Reference::create([
+                    'referenced_by_id' => $referrer->id,
+                    'referenced_user_id' => $user->id,
+                    'reference_code' => $request->reference_code,
+                    'reference_type' => $referrer->role, // e.g. 'mediator'
+                    'purchased_count' => 0,
+                ]);
+            }
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
             'user' => $user,
             'token' => $token,
-            'has_profile' => false // Freshly registered users don't have a profile yet
+            'has_profile' => false
         ], 201);
     }
 

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Wallet;
 use App\Models\ContactUnlock;
 use App\Models\Transaction;
+use App\Models\Reference;
 use Razorpay\Api\Api;
 
 class PaymentController extends Controller
@@ -121,6 +122,12 @@ class PaymentController extends Controller
                     'amount_paid' => $transaction->amount,
                     'payment_method' => 'direct'
                 ]);
+
+                // Increment purchased_count for the referrer if the buyer was referred
+                $reference = Reference::where('referenced_user_id', $user->id)->first();
+                if ($reference) {
+                    $reference->increment('purchased_count');
+                }
             }
 
             return response()->json([
@@ -180,6 +187,12 @@ class PaymentController extends Controller
             'status' => 'success',
             'description' => 'Contact unlock for user #' . $request->unlocked_user_id . ' (Wallet)'
         ]);
+
+        // Increment purchased_count for the referrer if the buyer was referred
+        $reference = Reference::where('referenced_user_id', $user->id)->first();
+        if ($reference) {
+            $reference->increment('purchased_count');
+        }
 
         return response()->json([
             'success' => true,

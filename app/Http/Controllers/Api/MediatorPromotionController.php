@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MediatorPromotion;
 use App\Models\PromotionSetting;
 use App\Models\Transaction;
+use App\Models\Reference;
 use App\Services\SocialMediaStatsService;
 use Illuminate\Support\Facades\Validator;
 use App\Services\RazorpayPayoutService;
@@ -244,12 +245,32 @@ class MediatorPromotionController extends Controller
             }
         }
 
-        // 3. Get total withdrawable amount
+        // 3. Get total withdrawable amount from promotions
         $promotions = MediatorPromotion::where('user_id', $user->id)
             ->where('calculated_payout', '>', 0)
             ->get();
 
-        $totalPayable = $promotions->sum('calculated_payout');
+        $promoPayable = $promotions->sum('calculated_payout');
+
+        // 4. Get total referral earnings (₹20 per unlock)
+        $rewardPerPurchase = 20;
+        $referrals = Reference::where('referenced_by_id', $user->id)->get();
+        $referralPayable = 0;
+        $payableReferrals = [];
+
+        foreach ($referrals as $ref) {
+            $earned = $ref->purchased_count * $rewardPerPurchase;
+            $pending = max(0, $earned - ($ref->total_paid_amount ?? 0));
+            if ($pending > 0) {
+                $referralPayable += $pending;
+                $payableReferrals[] = [
+                    'model' => $ref,
+                    'amount' => $pending
+                ];
+            }
+        }
+
+        $totalPayable = $promoPayable + $referralPayable;
 
         if ($totalPayable <= 0) {
             return response()->json(['error' => 'No pending payouts available.'], 422);
@@ -309,7 +330,7 @@ class MediatorPromotionController extends Controller
             'razorpay_payment_id' => $payoutId
         ]);
 
-        // 5. Update promotions
+        // 6. Update promotions
         foreach ($promotions as $promo) {
             $promo->total_paid_amount += $promo->calculated_payout;
             $promo->calculated_payout = 0;
@@ -318,6 +339,13 @@ class MediatorPromotionController extends Controller
                 $promo->paid_at = now();
             }
             $promo->save();
+        }
+
+        // 7. Update references
+        foreach ($payableReferrals as $item) {
+            $ref = $item['model'];
+            $ref->total_paid_amount += $item['amount'];
+            $ref->save();
         }
 
         return response()->json([

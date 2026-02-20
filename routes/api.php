@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\ReferenceController;
 use App\Events\TestEvent;
 
 /*
@@ -47,6 +48,9 @@ Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
     Route::middleware('throttle:3,5')->post('verify-otp', [AuthController::class, 'verifyOtp']);
     Route::middleware('throttle:3,5')->post('reset-password', [AuthController::class, 'resetPassword']);
 });
+
+// Public: validate a reference code before registration (no auth needed)
+Route::get('references/validate/{code}', [ReferenceController::class, 'validateCode']);
 
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
@@ -187,5 +191,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/occupation-options', [PreferenceController::class, 'getOccupationOptions']);
         Route::get('/religion-options', [PreferenceController::class, 'getReligionOptions']);
         Route::get('/all-options', [PreferenceController::class, 'getAllOptions']);
+    });
+
+    // Reference / Referral routes
+    Route::prefix('references')->group(function () {
+        // Every logged-in user can see their own reference code
+        Route::get('/my-code', [ReferenceController::class, 'myCode']);
+        // Mediators: see who registered with their code + purchase counts
+        Route::get('/my-referrals', [ReferenceController::class, 'myReferrals']);
+        // Regular users: see who referred them
+        Route::get('/my-referrer', [ReferenceController::class, 'myReferrer']);
+        // Mediator: manually add a referral
+        Route::post('/add', [ReferenceController::class, 'addReferral']);
+        // Admin: full list of all reference records
+        Route::get('/', [ReferenceController::class, 'index']);
+        Route::get('/{id}', [ReferenceController::class, 'show']);
     });
 });

@@ -26,6 +26,7 @@ use App\Models\AdminPermission;
 use App\Models\EngagementPoster;
 use App\Models\Suggestion;
 use App\Models\UserVerification;
+use App\Models\Reference;
 
 use Laravel\Sanctum\HasApiTokens;
 
@@ -36,6 +37,7 @@ class User extends Model
     protected $table = 'users';
     protected $fillable = [
         'matrimony_id',
+        'reference_code',
         'email',
         'phone',
         'password',
@@ -53,10 +55,6 @@ class User extends Model
      */
     protected $hidden = [
         'password',
-        'role',
-        'status',
-        'email_verified',
-        'phone_verified',
         'deleted_at',
     ];
 
@@ -68,6 +66,9 @@ class User extends Model
         static::creating(function ($user) {
             if (!$user->matrimony_id) {
                 $user->matrimony_id = static::generateMatrimonyId();
+            }
+            if (!$user->reference_code) {
+                $user->reference_code = static::generateReferenceCode();
             }
         });
     }
@@ -88,6 +89,18 @@ class User extends Model
         }
 
         return $matrimonyId;
+    }
+
+    /**
+     * Generate a unique 6-letter uppercase reference code (e.g. ABCXYZ)
+     */
+    public static function generateReferenceCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6));
+        } while (static::where('reference_code', $code)->exists());
+
+        return $code;
     }
 
     protected $casts = [
@@ -317,6 +330,22 @@ class User extends Model
     public function primaryBankAccount(): HasOne
     {
         return $this->hasOne(BankAccount::class, 'user_id')->where('is_primary', true);
+    }
+
+    /**
+     * References this user has given (as mediator/referrer)
+     */
+    public function givenReferences(): HasMany
+    {
+        return $this->hasMany(Reference::class, 'referenced_by_id');
+    }
+
+    /**
+     * The reference record where this user was referred by someone
+     */
+    public function receivedReference(): HasOne
+    {
+        return $this->hasOne(Reference::class, 'referenced_user_id');
     }
 }
 
