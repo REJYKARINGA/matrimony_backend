@@ -100,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/visited', [ProfileViewController::class, 'getVisitedProfiles']);
         Route::get('/contact-viewed', [ProfileViewController::class, 'getContactViewed']);
         Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
+        Route::get('/{id}/contact-details', [ProfileController::class, 'getContactDetails']);
         Route::get('/{id}', [ProfileController::class, 'show'])->middleware('throttle:10,1');
         Route::get('/', [ProfileController::class, 'index']);
     });

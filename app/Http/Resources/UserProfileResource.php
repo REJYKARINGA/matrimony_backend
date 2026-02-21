@@ -46,16 +46,13 @@ class UserProfileResource extends JsonResource
             'is_active_verified' => $this->is_active_verified,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
-            
+
             // Related models
             'religion_model' => new ReligionResource($this->whenLoaded('religionModel')),
             'caste_model' => new CasteResource($this->whenLoaded('casteModel')),
             'sub_caste_model' => new SubCasteResource($this->whenLoaded('subCasteModel')),
             'education_model' => new EducationResource($this->whenLoaded('educationModel')),
             'occupation_model' => new OccupationResource($this->whenLoaded('occupationModel')),
-            
-            // Family details - only shown if contact is unlocked or it's the user's own profile
-            'family_details' => new FamilyDetailResource($this->whenLoaded('familyDetails')),
         ];
     }
 }

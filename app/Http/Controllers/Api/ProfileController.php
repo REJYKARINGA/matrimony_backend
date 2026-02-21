@@ -674,4 +674,39 @@ class ProfileController extends Controller
             'profiles' => UserResource::collection($profiles)
         ]);
     }
+    /**
+     * Get unlocked contact details (Father's name, Mother's name, Phone)
+     */
+    public function getContactDetails($id)
+    {
+        $viewingUser = request()->user();
+        if (!$viewingUser) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = User::with('familyDetails')->find($id);
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        // Check if viewing own profile
+        $isOwnProfile = $viewingUser->id === $user->id;
+        $hasUnlocked = false;
+
+        if (!$isOwnProfile) {
+            $hasUnlocked = \App\Models\ContactUnlock::where('user_id', $viewingUser->id)
+                ->where('unlocked_user_id', $id)
+                ->exists();
+        }
+
+        if (!$isOwnProfile && !$hasUnlocked) {
+            return response()->json(['error' => 'Contact not unlocked'], 403);
+        }
+
+        return response()->json([
+            'father_name' => $user->familyDetails?->father_name,
+            'mother_name' => $user->familyDetails?->mother_name,
+            'phone' => $user->phone,
+        ]);
+    }
 }
