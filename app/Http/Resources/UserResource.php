@@ -34,6 +34,8 @@ class UserResource extends JsonResource
             'preferences' => new PreferenceResource($this->whenLoaded('preferences')),
             'profile_photos' => ProfilePhotoResource::collection($this->whenLoaded('profilePhotos')),
             'distance' => $this->when(isset($this->distance), $this->distance),
+            'personalities' => PersonalityResource::collection($this->whenLoaded('personalities')),
+            'interests' => InterestResource::collection($this->whenLoaded('interests')),
 
             'contact_info' => [
                 'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
