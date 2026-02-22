@@ -24,4 +24,12 @@ class UserPersonality extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the personality details
+     */
+    public function personality(): BelongsTo
+    {
+        return $this->belongsTo(Personality::class, 'personality_id');
+    }
 }
