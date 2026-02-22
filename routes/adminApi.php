@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminPromotionSettingController;
 use App\Http\Controllers\Api\AdminMediatorPromotionController;
 use App\Http\Controllers\Api\Admin\InterestHobbyController;
+use App\Http\Controllers\Api\Admin\PersonalityController;
 use App\Http\Controllers\Api\Admin\ReligionController;
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
@@ -58,6 +59,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::put('/interests/{id}', [InterestHobbyController::class, 'updateInterest']);
     Route::delete('/interests/{id}', [InterestHobbyController::class, 'deleteInterest']);
     Route::post('/interests/bulk-update-trending', [InterestHobbyController::class, 'bulkUpdateTrending']);
+
+    // Personality Management
+    Route::get('/personalities', [PersonalityController::class, 'getPersonalities']);
+    Route::get('/personalities/types', [PersonalityController::class, 'getPersonalityTypes']);
+    Route::post('/personalities', [PersonalityController::class, 'createPersonality']);
+    Route::put('/personalities/{id}', [PersonalityController::class, 'updatePersonality']);
+    Route::delete('/personalities/{id}', [PersonalityController::class, 'deletePersonality']);
+    Route::post('/personalities/bulk-update-trending', [PersonalityController::class, 'bulkUpdateTrending']);
 
     // Wallet Transactions
     Route::get('/wallet/stats', [AdminController::class, 'getWalletStats']);
