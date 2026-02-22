@@ -521,6 +521,18 @@ class SearchController extends Controller
             });
         }
 
+        if ($request->filled('min_height')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('height', '>=', $request->min_height);
+            });
+        }
+
+        if ($request->filled('max_height')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('height', '<=', $request->max_height);
+            });
+        }
+
         if ($request->filled('location')) {
             $location = $request->location;
             $query->whereHas('userProfile', function ($q) use ($location, $user) {
