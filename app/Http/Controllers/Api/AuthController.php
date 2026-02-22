@@ -98,7 +98,7 @@ class AuthController extends Controller
             'last_login' => now()
         ]);
 
-        $user->load('userProfile');
+        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount', 'interests', 'personalities']);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -155,7 +155,7 @@ class AuthController extends Controller
         // Update last login whenever the app is opened/user info is fetched
         $user->update(['last_login' => now()]);
 
-        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount']);
+        $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount', 'interests', 'personalities']);
 
         return response()->json([
             'user' => $user,

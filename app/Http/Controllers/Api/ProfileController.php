@@ -40,7 +40,8 @@ class ProfileController extends Controller
             'preferences',
             'profilePhotos',
             'verification',
-            'personalities'
+            'personalities',
+            'interests'
         ]);
 
         return response()->json([
@@ -83,6 +84,8 @@ class ProfileController extends Controller
             'alcohol' => 'sometimes|string|in:never,occasionally,regularly',
             'personality_ids' => 'sometimes|array',
             'personality_ids.*' => 'exists:personalities,id',
+            'interest_ids' => 'sometimes|array',
+            'interest_ids.*' => 'exists:interests_hobbies,id',
         ]);
 
         if ($validator->fails()) {
@@ -173,6 +176,10 @@ class ProfileController extends Controller
 
         if ($request->has('personality_ids')) {
             $user->personalities()->sync($request->personality_ids);
+        }
+
+        if ($request->has('interest_ids')) {
+            $user->interests()->sync($request->interest_ids);
         }
 
         return response()->json([
@@ -484,7 +491,8 @@ class ProfileController extends Controller
             'preferences',
             'profilePhotos',
             'verification',
-            'personalities'
+            'personalities',
+            'interests'
         ])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
@@ -586,7 +594,8 @@ class ProfileController extends Controller
             'userProfile.educationModel',
             'userProfile.occupationModel',
             'profilePhotos',
-            'personalities'
+            'personalities',
+            'interests'
         ])
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users

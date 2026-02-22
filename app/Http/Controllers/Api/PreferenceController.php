@@ -7,6 +7,7 @@ use App\Models\Education;
 use App\Models\Occupation;
 use App\Models\Religion;
 use App\Models\Personality;
+use App\Models\InterestHobby;
 use Illuminate\Http\Request;
 
 class PreferenceController extends Controller
@@ -126,13 +127,18 @@ class PreferenceController extends Controller
                 ->select('id', 'personality_name', 'personality_type')
                 ->get();
 
+            $interests = InterestHobby::active()
+                ->select('id', 'interest_name', 'interest_type')
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'educations' => $educations,
                     'occupations' => $occupations,
                     'religions' => $religions,
-                    'personalities' => $personalities
+                    'personalities' => $personalities,
+                    'interests' => $interests
                 ]
             ]);
         } catch (\Exception $e) {

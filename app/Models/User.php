@@ -29,6 +29,8 @@ use App\Models\UserVerification;
 use App\Models\Reference;
 
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\InterestHobby;
+use App\Models\Personality;
 
 class User extends Authenticatable
 {
@@ -354,6 +356,14 @@ class User extends Authenticatable
     public function personalities()
     {
         return $this->belongsToMany(Personality::class, 'user_personality', 'user_id', 'personality_id');
+    }
+
+    /**
+     * Relationship with interests
+     */
+    public function interests()
+    {
+        return $this->belongsToMany(InterestHobby::class, 'user_interests', 'user_id', 'interest_id');
     }
 }
 
