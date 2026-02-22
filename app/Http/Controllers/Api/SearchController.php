@@ -551,28 +551,58 @@ class SearchController extends Controller
             });
         }
 
-        if ($request->filled('field') && $request->field == 'new_members') {
-            $query->where('users.created_at', '>=', now()->subDays(7));
-        }
+        if ($request->filled('field') && $request->field == 'matching_me') {
+            $userAge = $userProfile ? \Carbon\Carbon::parse($userProfile->date_of_birth)->age : 25;
+            $userHeight = $userProfile?->height;
+            $userMarital = $userProfile?->marital_status;
+            $userReligion = $userProfile?->religion_id;
+            $userCaste = $userProfile?->caste_id;
+            $userDistrict = $userProfile?->district;
 
-        if ($request->filled('field') && $request->field == 'mother_tongue') {
-            $query->whereHas('userProfile', function ($q) use ($user) {
-                $q->where('mother_tongue', $user->userProfile->mother_tongue);
-            });
-        }
+            $query->whereHas('preferences', function ($q) use ($userAge, $userHeight, $userMarital, $userReligion, $userCaste, $userDistrict) {
+                // Age range check
+                $q->where(function ($sub) use ($userAge) {
+                    $sub->whereNull('min_age')->orWhere('min_age', '<=', $userAge);
+                })->where(function ($sub) use ($userAge) {
+                    $sub->whereNull('max_age')->orWhere('max_age', '>=', $userAge);
+                });
 
-        if ($request->filled('field') && $request->field == 'income') {
-            $query->whereHas('userProfile', function ($q) use ($user) {
-                $q->where('annual_income', '>=', $user->preferences->min_income ?? 0);
-            });
-        }
+                // Height range check
+                if ($userHeight) {
+                    $q->where(function ($sub) use ($userHeight) {
+                        $sub->whereNull('min_height')->orWhere('min_height', '<=', $userHeight);
+                    })->where(function ($sub) use ($userHeight) {
+                        $sub->whereNull('max_height')->orWhere('max_height', '>=', $userHeight);
+                    });
+                }
 
-        if ($request->filled('field') && $request->field == 'height') {
-            $query->whereHas('userProfile', function ($q) use ($user) {
-                if ($user->preferences->min_height)
-                    $q->where('height', '>=', $user->preferences->min_height);
-                if ($user->preferences->max_height)
-                    $q->where('height', '<=', $user->preferences->max_height);
+                // Marital Status check
+                if ($userMarital) {
+                    $q->where(function ($sub) use ($userMarital) {
+                        $sub->whereNull('marital_status')->orWhere('marital_status', $userMarital);
+                    });
+                }
+
+                // Religion check
+                if ($userReligion) {
+                    $q->where(function ($sub) use ($userReligion) {
+                        $sub->whereNull('religion_id')->orWhere('religion_id', $userReligion);
+                    });
+                }
+
+                // Caste check (JSON array)
+                if ($userCaste) {
+                    $q->where(function ($sub) use ($userCaste) {
+                        $sub->whereNull('caste_ids')->orWhereJsonContains('caste_ids', (int) $userCaste);
+                    });
+                }
+
+                // District check (JSON array)
+                if ($userDistrict) {
+                    $q->where(function ($sub) use ($userDistrict) {
+                        $sub->whereNull('preferred_locations')->orWhereJsonContains('preferred_locations', $userDistrict);
+                    });
+                }
             });
         }
 
