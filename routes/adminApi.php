@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminPromotionSettingController;
 use App\Http\Controllers\Api\AdminMediatorPromotionController;
+use App\Http\Controllers\Api\Admin\InterestHobbyController;
+use App\Http\Controllers\Api\Admin\ReligionController;
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
     // Dashboard
@@ -49,6 +51,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::put('/occupations/{id}', [AdminController::class, 'updateOccupation']);
     Route::delete('/occupations/{id}', [AdminController::class, 'deleteOccupation']);
 
+    // Interests & Hobbies Management
+    Route::get('/interests', [InterestHobbyController::class, 'getInterests']);
+    Route::get('/interests/types', [InterestHobbyController::class, 'getInterestTypes']);
+    Route::post('/interests', [InterestHobbyController::class, 'createInterest']);
+    Route::put('/interests/{id}', [InterestHobbyController::class, 'updateInterest']);
+    Route::delete('/interests/{id}', [InterestHobbyController::class, 'deleteInterest']);
+    Route::post('/interests/bulk-update-trending', [InterestHobbyController::class, 'bulkUpdateTrending']);
+
     // Wallet Transactions
     Route::get('/wallet/stats', [AdminController::class, 'getWalletStats']);
     Route::get('/wallet/transactions', [AdminController::class, 'getWalletTransactions']);
@@ -67,20 +77,20 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::delete('/mediator-promotions/{id}', [AdminMediatorPromotionController::class, 'destroy']);
 
     // Religion Management
-    Route::get('/religions', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getReligions']);
-    Route::post('/religions', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createReligion']);
-    Route::put('/religions/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateReligion']);
-    Route::delete('/religions/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteReligion']);
+    Route::get('/religions', [ReligionController::class, 'getReligions']);
+    Route::post('/religions', [ReligionController::class, 'createReligion']);
+    Route::put('/religions/{id}', [ReligionController::class, 'updateReligion']);
+    Route::delete('/religions/{id}', [ReligionController::class, 'deleteReligion']);
 
     // Caste Management
-    Route::get('/castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getCastes']);
-    Route::post('/castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createCaste']);
-    Route::put('/castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateCaste']);
-    Route::delete('/castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteCaste']);
+    Route::get('/castes', [ReligionController::class, 'getCastes']);
+    Route::post('/castes', [ReligionController::class, 'createCaste']);
+    Route::put('/castes/{id}', [ReligionController::class, 'updateCaste']);
+    Route::delete('/castes/{id}', [ReligionController::class, 'deleteCaste']);
 
     // SubCaste Management
-    Route::get('/sub-castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'getSubCastes']);
-    Route::post('/sub-castes', [App\Http\Controllers\Api\Admin\ReligionController::class, 'createSubCaste']);
-    Route::put('/sub-castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'updateSubCaste']);
-    Route::delete('/sub-castes/{id}', [App\Http\Controllers\Api\Admin\ReligionController::class, 'deleteSubCaste']);
+    Route::get('/sub-castes', [ReligionController::class, 'getSubCastes']);
+    Route::post('/sub-castes', [ReligionController::class, 'createSubCaste']);
+    Route::put('/sub-castes/{id}', [ReligionController::class, 'updateSubCaste']);
+    Route::delete('/sub-castes/{id}', [ReligionController::class, 'deleteSubCaste']);
 });

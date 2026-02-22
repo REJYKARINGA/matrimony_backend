@@ -22,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(MatrimonySeeder::class);
         $this->call(MatrimonyIdSeeder::class);
         $this->call(LocationSeeder::class);
+        $this->call(InterestsHobbiesSeeder::class);
     }
 }
