@@ -39,7 +39,8 @@ class ProfileController extends Controller
             'familyDetails',
             'preferences',
             'profilePhotos',
-            'verification'
+            'verification',
+            'personalities'
         ]);
 
         return response()->json([
@@ -80,6 +81,8 @@ class ProfileController extends Controller
             'drug_addiction' => 'sometimes|boolean',
             'smoke' => 'sometimes|string|in:never,occasionally,regularly',
             'alcohol' => 'sometimes|string|in:never,occasionally,regularly',
+            'personality_ids' => 'sometimes|array',
+            'personality_ids.*' => 'exists:personalities,id',
         ]);
 
         if ($validator->fails()) {
@@ -167,6 +170,10 @@ class ProfileController extends Controller
         }
 
         $userProfile->save();
+
+        if ($request->has('personality_ids')) {
+            $user->personalities()->sync($request->personality_ids);
+        }
 
         return response()->json([
             'message' => 'Profile updated successfully',
@@ -476,7 +483,8 @@ class ProfileController extends Controller
             'familyDetails',
             'preferences',
             'profilePhotos',
-            'verification'
+            'verification',
+            'personalities'
         ])
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
@@ -577,7 +585,8 @@ class ProfileController extends Controller
             'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
-            'profilePhotos'
+            'profilePhotos',
+            'personalities'
         ])
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users

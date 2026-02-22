@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Education;
 use App\Models\Occupation;
 use App\Models\Religion;
+use App\Models\Personality;
 use Illuminate\Http\Request;
 
 class PreferenceController extends Controller
@@ -121,12 +122,17 @@ class PreferenceController extends Controller
                 ->select('id', 'name')
                 ->get();
 
+            $personalities = Personality::active()
+                ->select('id', 'personality_name', 'personality_type')
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'educations' => $educations,
                     'occupations' => $occupations,
-                    'religions' => $religions
+                    'religions' => $religions,
+                    'personalities' => $personalities
                 ]
             ]);
         } catch (\Exception $e) {

@@ -347,5 +347,13 @@ class User extends Authenticatable
     {
         return $this->hasOne(Reference::class, 'referenced_user_id');
     }
+
+    /**
+     * Relationship with personalities
+     */
+    public function personalities()
+    {
+        return $this->belongsToMany(Personality::class, 'user_personality', 'user_id', 'personality_id');
+    }
 }
 
