@@ -42,7 +42,7 @@ class ShortlistController extends Controller
         }
 
         return response()->json([
-            'shortlisted' => $shortlisted
+            'shortlist' => $shortlisted
         ]);
     }
 

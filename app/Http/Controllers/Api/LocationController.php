@@ -111,7 +111,7 @@ class LocationController extends Controller
 
         return response()->json([
             'success' => true,
-            'profiles' => UserResource::collection($nearbyUsers)
+            'profiles' => UserResource::collection($nearbyUsers)->response()->getData(true)
         ]);
     }
 }

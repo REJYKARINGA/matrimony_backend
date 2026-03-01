@@ -37,12 +37,12 @@ class MatchingController extends Controller
                     $q->where('is_primary', true)->limit(1);
                 }
             ])
-            ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
-            ->where('users.id', '!=', $user->id)
-            ->where('users.status', 'active')
-            ->whereHas('userProfile', function ($q) {
-                $q->where('is_active_verified', true);
-            });
+                ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
+                ->where('users.id', '!=', $user->id)
+                ->where('users.status', 'active')
+                ->whereHas('userProfile', function ($q) {
+                    $q->where('is_active_verified', true);
+                });
 
             // Add distance calculation if current user has location
             if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
@@ -229,17 +229,20 @@ class MatchingController extends Controller
             });
         }
 
+        // Final transformation for the response
+        $matches->getCollection()->transform(function ($match) use ($user) {
+            return [
+                'id' => $match->id,
+                'user1_id' => $match->user1_id,
+                'user2_id' => $match->user2_id,
+                'status' => $match->status,
+                'created_at' => $match->created_at,
+                'user' => new UserResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
+            ];
+        });
+
         return response()->json([
-            'matches' => $matches->map(function ($match) use ($user) {
-                return [
-                    'id' => $match->id,
-                    'user1_id' => $match->user1_id,
-                    'user2_id' => $match->user2_id,
-                    'status' => $match->status,
-                    'created_at' => $match->created_at,
-                    'user' => new UserResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
-                ];
-            })
+            'matches' => $matches
         ]);
     }
 
@@ -329,19 +332,22 @@ class MatchingController extends Controller
             });
         }
 
+        // Final transformation for response
+        $interests->getCollection()->transform(function ($interest) {
+            return [
+                'id' => $interest->id,
+                'sender_id' => $interest->sender_id,
+                'receiver_id' => $interest->receiver_id,
+                'message' => $interest->message,
+                'status' => $interest->status,
+                'sent_at' => $interest->created_at,
+                'responded_at' => $interest->responded_at,
+                'receiver' => new UserResource($interest->receiver),
+            ];
+        });
+
         return response()->json([
-            'interests' => $interests->map(function ($interest) {
-                return [
-                    'id' => $interest->id,
-                    'sender_id' => $interest->sender_id,
-                    'receiver_id' => $interest->receiver_id,
-                    'message' => $interest->message,
-                    'status' => $interest->status,
-                    'sent_at' => $interest->created_at,
-                    'responded_at' => $interest->responded_at,
-                    'receiver' => new UserResource($interest->receiver),
-                ];
-            })
+            'interests' => $interests
         ]);
     }
 
@@ -384,19 +390,22 @@ class MatchingController extends Controller
             });
         }
 
+        // Final transformation for response
+        $interests->getCollection()->transform(function ($interest) use ($user) {
+            return [
+                'id' => $interest->id,
+                'sender_id' => $interest->sender_id,
+                'receiver_id' => $interest->receiver_id,
+                'message' => $interest->message,
+                'status' => $interest->status,
+                'sent_at' => $interest->created_at,
+                'responded_at' => $interest->responded_at,
+                'sender' => new UserResource($interest->sender),
+            ];
+        });
+
         return response()->json([
-            'interests' => $interests->map(function ($interest) use ($user) {
-                return [
-                    'id' => $interest->id,
-                    'sender_id' => $interest->sender_id,
-                    'receiver_id' => $interest->receiver_id,
-                    'message' => $interest->message,
-                    'status' => $interest->status,
-                    'sent_at' => $interest->created_at,
-                    'responded_at' => $interest->responded_at,
-                    'sender' => new UserResource($interest->sender),
-                ];
-            })
+            'interests' => $interests
         ]);
     }
 

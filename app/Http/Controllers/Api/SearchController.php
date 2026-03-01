@@ -627,7 +627,7 @@ class SearchController extends Controller
         }
 
         return response()->json([
-            'profiles' => UserResource::collection($profiles)
+            'profiles' => UserResource::collection($profiles)->response()->getData(true)
         ]);
     }
 
