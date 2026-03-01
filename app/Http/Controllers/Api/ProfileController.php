@@ -399,15 +399,20 @@ class ProfileController extends Controller
 
                 $photoUrl = $uploadResult['secure_url'];
 
-                // If this is the first photo, make it primary
-                $hasPhotos = ProfilePhoto::where('user_id', $user->id)->exists();
-                $isPrimary = !$hasPhotos;
+                // Set as primary by default for better UX, or if it's the first photo
+                $isPrimary = true;
+
+                // If making this one primary, set all others to non-primary
+                ProfilePhoto::where('user_id', $user->id)->update(['is_primary' => false]);
 
                 $photo = ProfilePhoto::create([
                     'user_id' => $user->id,
                     'photo_url' => $photoUrl,
                     'is_primary' => $isPrimary,
                 ]);
+
+                // Sync with user_profiles table
+                $user->userProfile()->update(['profile_picture' => $photoUrl]);
 
                 return response()->json([
                     'message' => 'Photo uploaded successfully',
@@ -448,6 +453,9 @@ class ProfileController extends Controller
 
         // Set this one to primary
         $photo->update(['is_primary' => true]);
+
+        // Sync with user_profiles table
+        $user->userProfile()->update(['profile_picture' => $photo->photo_url]);
 
         return response()->json([
             'message' => 'Primary photo updated successfully',
