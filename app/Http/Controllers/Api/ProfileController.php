@@ -13,6 +13,7 @@ use App\Models\Preference;
 use App\Models\ProfilePhoto;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\UserResource;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProfileController extends Controller
 {
@@ -368,14 +369,14 @@ class ProfileController extends Controller
     }
 
     /**
-     * Upload a profile photo
+     * Upload a profile photo to Cloudinary
      */
     public function uploadProfilePhoto(Request $request)
     {
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max for Cloudinary
         ]);
 
         if ($validator->fails()) {
@@ -386,26 +387,40 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $extension = $file->getClientOriginalExtension();
-            $filename = 'profile_' . $user->id . '_' . now()->format('Y_m_d_H_i_s') . '.' . $extension;
-            $path = $file->storeAs('profile_photos', $filename, 'public');
-            $photoUrl = Storage::url($path);
+            try {
+                // Upload to Cloudinary using v3.x API
+                $uploadResult = cloudinary()->uploadApi()->upload($request->file('photo')->getRealPath(), [
+                    'folder' => 'matrimony/profiles/' . $user->id,
+                    'public_id' => 'profile_' . $user->id . '_' . now()->timestamp,
+                    'transformation' => [
+                        ['width' => 800, 'height' => 800, 'crop' => 'limit', 'quality' => 'auto:good'],
+                    ],
+                ]);
 
-            // If this is the first photo, make it primary
-            $hasPhotos = ProfilePhoto::where('user_id', $user->id)->exists();
-            $isPrimary = !$hasPhotos;
+                $photoUrl = $uploadResult['secure_url'];
 
-            $photo = ProfilePhoto::create([
-                'user_id' => $user->id,
-                'photo_url' => $photoUrl,
-                'is_primary' => $isPrimary,
-            ]);
+                // If this is the first photo, make it primary
+                $hasPhotos = ProfilePhoto::where('user_id', $user->id)->exists();
+                $isPrimary = !$hasPhotos;
 
-            return response()->json([
-                'message' => 'Photo uploaded successfully',
-                'photo' => $photo->setAppends(['full_photo_url'])
-            ]);
+                $photo = ProfilePhoto::create([
+                    'user_id' => $user->id,
+                    'photo_url' => $photoUrl,
+                    'is_primary' => $isPrimary,
+                ]);
+
+                return response()->json([
+                    'message' => 'Photo uploaded successfully',
+                    'photo' => $photo->setAppends(['full_photo_url'])
+                ], 201);
+
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary upload error: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Failed to upload photo',
+                    'message' => $e->getMessage()
+                ], 500);
+            }
         }
 
         return response()->json([
@@ -465,9 +480,22 @@ class ProfileController extends Controller
             }
         }
 
-        // Delete file from storage
-        $path = str_replace('/storage/', '', $photo->photo_url);
-        Storage::disk('public')->delete($path);
+        // Delete from Cloudinary
+        try {
+            // Extract public_id from Cloudinary URL
+            // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v1234567890/folder/path/public_id.ext
+            $urlParts = parse_url($photo->photo_url);
+            $pathParts = explode('/', trim($urlParts['path'], '/'));
+
+            // Remove 'image', 'upload', version from path
+            $publicIdWithExt = end($pathParts);
+            $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
+
+            cloudinary()->uploadApi()->destroy($publicId);
+        } catch (\Exception $e) {
+            // Log error but continue with database deletion
+            \Log::warning('Failed to delete from Cloudinary: ' . $e->getMessage());
+        }
 
         $photo->delete();
 
