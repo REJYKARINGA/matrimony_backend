@@ -37,7 +37,7 @@ class PaymentController extends Controller
     public function createOrder(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:' . ($request->type === 'wallet_recharge' ? 199 : 1),
             'type' => 'required|in:wallet_recharge,contact_unlock',
             'unlocked_user_id' => 'required_if:type,contact_unlock|exists:users,id'
         ]);
