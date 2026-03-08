@@ -11,7 +11,7 @@ class TrackDailyUsage
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!$user || $user->role === 'admins')
+        if (!$user || $user->role === 'admin')
             return $next($request);
 
         $today = now()->toDateString();
