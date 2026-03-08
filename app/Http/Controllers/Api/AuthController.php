@@ -403,6 +403,67 @@ class AuthController extends Controller
     }
 
     /**
+     * Send email OTP, explicitly handling signup condition
+     */
+    public function sendEmailOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'is_signup' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $validator->errors()
+            ], 422);
+        }
+
+        if ($request->is_signup) {
+            $exists = User::where('email', $request->email)->exists();
+            if ($exists) {
+                return response()->json([
+                    'error' => 'Email already registered. Please login instead.'
+                ], 409);
+            }
+        }
+
+        // Generate a 6-digit numeric OTP
+        $otp = rand(100000, 999999);
+
+        // Create or update password reset token
+        $resetToken = PasswordResetToken::updateOrCreate(
+            ['email' => $request->email],
+            [
+                'token' => $otp,
+                'expires_at' => now()->addMinutes(30), // OTP expires in 30 minutes
+                'used_at' => null
+            ]
+        );
+
+        // Send OTP to user's email
+        try {
+            Mail::send('emails.password-reset', ['otp' => $otp], function ($message) use ($request) {
+                $message->to($request->email)
+                    ->subject('Verification OTP - ' . config('app.name'));
+            });
+
+            return response()->json([
+                'message' => 'OTP sent to your email',
+                'otp' => env('APP_ENV') === 'local' ? $otp : null
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send verification email: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to send OTP email. Please try again later.',
+                'message' => env('APP_DEBUG') ? $e->getMessage() : 'Email service error',
+                'otp' => env('APP_ENV') === 'local' ? $otp : null
+            ], 500);
+        }
+    }
+
+    /**
      * Send OTP via 2factor.in
      */
     public function sendPhoneOtp(Request $request)
