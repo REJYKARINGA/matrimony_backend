@@ -222,6 +222,33 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        // For contact_unlock transactions, attach the unlocked user's name & matrimony_id
+        $transactions->getCollection()->transform(function ($tx) {
+            if ($tx->type === 'contact_unlock') {
+                // Extract the unlocked_user_id from the description or from contact_unlocks
+                $contactUnlock = \App\Models\ContactUnlock::where('user_id', $tx->user_id)
+                    ->whereDate('created_at', $tx->created_at->toDateString())
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if ($contactUnlock) {
+                    $unlockedUser = \App\Models\User::with('userProfile:id,user_id,first_name,last_name')
+                        ->select('id', 'matrimony_id')
+                        ->find($contactUnlock->unlocked_user_id);
+
+                    if ($unlockedUser) {
+                        $tx->unlocked_user = [
+                            'id' => $unlockedUser->id,
+                            'matrimony_id' => $unlockedUser->matrimony_id,
+                            'first_name' => $unlockedUser->userProfile->first_name ?? null,
+                            'last_name' => $unlockedUser->userProfile->last_name ?? null,
+                        ];
+                    }
+                }
+            }
+            return $tx;
+        });
+
         return response()->json([
             'transactions' => $transactions
         ]);

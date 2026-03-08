@@ -48,6 +48,9 @@ class User extends Authenticatable
         'email_verified',
         'phone_verified',
         'last_login',
+        'last_hit_date',
+        'daily_hits_count',
+        'last_usage_deduction_at',
     ];
 
     /**

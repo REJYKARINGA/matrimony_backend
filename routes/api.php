@@ -101,13 +101,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/contact-viewed', [ProfileViewController::class, 'getContactViewed']);
         Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
         Route::get('/{id}/contact-details', [ProfileController::class, 'getContactDetails']);
-        Route::get('/{id}', [ProfileController::class, 'show'])->middleware('throttle:10,1');
-        Route::get('/', [ProfileController::class, 'index']);
+        Route::get('/{id}', [ProfileController::class, 'show'])->middleware(['throttle:10,1', 'track_usage']);
+        Route::get('/', [ProfileController::class, 'index'])->middleware('track_usage');
     });
 
     // Matching routes
     Route::prefix('matching')->group(function () {
-        Route::get('/suggestions', [MatchingController::class, 'getSuggestions']);
+        Route::get('/suggestions', [MatchingController::class, 'getSuggestions'])->middleware('track_usage');
         Route::post('/match/{userId}', [MatchingController::class, 'createMatch']);
         Route::get('/matches', [MatchingController::class, 'getMatches']);
         Route::post('/interest/{userId}', [MatchingController::class, 'sendInterest']);
@@ -145,7 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('engagement-posters', EngagementPosterController::class);
 
     // Search routes
-    Route::prefix('search')->group(function () {
+    Route::prefix('search')->middleware('track_usage')->group(function () {
         Route::get('/preference-matches', [SearchController::class, 'getPreferenceMatches']);
         Route::post('/log-click', [SearchController::class, 'logDiscoveryClick']);
         Route::get('/', [SearchController::class, 'search']);
