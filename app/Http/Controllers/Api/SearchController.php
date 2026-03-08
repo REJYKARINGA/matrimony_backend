@@ -9,6 +9,7 @@ use App\Models\UserProfile;
 use App\Models\Preference;
 use App\Models\DiscoveryStat;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserCardResource;
 
 class SearchController extends Controller
 {
@@ -433,14 +434,9 @@ class SearchController extends Controller
         $userProfile = $user->userProfile;
 
         $query = User::with([
-            'userProfile.religionModel',
             'userProfile.casteModel',
-            'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
-            'profilePhotos' => function ($q) {
-                $q->where('is_primary', true)->limit(1);
-            }
         ])
             ->where('id', '!=', $user->id)
             ->where('status', 'active')
@@ -627,7 +623,7 @@ class SearchController extends Controller
         }
 
         return response()->json([
-            'profiles' => UserResource::collection($profiles)->response()->getData(true)
+            'profiles' => UserCardResource::collection($profiles)->response()->getData(true)
         ]);
     }
 

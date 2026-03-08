@@ -9,6 +9,7 @@ use App\Models\UserMatch as MatchModel;
 use App\Models\InterestSent;
 use App\Models\Notification;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserCardResource;
 use Illuminate\Support\Facades\Cache;
 
 class MatchingController extends Controller
@@ -28,14 +29,9 @@ class MatchingController extends Controller
 
         return Cache::remember($cacheKey, 120, function () use ($user, $preferences, $request) {
             $query = User::with([
-                'userProfile.religionModel',
                 'userProfile.casteModel',
-                'userProfile.subCasteModel',
                 'userProfile.educationModel',
                 'userProfile.occupationModel',
-                'profilePhotos' => function ($q) {
-                    $q->where('is_primary', true)->limit(1);
-                }
             ])
                 ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
                 ->where('users.id', '!=', $user->id)
@@ -130,7 +126,7 @@ class MatchingController extends Controller
                 ->inRandomOrder()
                 ->paginate(12);
 
-            return UserResource::collection($suggestions);
+            return UserCardResource::collection($suggestions);
         });
     }
 
@@ -189,24 +185,12 @@ class MatchingController extends Controller
                 ->orWhere('user2_id', $user->id);
         })
             ->with([
-                'user1',
-                'user1.userProfile.religionModel',
                 'user1.userProfile.casteModel',
-                'user1.userProfile.subCasteModel',
                 'user1.userProfile.educationModel',
                 'user1.userProfile.occupationModel',
-                'user1.profilePhotos' => function ($q) {
-                    $q->where('is_primary', true)->limit(1);
-                },
-                'user2',
-                'user2.userProfile.religionModel',
                 'user2.userProfile.casteModel',
-                'user2.userProfile.subCasteModel',
                 'user2.userProfile.educationModel',
                 'user2.userProfile.occupationModel',
-                'user2.profilePhotos' => function ($q) {
-                    $q->where('is_primary', true)->limit(1);
-                }
             ])
             ->paginate(10);
 
@@ -237,7 +221,7 @@ class MatchingController extends Controller
                 'user2_id' => $match->user2_id,
                 'status' => $match->status,
                 'created_at' => $match->created_at,
-                'user' => new UserResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
+                'user' => new UserCardResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
             ];
         });
 
@@ -302,15 +286,9 @@ class MatchingController extends Controller
 
         $interests = InterestSent::where('sender_id', $user->id)
             ->with([
-                'receiver',
-                'receiver.userProfile.religionModel',
                 'receiver.userProfile.casteModel',
-                'receiver.userProfile.subCasteModel',
                 'receiver.userProfile.educationModel',
                 'receiver.userProfile.occupationModel',
-                'receiver.profilePhotos' => function ($q) {
-                    $q->where('is_primary', true)->limit(1);
-                }
             ])
             ->paginate(10);
 
@@ -342,7 +320,7 @@ class MatchingController extends Controller
                 'status' => $interest->status,
                 'sent_at' => $interest->created_at,
                 'responded_at' => $interest->responded_at,
-                'receiver' => new UserResource($interest->receiver),
+                'receiver' => new UserCardResource($interest->receiver),
             ];
         });
 
@@ -360,15 +338,9 @@ class MatchingController extends Controller
 
         $interests = InterestSent::where('receiver_id', $user->id)
             ->with([
-                'sender',
-                'sender.userProfile.religionModel',
                 'sender.userProfile.casteModel',
-                'sender.userProfile.subCasteModel',
                 'sender.userProfile.educationModel',
                 'sender.userProfile.occupationModel',
-                'sender.profilePhotos' => function ($q) {
-                    $q->where('is_primary', true)->limit(1);
-                }
             ])
             ->paginate(10);
 
@@ -400,7 +372,7 @@ class MatchingController extends Controller
                 'status' => $interest->status,
                 'sent_at' => $interest->created_at,
                 'responded_at' => $interest->responded_at,
-                'sender' => new UserResource($interest->sender),
+                'sender' => new UserCardResource($interest->sender),
             ];
         });
 

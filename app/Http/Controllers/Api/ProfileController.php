@@ -13,6 +13,7 @@ use App\Models\Preference;
 use App\Models\ProfilePhoto;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserCardResource;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProfileController extends Controller
@@ -624,14 +625,9 @@ class ProfileController extends Controller
         $preferences = $user->preferences;
 
         $query = User::with([
-            'userProfile.religionModel',
             'userProfile.casteModel',
-            'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
-            'profilePhotos',
-            'personalities',
-            'interests'
         ])
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users
@@ -725,7 +721,7 @@ class ProfileController extends Controller
         $profiles = $query->paginate(10);
 
         return response()->json([
-            'profiles' => UserResource::collection($profiles)
+            'profiles' => UserCardResource::collection($profiles)
         ]);
     }
     /**
