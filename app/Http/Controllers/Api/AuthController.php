@@ -401,4 +401,127 @@ class AuthController extends Controller
             'message' => 'Password reset successfully'
         ]);
     }
+
+    /**
+     * Send OTP via 2factor.in
+     */
+    public function sendPhoneOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string|min:10',
+            'is_signup' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $validator->errors()
+            ], 422);
+        }
+
+        $phone = $request->phone;
+
+        // Strip country code for Indian numbers if present +91
+        if (str_starts_with($phone, '+91')) {
+            $phone = substr($phone, 3);
+        } elseif (str_starts_with($phone, '91') && strlen($phone) == 12) {
+            $phone = substr($phone, 2);
+        }
+
+        if ($request->is_signup) {
+            $exists = User::where('phone', "LIKE", "%{$phone}")->exists();
+            if ($exists) {
+                return response()->json([
+                    'error' => 'Phone number already registered. Please login instead.'
+                ], 409);
+            }
+        }
+
+        $apiKey = env('TWOFACTOR_API_KEY');
+
+        // Fallback dummy OTP if no key is configured (for local dev)
+        if (empty($apiKey)) {
+            return response()->json([
+                'message' => 'Dummy OTP sent (No 2Factor API Key configured)',
+                'session_id' => 'dummy_session_123456'
+            ]);
+        }
+
+        try {
+            $url = "https://2factor.in/API/V1/{$apiKey}/SMS/{$phone}/AUTOGEN";
+            $response = \Illuminate\Support\Facades\Http::get($url);
+            $data = $response->json();
+
+            if (isset($data['Status']) && $data['Status'] == 'Success') {
+                return response()->json([
+                    'message' => 'OTP sent successfully',
+                    'session_id' => $data['Details']
+                ]);
+            }
+
+            return response()->json([
+                'error' => 'Failed to send OTP',
+                'details' => $data['Details'] ?? 'Unknown error'
+            ], 500);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error while sending OTP',
+                'details' => env('APP_DEBUG') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify OTP via 2factor.in
+     */
+    public function verifyPhoneOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|string',
+            'session_id' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $validator->errors()
+            ], 422);
+        }
+
+        $apiKey = env('TWOFACTOR_API_KEY');
+
+        if (empty($apiKey) && $request->session_id === 'dummy_session_123456') {
+            if ($request->otp === '123456') {
+                return response()->json(['message' => 'OTP verified successfully']);
+            }
+            return response()->json(['error' => 'Invalid dummy OTP (Use 123456)'], 400);
+        }
+
+        if (empty($apiKey)) {
+            return response()->json(['error' => 'No 2Factor API Key configured'], 500);
+        }
+
+        try {
+            $url = "https://2factor.in/API/V1/{$apiKey}/SMS/VERIFY/{$request->session_id}/{$request->otp}";
+            $response = \Illuminate\Support\Facades\Http::get($url);
+            $data = $response->json();
+
+            if (isset($data['Status']) && $data['Status'] == 'Success' && $data['Details'] == 'OTP Matched') {
+                return response()->json([
+                    'message' => 'OTP verified successfully'
+                ]);
+            }
+
+            return response()->json([
+                'error' => 'Invalid OTP',
+                'details' => $data['Details'] ?? ''
+            ], 400);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error while verifying OTP'
+            ], 500);
+        }
+    }
 }

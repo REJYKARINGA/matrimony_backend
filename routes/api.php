@@ -39,6 +39,8 @@ Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
         return response()->json(['message' => 'Event broadcasted!']);
     });
     Route::post('register', [AuthController::class, 'register']);
+    Route::middleware('throttle:5,5')->post('send-phone-otp', [AuthController::class, 'sendPhoneOtp']);
+    Route::middleware('throttle:5,5')->post('verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);
 
     // Strict limits for sensitive actions: 5 attempts per 5 minutes
     Route::middleware('throttle:5,5')->post('login', [AuthController::class, 'login']);
