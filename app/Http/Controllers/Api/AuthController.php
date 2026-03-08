@@ -409,7 +409,8 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string|min:10',
-            'is_signup' => 'boolean'
+            'is_signup' => 'boolean',
+            'is_reset' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -434,6 +435,15 @@ class AuthController extends Controller
                 return response()->json([
                     'error' => 'Phone number already registered. Please login instead.'
                 ], 409);
+            }
+        }
+
+        if ($request->is_reset) {
+            $exists = User::where('phone', "LIKE", "%{$phone}")->exists();
+            if (!$exists) {
+                return response()->json([
+                    'error' => 'Phone number not registered with any account.'
+                ], 404);
             }
         }
 
@@ -479,7 +489,9 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'otp' => 'required|string',
-            'session_id' => 'required|string'
+            'session_id' => 'required|string',
+            'phone' => 'nullable|string',
+            'is_reset' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -493,6 +505,31 @@ class AuthController extends Controller
 
         if (empty($apiKey) && $request->session_id === 'dummy_session_123456') {
             if ($request->otp === '123456') {
+                if ($request->is_reset && $request->phone) {
+                    $phone = $request->phone;
+                    if (str_starts_with($phone, '+91')) {
+                        $phone = substr($phone, 3);
+                    } elseif (str_starts_with($phone, '91') && strlen($phone) == 12) {
+                        $phone = substr($phone, 2);
+                    }
+
+                    $user = User::where('phone', "LIKE", "%{$phone}")->first();
+                    if ($user) {
+                        PasswordResetToken::updateOrCreate(
+                            ['email' => $user->email],
+                            [
+                                'token' => 'PHONE_VERIFIED',
+                                'expires_at' => now()->addMinutes(30),
+                                'verified_at' => now(),
+                                'used_at' => null
+                            ]
+                        );
+                        return response()->json([
+                            'message' => 'OTP verified successfully',
+                            'email' => $user->email
+                        ]);
+                    }
+                }
                 return response()->json(['message' => 'OTP verified successfully']);
             }
             return response()->json(['error' => 'Invalid dummy OTP (Use 123456)'], 400);
@@ -508,6 +545,32 @@ class AuthController extends Controller
             $data = $response->json();
 
             if (isset($data['Status']) && $data['Status'] == 'Success' && $data['Details'] == 'OTP Matched') {
+                if ($request->is_reset && $request->phone) {
+                    $phone = $request->phone;
+                    if (str_starts_with($phone, '+91')) {
+                        $phone = substr($phone, 3);
+                    } elseif (str_starts_with($phone, '91') && strlen($phone) == 12) {
+                        $phone = substr($phone, 2);
+                    }
+
+                    $user = User::where('phone', "LIKE", "%{$phone}")->first();
+                    if ($user) {
+                        PasswordResetToken::updateOrCreate(
+                            ['email' => $user->email],
+                            [
+                                'token' => 'PHONE_VERIFIED',
+                                'expires_at' => now()->addMinutes(30),
+                                'verified_at' => now(),
+                                'used_at' => null
+                            ]
+                        );
+                        return response()->json([
+                            'message' => 'OTP verified successfully',
+                            'email' => $user->email
+                        ]);
+                    }
+                }
+
                 return response()->json([
                     'message' => 'OTP verified successfully'
                 ]);
