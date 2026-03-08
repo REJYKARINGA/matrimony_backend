@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('location')->group(function () {
         Route::post('/update', [LocationController::class, 'updateLocation']);
         Route::get('/nearby', [LocationController::class, 'getNearbyUsers']);
+        Route::get('/geocode', [LocationController::class, 'reverseGeocode']);
+        Route::get('/search', [LocationController::class, 'searchAddress']);
     });
 
     // Suggestion routes

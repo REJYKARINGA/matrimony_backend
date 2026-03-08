@@ -9,6 +9,7 @@ use App\Models\UserProfile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Http;
 
 class LocationController extends Controller
 {
@@ -113,5 +114,48 @@ class LocationController extends Controller
             'success' => true,
             'profiles' => UserResource::collection($nearbyUsers)->response()->getData(true)
         ]);
+    }
+
+    /**
+     * Reverse Geocoding via Backend
+     */
+    public function reverseGeocode(Request $request)
+    {
+        $request->validate([
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
+        ]);
+
+        $apiKey = env('GOOGLE_MAPS_KEY', env('GOOGLE_MAPS_API_KEY'));
+        if (!$apiKey) {
+            return response()->json(['error' => 'API key missing'], 500);
+        }
+
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng={$request->lat},{$request->lon}&key={$apiKey}";
+
+        $response = Http::get($url);
+
+        return response()->json($response->json());
+    }
+
+    /**
+     * Forward Geocoding via Backend
+     */
+    public function searchAddress(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string',
+        ]);
+
+        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        if (!$apiKey) {
+            return response()->json(['error' => 'API key missing'], 500);
+        }
+
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($request->query('query')) . "&key={$apiKey}";
+
+        $response = Http::get($url);
+
+        return response()->json($response->json());
     }
 }
