@@ -153,6 +153,22 @@ class PaymentController extends Controller
         ]);
 
         $user = $request->user();
+        
+        // Check daily unlock limit (configurable, default 20 per day)
+        $dailyLimit = config('services.daily_unlock_limit', 20);
+        $todayUnlocks = ContactUnlock::where('user_id', $user->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->count();
+        
+        if ($todayUnlocks >= $dailyLimit) {
+            return response()->json([
+                'error' => 'daily_limit_exceeded',
+                'message' => "You have reached your daily limit of $dailyLimit contact unlocks. Please try again tomorrow.",
+                'daily_limit' => $dailyLimit,
+                'today_unlocks' => $todayUnlocks
+            ], 403);
+        }
+
         $wallet = Wallet::where('user_id', $user->id)->first();
 
         if (!$wallet || $wallet->balance < 49) {
@@ -197,7 +213,9 @@ class PaymentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Contact unlocked successfully',
-            'remaining_balance' => $wallet->balance
+            'remaining_balance' => $wallet->balance,
+            'today_unlocks' => $todayUnlocks + 1,
+            'daily_limit' => $dailyLimit
         ]);
     }
 
@@ -263,7 +281,9 @@ class PaymentController extends Controller
             ->count();
 
         return response()->json([
-            'count' => $count
+            'count' => $count,
+            'daily_limit' => config('services.daily_unlock_limit', 20),
+            'remaining' => config('services.daily_unlock_limit', 20) - $count
         ]);
     }
 }

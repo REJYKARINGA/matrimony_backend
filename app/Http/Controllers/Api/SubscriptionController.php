@@ -49,7 +49,7 @@ class SubscriptionController extends Controller
 
         // Calculate end date
         $startDate = now();
-        $endDate = $startDate->copy()->addDays($plan->duration_days);
+        $endDate = $plan->duration_days > 0 ? $startDate->copy()->addDays($plan->duration_days) : null;
 
         $userSubscription = UserSubscription::create([
             'user_id' => $user->id,

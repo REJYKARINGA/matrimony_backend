@@ -15,6 +15,20 @@ class TrackDailyUsage
             return $next($request);
 
         $today = now()->toDateString();
+        $now = now();
+
+        // 0. Check if user has an active subscription (No expiry or within date)
+        $hasActiveSubscription = \App\Models\UserSubscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where(function ($query) use ($now) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>', $now);
+            })
+            ->exists();
+
+        if ($hasActiveSubscription) {
+            return $next($request);
+        }
 
         // 1. Check if user is "Active" (purchased >= 2 contacts in last 30 days)
         $purchaseCount = \App\Models\ContactUnlock::where('user_id', $user->id)
