@@ -153,13 +153,13 @@ class PaymentController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         // Check daily unlock limit (configurable, default 20 per day)
         $dailyLimit = config('services.daily_unlock_limit', 20);
         $todayUnlocks = ContactUnlock::where('user_id', $user->id)
             ->whereDate('created_at', now()->toDateString())
             ->count();
-        
+
         if ($todayUnlocks >= $dailyLimit) {
             return response()->json([
                 'error' => 'daily_limit_exceeded',
