@@ -45,4 +45,8 @@ return [
     // Daily contact unlock limit for users
     'daily_unlock_limit' => env('DAILY_CONTACT_UNLOCK_LIMIT', 20),
 
+    'google' => [
+        'maps_key' => env('GOOGLE_MAPS_KEY', env('GOOGLE_MAPS_API_KEY')),
+    ],
+
 ];

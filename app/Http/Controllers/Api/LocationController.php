@@ -126,7 +126,7 @@ class LocationController extends Controller
             'lon' => 'required|numeric',
         ]);
 
-        $apiKey = env('GOOGLE_MAPS_KEY', env('GOOGLE_MAPS_API_KEY'));
+        $apiKey = config('services.google.maps_key');
         if (!$apiKey) {
             return response()->json(['error' => 'API key missing'], 500);
         }
@@ -147,7 +147,7 @@ class LocationController extends Controller
             'query' => 'required|string',
         ]);
 
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        $apiKey = config('services.google.maps_key');
         if (!$apiKey) {
             return response()->json(['error' => 'API key missing'], 500);
         }
