@@ -26,13 +26,54 @@ class UserResource extends JsonResource
                 ->exists();
         }
 
+        $canViewPhotos = true;
+        $hasPhotoRequestPending = false;
+        
+        if ($this->userProfile && $this->userProfile->hide_photos) {
+            $canViewPhotos = false;
+            if ($currentUser) {
+                if ($currentUser->id === $this->id) {
+                    $canViewPhotos = true;
+                } else {
+                    $ownerSentInterest = \App\Models\InterestSent::where('sender_id', $this->id)
+                        ->where('receiver_id', $currentUser->id)
+                        ->exists();
+
+                    $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
+                        ->where('receiver_id', $this->id)
+                        ->value('status');
+
+                    if ($ownerSentInterest || $photoRequestStatus === 'accepted') {
+                        $canViewPhotos = true;
+                    }
+                    if ($photoRequestStatus === 'pending') {
+                        $hasPhotoRequestPending = true;
+                    }
+                }
+            }
+        }
+
+        $profilePhotos = $canViewPhotos ? ProfilePhotoResource::collection($this->whenLoaded('profilePhotos')) : [];
+
+        // Modify the userProfile resource conditionally
+        $userProfileResource = null;
+        if ($this->relationLoaded('userProfile') && $this->userProfile) {
+            $clonedProfile = clone $this->userProfile;
+            if (!$canViewPhotos) {
+                $clonedProfile->profile_picture = null;
+            }
+            $userProfileResource = new UserProfileResource($clonedProfile);
+        }
+
         return [
             'id' => $this->id,
             'matrimony_id' => $this->matrimony_id,
-            'user_profile' => new UserProfileResource($this->whenLoaded('userProfile')),
+            'user_profile' => $userProfileResource,
             'family_details' => new FamilyDetailResource($this->whenLoaded('familyDetails')),
             'preferences' => new PreferenceResource($this->whenLoaded('preferences')),
-            'profile_photos' => ProfilePhotoResource::collection($this->whenLoaded('profilePhotos')),
+            'profile_photos' => $profilePhotos,
+            'has_hidden_photos' => !$canViewPhotos,
+            'photo_request_pending' => $hasPhotoRequestPending,
             'distance' => $this->when(isset($this->distance), $this->distance),
             'personalities' => PersonalityResource::collection($this->whenLoaded('personalities')),
             'interests' => InterestResource::collection($this->whenLoaded('interests')),

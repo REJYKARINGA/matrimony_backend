@@ -25,6 +25,33 @@ class UserCardResource extends JsonResource
                 ->exists();
         }
 
+        $canViewPhotos = true;
+        $hasPhotoRequestPending = false;
+        
+        if ($profile && $profile->hide_photos) {
+            $canViewPhotos = false;
+            if ($currentUser) {
+                if ($currentUser->id === $this->id) {
+                    $canViewPhotos = true;
+                } else {
+                    $ownerSentInterest = \App\Models\InterestSent::where('sender_id', $this->id)
+                        ->where('receiver_id', $currentUser->id)
+                        ->exists();
+
+                    $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
+                        ->where('receiver_id', $this->id)
+                        ->value('status');
+
+                    if ($ownerSentInterest || $photoRequestStatus === 'accepted') {
+                        $canViewPhotos = true;
+                    }
+                    if ($photoRequestStatus === 'pending') {
+                        $hasPhotoRequestPending = true;
+                    }
+                }
+            }
+        }
+
         return [
             'id' => $this->id,
             'matrimony_id' => $this->matrimony_id,
@@ -35,7 +62,9 @@ class UserCardResource extends JsonResource
             'education' => $profile && $profile->educationModel ? $profile->educationModel->name : null,
             'occupation' => $profile && $profile->occupationModel ? $profile->occupationModel->name : null,
             'city' => $profile ? $profile->city : null,
-            'profile_picture' => $profile ? $profile->profile_picture : null,
+            'profile_picture' => ($profile && $canViewPhotos) ? $profile->profile_picture : null,
+            'has_hidden_photos' => !$canViewPhotos,
+            'photo_request_pending' => $hasPhotoRequestPending,
             'distance' => $this->when(isset($this->distance), function () {
                 return round($this->distance, 1);
             }),

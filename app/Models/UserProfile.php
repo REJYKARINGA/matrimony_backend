@@ -41,6 +41,7 @@ class UserProfile extends Model
         'location_updated_at',
         'is_active_verified',
         'changed_fields',
+        'hide_photos',
     ];
 
     protected $casts = [
@@ -53,6 +54,7 @@ class UserProfile extends Model
         'longitude' => 'float',
         'location_updated_at' => 'datetime',
         'is_active_verified' => 'boolean',
+        'hide_photos' => 'boolean',
         'changed_fields' => 'array',
         'religion_id' => 'integer',
         'caste_id' => 'integer',

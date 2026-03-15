@@ -108,6 +108,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->middleware('track_usage');
     });
 
+    // Photo Request routes
+    Route::prefix('photo-requests')->group(function () {
+        Route::get('/pending', [\App\Http\Controllers\Api\PhotoRequestController::class, 'getPendingRequests']);
+        Route::post('/{receiverId}', [\App\Http\Controllers\Api\PhotoRequestController::class, 'sendRequest']);
+        Route::put('/{id}/accept', [\App\Http\Controllers\Api\PhotoRequestController::class, 'acceptRequest']);
+        Route::put('/{id}/reject', [\App\Http\Controllers\Api\PhotoRequestController::class, 'rejectRequest']);
+    });
+
     // Matching routes
     Route::prefix('matching')->group(function () {
         Route::get('/suggestions', [MatchingController::class, 'getSuggestions'])->middleware('track_usage');

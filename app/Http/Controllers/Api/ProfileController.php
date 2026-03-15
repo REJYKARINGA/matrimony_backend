@@ -84,6 +84,7 @@ class ProfileController extends Controller
             'drug_addiction' => 'sometimes|boolean',
             'smoke' => 'sometimes|string|in:never,occasionally,regularly',
             'alcohol' => 'sometimes|string|in:never,occasionally,regularly',
+            'hide_photos' => 'sometimes|boolean',
             'personality_ids' => 'sometimes|array',
             'personality_ids.*' => 'exists:personalities,id',
             'interest_ids' => 'sometimes|array',
@@ -146,7 +147,8 @@ class ProfileController extends Controller
             'postal_code',
             'drug_addiction',
             'smoke',
-            'alcohol'
+            'alcohol',
+            'hide_photos',
         ]);
 
         $userProfile->fill($data);

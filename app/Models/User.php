@@ -368,5 +368,13 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(InterestHobby::class, 'user_interests', 'user_id', 'interest_id');
     }
-}
+    public function photoRequestsSent()
+    {
+        return $this->hasMany(PhotoRequest::class, 'requester_id');
+    }
 
+    public function photoRequestsReceived()
+    {
+        return $this->hasMany(PhotoRequest::class, 'receiver_id');
+    }
+}
