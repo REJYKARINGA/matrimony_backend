@@ -68,15 +68,7 @@ class MessageController extends Controller
             ], 404);
         }
 
-        // Check if users are matched OR if contact is unlocked before allowing messaging
-        $isMatched = \App\Models\UserMatch::where(function ($query) use ($sender, $receiver) {
-            $query->where('user1_id', $sender->id)
-                ->where('user2_id', $receiver->id);
-        })->orWhere(function ($query) use ($sender, $receiver) {
-            $query->where('user1_id', $receiver->id)
-                ->where('user2_id', $sender->id);
-        })->exists();
-
+        // Check if contact is unlocked before allowing messaging
         $isContactUnlocked = \App\Models\ContactUnlock::where(function ($query) use ($sender, $receiver) {
             $query->where('user_id', $sender->id)
                 ->where('unlocked_user_id', $receiver->id);
@@ -85,9 +77,9 @@ class MessageController extends Controller
                 ->where('unlocked_user_id', $sender->id);
         })->exists();
 
-        if (!$isMatched && !$isContactUnlocked) {
+        if (!$isContactUnlocked) {
             return response()->json([
-                'error' => 'You can only message matched users or if you have purchased their contact'
+                'error' => 'You can only message if you have purchased their contact'
             ], 403);
         }
 
