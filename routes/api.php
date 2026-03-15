@@ -111,6 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Matching routes
     Route::prefix('matching')->group(function () {
         Route::get('/suggestions', [MatchingController::class, 'getSuggestions'])->middleware('track_usage');
+        Route::get('/daily-pick', [MatchingController::class, 'getDailyTopPick']);
         Route::post('/match/{userId}', [MatchingController::class, 'createMatch']);
         Route::get('/matches', [MatchingController::class, 'getMatches']);
         Route::post('/interest/{userId}', [MatchingController::class, 'sendInterest']);

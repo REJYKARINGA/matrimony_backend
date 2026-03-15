@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserMatch as MatchModel;
 use App\Models\InterestSent;
 use App\Models\Notification;
+use App\Models\DailyTopPick;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UserCardResource;
 use Illuminate\Support\Facades\Cache;
@@ -180,17 +181,21 @@ class MatchingController extends Controller
     {
         $user = $request->user();
 
-        $matches = MatchModel::where(function ($q) use ($user) {
-            $q->where('user1_id', $user->id)
-                ->orWhere('user2_id', $user->id);
-        })
+        // Get IDs of users who are matched
+        $matchedUserIds = MatchModel::where('user1_id', $user->id)->pluck('user2_id')
+            ->merge(MatchModel::where('user2_id', $user->id)->pluck('user1_id'));
+
+        // Get IDs of users whose contacts are unlocked (either way)
+        $unlockedUserIds = \App\Models\ContactUnlock::where('user_id', $user->id)->pluck('unlocked_user_id')
+            ->merge(\App\Models\ContactUnlock::where('unlocked_user_id', $user->id)->pluck('user_id'));
+
+        $totalUserIds = $matchedUserIds->merge($unlockedUserIds)->unique();
+
+        $chattableUsers = User::whereIn('id', $totalUserIds)
             ->with([
-                'user1.userProfile.casteModel',
-                'user1.userProfile.educationModel',
-                'user1.userProfile.occupationModel',
-                'user2.userProfile.casteModel',
-                'user2.userProfile.educationModel',
-                'user2.userProfile.occupationModel',
+                'userProfile.casteModel',
+                'userProfile.educationModel',
+                'userProfile.occupationModel',
             ])
             ->paginate(10);
 
@@ -199,9 +204,8 @@ class MatchingController extends Controller
             $lat = $user->userProfile->latitude;
             $lon = $user->userProfile->longitude;
 
-            $matches->getCollection()->transform(function ($match) use ($user, $lat, $lon) {
-                $otherUser = $match->user1_id === $user->id ? $match->user2 : $match->user1;
-                if ($otherUser && $otherUser->userProfile && $otherUser->userProfile->latitude) {
+            $chattableUsers->getCollection()->transform(function ($otherUser) use ($lat, $lon) {
+                if ($otherUser->userProfile && $otherUser->userProfile->latitude) {
                     $otherUser->distance = $this->calculateDistance(
                         $lat,
                         $lon,
@@ -209,24 +213,26 @@ class MatchingController extends Controller
                         $otherUser->userProfile->longitude
                     );
                 }
-                return $match;
+                return $otherUser;
             });
         }
 
-        // Final transformation for the response
-        $matches->getCollection()->transform(function ($match) use ($user) {
+        // Final transformation for the response to match the structure expected by frontend
+        $transformed = $chattableUsers->getCollection()->map(function ($otherUser) use ($user) {
             return [
-                'id' => $match->id,
-                'user1_id' => $match->user1_id,
-                'user2_id' => $match->user2_id,
-                'status' => $match->status,
-                'created_at' => $match->created_at,
-                'user' => new UserCardResource($match->user1_id === $user->id ? $match->user2 : $match->user1),
+                'id' => $otherUser->id, // Use User ID as a stable reference
+                'user1_id' => $user->id,
+                'user2_id' => $otherUser->id,
+                'status' => 'matched',
+                'created_at' => $otherUser->created_at,
+                'user' => new UserCardResource($otherUser),
             ];
         });
 
+        $chattableUsers->setCollection($transformed);
+
         return response()->json([
-            'matches' => $matches
+            'matches' => $chattableUsers
         ]);
     }
 
