@@ -132,6 +132,107 @@ class MatchingController extends Controller
     }
 
     /**
+     * Get today's daily top pick for the user
+     */
+    public function getDailyTopPick(Request $request)
+    {
+        $user = $request->user();
+        $today = now()->format('Y-m-d');
+
+        // Check if we already have a pick for today
+        $pick = DailyTopPick::where('user_id', $user->id)
+            ->where('picked_date', $today)
+            ->with(['pickedUser.userProfile.casteModel', 'pickedUser.userProfile.educationModel', 'pickedUser.userProfile.occupationModel'])
+            ->first();
+
+        if (!$pick) {
+            // Generate a new pick
+            $pickedUser = $this->generatePickForUser($user);
+            
+            if (!$pickedUser) {
+                return response()->json(['message' => 'No matches found today. Try updating your preferences!'], 404);
+            }
+
+            $pick = DailyTopPick::create([
+                'user_id' => $user->id,
+                'picked_user_id' => $pickedUser->id,
+                'picked_date' => $today
+            ]);
+
+            // Reload with relations
+            $pick->load(['pickedUser.userProfile.casteModel', 'pickedUser.userProfile.educationModel', 'pickedUser.userProfile.occupationModel']);
+        }
+
+        return new UserCardResource($pick->pickedUser);
+    }
+
+    /**
+     * Logic to generate a daily pick for a specific user
+     */
+    private function generatePickForUser($user)
+    {
+        $preferences = $user->preferences;
+        
+        // Basic query for potential matches
+        $query = User::where('users.id', '!=', $user->id)
+            ->where('users.status', 'active')
+            ->whereHas('userProfile', function ($q) use ($user) {
+                $q->where('is_active_verified', true);
+                
+                // Opposite gender logic
+                if ($user->userProfile && $user->userProfile->gender) {
+                    $targetGender = $user->userProfile->gender === 'male' ? 'female' : 'male';
+                    $q->where('gender', $targetGender);
+                }
+            });
+
+        // Apply basic preferences if available
+        if ($preferences) {
+            if ($preferences->religion_id) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->where('religion_id', $preferences->religion_id);
+                });
+            }
+
+            if ($preferences->min_age) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) >= ?', [$preferences->min_age]);
+                });
+            }
+
+            if ($preferences->max_age) {
+                $query->whereHas('userProfile', function ($q) use ($preferences) {
+                    $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$preferences->max_age]);
+                });
+            }
+        }
+
+        // Exclude users who have already received interest or are blocked/blocked by
+        $interactedIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
+        $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
+        $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
+        $alreadyPickedIds = DailyTopPick::where('user_id', $user->id)->pluck('picked_user_id')->toArray();
+
+        $allExcludedIds = array_unique(array_merge(
+            [$user->id], 
+            $interactedIds, 
+            $blockedUserIds, 
+            $blockedMeIds,
+            $alreadyPickedIds
+        ));
+
+        $query->whereNotIn('users.id', $allExcludedIds);
+
+        // Pick one at random from the top active users
+        $candidates = $query->orderBy('users.last_login', 'DESC')
+            ->limit(20)
+            ->get();
+            
+        return $candidates->isEmpty() ? null : $candidates->random();
+    }
+
+
+    /**
      * Create a match between two users
      */
     public function createMatch($userId, Request $request)
