@@ -376,6 +376,15 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // Check if user already has 5 photos
+        $photoCount = ProfilePhoto::where('user_id', $user->id)->count();
+        if ($photoCount >= 5) {
+            return response()->json([
+                'error' => 'Limit reached',
+                'message' => 'You can only upload a maximum of 5 photos.'
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max for Cloudinary
         ]);
