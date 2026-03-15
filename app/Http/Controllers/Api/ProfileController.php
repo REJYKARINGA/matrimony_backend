@@ -167,9 +167,8 @@ class ProfileController extends Controller
                 }
             }
 
-            // Update the changed_fields and set is_active_verified to false
+            // Update the changed_fields but DO NOT set is_active_verified to false
             $userProfile->changed_fields = array_values($changes);
-            $userProfile->is_active_verified = false;
         } elseif (!$userProfile->exists) {
             // New profile creation
             $userProfile->is_active_verified = false;

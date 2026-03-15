@@ -21,6 +21,7 @@ class ProfilePhotoResource extends JsonResource
             'photo_url' => $this->photo_url,
             'full_photo_url' => $this->full_photo_url ?? null,
             'is_primary' => $this->is_primary,
+            'is_verified' => $this->is_verified,
             'upload_date' => $this->upload_date,
         ];
     }

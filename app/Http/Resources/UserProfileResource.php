@@ -44,6 +44,7 @@ class UserProfileResource extends JsonResource
             'country' => $this->country,
             'postal_code' => $this->postal_code,
             'is_active_verified' => $this->is_active_verified,
+            'changed_fields' => $this->changed_fields ?? [],
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
 
