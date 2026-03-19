@@ -57,14 +57,16 @@ class TrackDailyUsage
             return $next($request);
         }
 
-        // 2. Check for recharge grace period (30 days after last success recharge)
+        // 2. Check for recharge grace period (30 days after last success recharge) OR New user grace period (30 days after registration)
         $lastRecharge = \App\Models\Transaction::where('user_id', $user->id)
             ->where('type', 'wallet_recharge')
             ->where('status', 'success')
             ->latest()
             ->first();
 
-        if ($lastRecharge && $lastRecharge->created_at->diffInDays(now()) <= 30) {
+        $isNewUser = $user->created_at->diffInDays(now()) <= 30;
+
+        if ($isNewUser || ($lastRecharge && $lastRecharge->created_at->diffInDays(now()) <= 30)) {
             return $next($request);
         }
 
