@@ -35,12 +35,18 @@ class ProfileViewController extends Controller
             ->take(20)
             ->get();
 
-        // Transform to return user data directly with extra fields for visitors
+        // Transform to return slim user data for the horizontal visitors list
         $visitorsData = $visitors->map(function ($view) {
             $viewer = $view->viewer;
             if ($viewer) {
                 $card = (new UserCardResource($viewer))->resolve();
-                $card['email'] = $viewer->email; // Keep email for compatibility
+                
+                // Remove fields not needed for the slim visitors list
+                $exclude = ['age', 'height', 'marital_status', 'caste', 'education', 'occupation', 'city', 'email'];
+                foreach ($exclude as $field) {
+                    unset($card[$field]);
+                }
+                
                 $card['last_viewed_at'] = $view->last_viewed_at;
                 return $card;
             }
