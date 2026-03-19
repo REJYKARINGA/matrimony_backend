@@ -35,6 +35,8 @@ class UserProfile extends Model
         'county',
         'state',
         'country',
+        'present_city',
+        'present_country',
         'postal_code',
         'latitude',
         'longitude',

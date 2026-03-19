@@ -65,6 +65,8 @@ class UserCardResource extends JsonResource
             'education' => $profile && $profile->educationModel ? $profile->educationModel->name : null,
             'occupation' => $profile && $profile->occupationModel ? $profile->occupationModel->name : null,
             'city' => $profile ? $profile->city : null,
+            'present_city' => $profile ? $profile->present_city : null,
+            'present_country' => $profile ? $profile->present_country : null,
             'profile_picture' => ($profile && $canViewPhotos) ? $profile->profile_picture : null,
             'has_hidden_photos' => !$canViewPhotos,
             'is_photo_verified' => $isPhotoVerified,
