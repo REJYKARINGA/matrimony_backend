@@ -10,9 +10,20 @@ class TrackDailyUsage
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip check for admins or if viewing a specific profile details (exempted from fee)
-        if (!$user || $user->role === 'admin' || ($request->is('api/profiles/*') && $request->isMethod('GET') && ! $request->is('api/profiles/visitors', 'api/profiles/visited', 'api/profiles/contact-viewed', 'api/profiles/photos', 'api/profiles/my'))) {
+        $user = $request->user();
+        if (!$user || $user->role === 'admin')
             return $next($request);
+
+        // Define routes that bypass the usage fee check (e.g., viewing public profiles)
+        $excludedRoutes = [
+            'api/profiles/*',
+            'api/profile-views/*', // Potential extra routes to exclude
+        ];
+
+        foreach ($excludedRoutes as $pattern) {
+            if ($request->is($pattern)) {
+                return $next($request);
+            }
         }
 
         $today = now()->toDateString();
