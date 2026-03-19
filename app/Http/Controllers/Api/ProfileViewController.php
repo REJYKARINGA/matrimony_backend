@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\ProfileView;
 use App\Models\User;
 use Carbon\Carbon;
+use App\Http\Resources\UserCardResource;
 
 class ProfileViewController extends Controller
 {
@@ -34,16 +35,14 @@ class ProfileViewController extends Controller
             ->take(20)
             ->get();
 
-        // Transform to return user data directly
+        // Transform to return user data directly with extra fields for visitors
         $visitorsData = $visitors->map(function ($view) {
             $viewer = $view->viewer;
             if ($viewer) {
-                return [
-                    'id' => $viewer->id,
-                    'email' => $viewer->email,
-                    'user_profile' => $viewer->userProfile,
-                    'last_viewed_at' => $view->last_viewed_at,
-                ];
+                $card = (new UserCardResource($viewer))->resolve();
+                $card['email'] = $viewer->email; // Keep email for compatibility
+                $card['last_viewed_at'] = $view->last_viewed_at;
+                return $card;
             }
             return null;
         })->filter();
@@ -97,6 +96,18 @@ class ProfileViewController extends Controller
             ->orderBy('last_viewed_at', 'desc')
             ->paginate(15);
 
+        $visitedData = $visited->getCollection()->map(function ($view) {
+            $viewedUser = $view->viewedUser;
+            if ($viewedUser) {
+                $card = (new UserCardResource($viewedUser))->resolve();
+                $card['last_viewed_at'] = $view->last_viewed_at;
+                return $card;
+            }
+            return null;
+        })->filter();
+
+        $visited->setCollection($visitedData);
+
         return response()->json([
             'visited' => $visited
         ]);
@@ -119,6 +130,18 @@ class ProfileViewController extends Controller
             ])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
+
+        $unlockedData = $unlocked->getCollection()->map(function ($unlock) {
+            $unlockedUser = $unlock->unlockedUser;
+            if ($unlockedUser) {
+                $card = (new UserCardResource($unlockedUser))->resolve();
+                $card['unlocked_at'] = $unlock->created_at;
+                return $card;
+            }
+            return null;
+        })->filter();
+
+        $unlocked->setCollection($unlockedData);
 
         return response()->json([
             'unlocked' => $unlocked

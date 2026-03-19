@@ -52,6 +52,9 @@ class UserCardResource extends JsonResource
             }
         }
 
+        $primaryPhoto = $this->profilePhotos()->where('is_primary', true)->first() ?? $this->profilePhotos()->first();
+        $isPhotoVerified = $primaryPhoto ? (bool) $primaryPhoto->is_verified : true;
+
         return [
             'id' => $this->id,
             'matrimony_id' => $this->matrimony_id,
@@ -64,6 +67,7 @@ class UserCardResource extends JsonResource
             'city' => $profile ? $profile->city : null,
             'profile_picture' => ($profile && $canViewPhotos) ? $profile->profile_picture : null,
             'has_hidden_photos' => !$canViewPhotos,
+            'is_photo_verified' => $isPhotoVerified,
             'photo_request_pending' => $hasPhotoRequestPending,
             'distance' => $this->when(isset($this->distance), function () {
                 return round($this->distance, 1);
