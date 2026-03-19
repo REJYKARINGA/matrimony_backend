@@ -43,9 +43,12 @@ class TrackDailyUsage
         }
 
         // 1. Check if user is "Active" (purchased >= 2 contacts in last 30 days)
-        $purchaseCount = \App\Models\ContactUnlock::where('user_id', $user->id)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->count();
+        $recentUnlocks = \App\Models\ContactUnlock::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30));
+        
+        $purchaseCount = $recentUnlocks->count();
+        $lastUnlock = \App\Models\ContactUnlock::where('user_id', $user->id)->latest()->first();
+        $lastPurchaseInfo = $lastUnlock ? "Last contact purchased on " . $lastUnlock->created_at->format('d M Y') : "No contacts purchased yet";
 
         if ($purchaseCount >= 2) {
             return $next($request);
@@ -70,7 +73,8 @@ class TrackDailyUsage
             if ($wallet->balance < 1) {
                 return response()->json([
                     'error' => 'insufficient_balance',
-                    'message' => 'Please recharge your wallet. Daily usage fee of ₹1 applies as you haven\'t purchased 2 contacts in the last 30 days.',
+                    'message' => 'Please recharge your wallet. Daily usage fee of ₹1 applies as you haven\'t purchased 2 contacts in the last 30 days (' . $lastPurchaseInfo . ').',
+                    'last_purchase_at' => $lastUnlock ? $lastUnlock->created_at : null,
                     'required_recharge' => true
                 ], 403);
             }
@@ -97,7 +101,8 @@ class TrackDailyUsage
                 if ($wallet->balance < 1) {
                     return response()->json([
                         'error' => 'insufficient_balance',
-                        'message' => 'Daily limit of 20 activities reached. Additional ₹1 usage fee applies for more activity. Please recharge.',
+                        'message' => 'Daily limit of 20 activities reached. Additional ₹1 usage fee applies (' . $lastPurchaseInfo . '). Please recharge.',
+                        'last_purchase_at' => $lastUnlock ? $lastUnlock->created_at : null,
                         'required_recharge' => true
                     ], 403);
                 }
