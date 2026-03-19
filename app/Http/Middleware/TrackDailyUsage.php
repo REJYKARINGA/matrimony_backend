@@ -76,7 +76,7 @@ class TrackDailyUsage
             if ($wallet->balance < 1) {
                 return response()->json([
                     'error' => 'insufficient_balance',
-                    'message' => 'Please recharge your wallet. Daily usage fee of ₹1 applies as you haven\'t purchased 2 contacts in the last 30 days (' . $lastPurchaseInfo . ').',
+                    'message' => 'Insufficient wallet balance. Recharge now to continue viewing profiles and unlocking contacts.',
                     'last_purchase_at' => $lastUnlock ? $lastUnlock->created_at : null,
                     'required_recharge' => true
                 ], 403);
@@ -104,7 +104,7 @@ class TrackDailyUsage
                 if ($wallet->balance < 1) {
                     return response()->json([
                         'error' => 'insufficient_balance',
-                        'message' => 'Daily limit of 20 activities reached. Additional ₹1 usage fee applies (' . $lastPurchaseInfo . '). Please recharge.',
+                        'message' => 'Daily activity limit reached. Recharge your wallet to continue exploring matches.',
                         'last_purchase_at' => $lastUnlock ? $lastUnlock->created_at : null,
                         'required_recharge' => true
                     ], 403);
