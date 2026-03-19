@@ -29,19 +29,6 @@ class TrackDailyUsage
         $today = now()->toDateString();
         $now = now();
 
-        // 0. Check if user has an active subscription (No expiry or within date)
-        $hasActiveSubscription = \App\Models\UserSubscription::where('user_id', $user->id)
-            ->where('status', 'active')
-            ->where(function ($query) use ($now) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>', $now);
-            })
-            ->exists();
-
-        if ($hasActiveSubscription) {
-            return $next($request);
-        }
-
         // 1. Check if user is "Active" (purchased >= 2 contacts in last 30 days)
         $recentUnlocks = \App\Models\ContactUnlock::where('user_id', $user->id)
             ->where('created_at', '>=', now()->subDays(30));
@@ -101,8 +88,8 @@ class TrackDailyUsage
             // Same day entry
             $user->daily_hits_count++;
 
-            // Check if specifically reaching 21 hits
-            if ($user->daily_hits_count == 21) {
+            // Check if specifically reaching 51 hits
+            if ($user->daily_hits_count == 51) {
                 if ($wallet->balance < 1) {
                     return response()->json([
                         'error' => 'insufficient_balance',
@@ -119,7 +106,7 @@ class TrackDailyUsage
                     'type' => 'usage_fee',
                     'amount' => 1,
                     'status' => 'success',
-                    'description' => 'High activity daily fee (>20 hits)'
+                    'description' => 'High activity daily fee (>50 hits)'
                 ]);
             }
             $user->save();
