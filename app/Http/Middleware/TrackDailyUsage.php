@@ -48,7 +48,10 @@ class TrackDailyUsage
         
         $purchaseCount = $recentUnlocks->count();
         $lastUnlock = \App\Models\ContactUnlock::where('user_id', $user->id)->latest()->first();
-        $lastPurchaseInfo = $lastUnlock ? "Last contact purchased on " . $lastUnlock->created_at->format('d M Y') : "No contacts purchased yet";
+        
+        $lastPurchaseInfo = $lastUnlock 
+            ? "Last contact purchased on " . $lastUnlock->created_at->format('d M Y') 
+            : "Registered on " . $user->created_at->format('d M Y') . " (No contacts purchased yet)";
 
         if ($purchaseCount >= 2) {
             return $next($request);
