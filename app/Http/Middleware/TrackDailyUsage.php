@@ -10,9 +10,10 @@ class TrackDailyUsage
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
-        if (!$user || $user->role === 'admin')
+        // Skip check for admins or if viewing a specific profile details (exempted from fee)
+        if (!$user || $user->role === 'admin' || ($request->is('api/profiles/*') && $request->isMethod('GET') && ! $request->is('api/profiles/visitors', 'api/profiles/visited', 'api/profiles/contact-viewed', 'api/profiles/photos', 'api/profiles/my'))) {
             return $next($request);
+        }
 
         $today = now()->toDateString();
         $now = now();
