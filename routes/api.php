@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/contact-viewed', [ProfileViewController::class, 'getContactViewed']);
         Route::post('/{id}/view', [ProfileViewController::class, 'recordView']);
         Route::get('/{id}/contact-details', [ProfileController::class, 'getContactDetails']);
+        Route::get('/{id}/related', [ProfileController::class, 'getRelatedProfiles']);
         Route::get('/{id}', [ProfileController::class, 'show'])->middleware(['throttle:10,1', 'track_usage']);
         Route::get('/', [ProfileController::class, 'index'])->middleware('track_usage');
     });

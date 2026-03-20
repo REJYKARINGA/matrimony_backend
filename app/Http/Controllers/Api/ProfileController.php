@@ -611,6 +611,85 @@ class ProfileController extends Controller
     }
 
     /**
+     * Get related profiles for a specific user profile
+     */
+    public function getRelatedProfiles($id)
+    {
+        $viewedUser = User::with('userProfile')->find($id);
+        if (!$viewedUser || !$viewedUser->userProfile) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        $viewedProfile = $viewedUser->userProfile;
+        $currentUser = request()->user();
+
+        $query = User::with([
+            'userProfile.casteModel',
+            'userProfile.educationModel',
+            'userProfile.occupationModel',
+        ])
+            ->where('users.id', '!=', $id) // Exclude viewed user
+            ->where('users.status', 'active')
+            ->whereHas('userProfile', function ($q) use ($viewedProfile) {
+                $q->where('is_active_verified', true);
+
+                // Same religion
+                if ($viewedProfile->religion_id) {
+                    $q->where('religion_id', $viewedProfile->religion_id);
+                }
+
+                // Gender/Age Logic
+                // If viewed profile is Female (Seeking Male)
+                if ($viewedProfile->gender === 'female') {
+                    $q->where('gender', 'male');
+                    // "show greater or equal of their age male profiles"
+                    if ($viewedProfile->date_of_birth) {
+                        // In DB, older = smaller date
+                        $q->where('date_of_birth', '<=', $viewedProfile->date_of_birth);
+                    }
+                } 
+                // If viewed profile is Male (Seeking Female)
+                else if ($viewedProfile->gender === 'male') {
+                    $q->where('gender', 'female');
+                    // "show equal or under their age profiles"
+                    if ($viewedProfile->date_of_birth) {
+                        // In DB, younger = larger date
+                        $q->where('date_of_birth', '>=', $viewedProfile->date_of_birth);
+                    }
+                }
+            });
+
+        // Exclude current user if logged in
+        if ($currentUser) {
+            $query->where('users.id', '!=', $currentUser->id);
+            
+            // Exclude already interacted or blocked
+            $blockedIds = \App\Models\BlockedUser::where('user_id', $currentUser->id)->pluck('blocked_user_id')->toArray();
+            $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $currentUser->id)->pluck('user_id')->toArray();
+            $query->whereNotIn('users.id', array_unique(array_merge([$currentUser->id], $blockedIds, $blockedMeIds)));
+        }
+
+        $related = $query->inRandomOrder()
+            ->limit(10)
+            ->get();
+
+        // Distance calculation
+        if ($currentUser && $currentUser->userProfile && $currentUser->userProfile->latitude) {
+            $lat = $currentUser->userProfile->latitude;
+            $lon = $currentUser->userProfile->longitude;
+            foreach ($related as $rUser) {
+                if ($rUser->userProfile && $rUser->userProfile->latitude) {
+                    $rUser->distance = $this->calculateDistance($lat, $lon, $rUser->userProfile->latitude, $rUser->userProfile->longitude);
+                }
+            }
+        }
+
+        return response()->json([
+            'data' => UserCardResource::collection($related)
+        ]);
+    }
+
+    /**
      * Calculate distance between two points using Haversine formula
      */
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
