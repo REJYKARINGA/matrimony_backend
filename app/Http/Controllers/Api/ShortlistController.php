@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserCardResource;
 use Illuminate\Http\Request;
 use App\Models\ShortlistedProfile;
 use App\Models\User;
@@ -15,13 +16,16 @@ class ShortlistController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-
         $shortlisted = ShortlistedProfile::where('user_id', $user->id)
-            ->with([
-                'shortlistedUser:id,email',
-                'shortlistedUser.userProfile:user_id,first_name,last_name,profile_picture,date_of_birth,gender,city,state,latitude,longitude'
-            ])
+            ->with(['shortlistedUser.userProfile.casteModel', 'shortlistedUser.userProfile.educationModel', 'shortlistedUser.userProfile.occupationModel'])
             ->paginate(10);
+
+        $shortlisted->getCollection()->transform(function ($item) {
+            $resource = new UserCardResource($item->shortlistedUser);
+            // Re-map the resource data to a clean array
+            $item->shortlisted_user_data = $resource->toArray(request());
+            return $item;
+        });
 
         // Add distance calculation
         if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
@@ -42,7 +46,20 @@ class ShortlistController extends Controller
         }
 
         return response()->json([
-            'shortlist' => $shortlisted
+            'shortlist' => [
+                'data' => $shortlisted->getCollection()->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'user_id' => $item->user_id,
+                        'shortlisted_user_id' => $item->shortlisted_user_id,
+                        'notes' => $item->notes,
+                        'shortlisted_user' => $item->shortlisted_user_data,
+                    ];
+                }),
+                'current_page' => $shortlisted->currentPage(),
+                'last_page' => $shortlisted->lastPage(),
+                'total' => $shortlisted->total(),
+            ]
         ]);
     }
 
