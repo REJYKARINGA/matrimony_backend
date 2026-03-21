@@ -191,13 +191,40 @@ class UserController extends Controller
 
         $blockedUsers = BlockedUser::where('user_id', $currentUser->id)
             ->with([
-                'blockedUser:id,email,matrimony_id,status',
-                'blockedUser.userProfile:user_id,first_name,last_name,profile_picture,date_of_birth,city,district,gender',
+                'blockedUser',
+                'blockedUser.userProfile.casteModel',
+                'blockedUser.userProfile.educationModel',
+                'blockedUser.userProfile.occupationModel',
+                'blockedUser.profilePhotos' => function ($q) {
+                    $q->where('is_primary', true)->limit(1);
+                },
             ])
             ->paginate(10);
 
+        // Transform each block to include rich user card data
+        $transformed = $blockedUsers->getCollection()->map(function ($block) use ($request) {
+            return [
+                'id'              => $block->id,
+                'user_id'         => $block->user_id,
+                'blocked_user_id' => $block->blocked_user_id,
+                'reason'          => $block->reason,
+                'blocked_at'      => $block->blocked_at,
+                'blocked_user'    => $block->blockedUser
+                    ? (new \App\Http\Resources\UserCardResource($block->blockedUser))->toArray($request)
+                    : null,
+            ];
+        });
+
         return response()->json([
-            'blocked_users' => $blockedUsers
+            'blocked_users' => [
+                'current_page'   => $blockedUsers->currentPage(),
+                'data'           => $transformed,
+                'last_page'      => $blockedUsers->lastPage(),
+                'per_page'       => $blockedUsers->perPage(),
+                'total'          => $blockedUsers->total(),
+                'next_page_url'  => $blockedUsers->nextPageUrl(),
+                'prev_page_url'  => $blockedUsers->previousPageUrl(),
+            ],
         ]);
     }
 }
