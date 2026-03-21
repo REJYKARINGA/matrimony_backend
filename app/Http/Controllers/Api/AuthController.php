@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\PasswordResetToken;
 use App\Models\Reference;
+use App\Models\UserLoginHistory;
 
 class AuthController extends Controller
 {
@@ -60,6 +61,16 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Record initial login history after registration
+        UserLoginHistory::create([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'device_id' => $request->device_id,
+            'location' => $request->location,
+            'login_at' => now(),
+        ]);
+
         return response()->json([
             'message' => 'User registered successfully',
             'user' => $user,
@@ -96,6 +107,16 @@ class AuthController extends Controller
         // Update last login
         $user->update([
             'last_login' => now()
+        ]);
+
+        // Record login history
+        UserLoginHistory::create([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'device_id' => $request->device_id, // Sent from app
+            'location' => $request->location,   // Optional from app
+            'login_at' => now(),
         ]);
 
         $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount', 'interests', 'personalities']);
@@ -647,5 +668,24 @@ class AuthController extends Controller
                 'error' => 'Internal server error while verifying OTP'
             ], 500);
         }
+    }
+    /**
+     * Get login history of the authenticated user
+     */
+    public function loginHistory(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $history = UserLoginHistory::where('user_id', $user->id)
+            ->orderBy('login_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'history' => $history
+        ]);
     }
 }

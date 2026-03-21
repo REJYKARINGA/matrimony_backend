@@ -80,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::post('auth/change-password', [AuthController::class, 'changePassword']);
     Route::put('auth/update-info', [AuthController::class, 'updateInfo']);
+    Route::get('auth/login-history', [AuthController::class, 'loginHistory']);
     Route::delete('auth/delete-account', [AuthController::class, 'deleteAccount']);
 
     // Additional user routes - MUST be declared BEFORE apiResource to avoid
