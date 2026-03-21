@@ -76,6 +76,11 @@ class User extends Authenticatable
                 $user->reference_code = static::generateReferenceCode();
             }
         });
+
+        // Add Global Scope to filter out inactive users
+        static::addGlobalScope('active', function (\Illuminate\Database\Eloquent\Builder $builder) {
+            $builder->where('users.status', 'active');
+        });
     }
 
     /**

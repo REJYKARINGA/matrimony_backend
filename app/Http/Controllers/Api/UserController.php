@@ -16,9 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::where('status', 'active')
-            ->whereNull('deleted_at') // Exclude soft deleted users
-            ->with([
+        $users = User::with([
                 'userProfile.religionModel',
                 'userProfile.casteModel',
                 'userProfile.subCasteModel',
@@ -60,7 +58,6 @@ class UserController extends Controller
                 $q->where('is_primary', true)->limit(1);
             }
         ])
-            ->whereNull('deleted_at') // Exclude soft deleted users
             ->find($id);
 
         if (!$user) {

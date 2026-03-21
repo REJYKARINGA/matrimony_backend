@@ -36,7 +36,7 @@ class MatchingController extends Controller
             ])
                 ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
                 ->where('users.id', '!=', $user->id)
-                ->where('users.status', 'active')
+                
                 ->whereHas('userProfile', function ($q) {
                     $q->where('is_active_verified', true);
                 });
@@ -175,7 +175,7 @@ class MatchingController extends Controller
         
         // Basic query for potential matches
         $query = User::where('users.id', '!=', $user->id)
-            ->where('users.status', 'active')
+            
             ->whereHas('userProfile', function ($q) use ($user) {
                 $q->where('is_active_verified', true);
                 

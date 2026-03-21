@@ -74,7 +74,7 @@ class SearchController extends Controller
                     }
                 })
                     ->where('id', '!=', $user->id)
-                    ->where('status', 'active')
+                    
                     ->count();
 
                 if ($count > 0) {
@@ -117,7 +117,7 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                ->where('status', 'active')
+                
                 ->count();
 
             if ($count > 0) {
@@ -155,7 +155,7 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                ->where('status', 'active')
+                
                 ->count();
 
             if ($count > 0) {
@@ -193,7 +193,7 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                ->where('status', 'active')
+                
                 ->count();
 
             if ($count > 0) {
@@ -215,7 +215,7 @@ class SearchController extends Controller
 
             $count = User::join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
-                ->where('users.status', 'active')
+                
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                     $q->where('is_active_verified', true);
                     if ($user->userProfile && $user->userProfile->religion_id) {
@@ -273,7 +273,7 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -305,7 +305,7 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -338,7 +338,7 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -368,7 +368,7 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('status', 'active')->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)->count();
 
         if ($count > 0) {
             $categories[] = [
@@ -439,7 +439,7 @@ class SearchController extends Controller
             'userProfile.occupationModel',
         ])
             ->where('id', '!=', $user->id)
-            ->where('status', 'active')
+            
             ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch, $userProfile) {
                 $q->where('is_active_verified', true);
 

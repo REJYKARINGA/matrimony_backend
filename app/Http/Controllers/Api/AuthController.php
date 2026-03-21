@@ -101,12 +101,21 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $request->email)->first();
+        // Use withoutGlobalScope to find the user even if they are inactive
+        $user = User::withoutGlobalScope('active')->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'error' => 'Invalid credentials'
             ], 401);
+        }
+
+        // Specifically check if the account is inactive
+        if ($user->status !== 'active') {
+             return response()->json([
+                'error' => 'Account is inactive',
+                'message' => 'Your account is deactivated. Please contact support to reactivate.'
+            ], 403);
         }
 
         // Update last login
@@ -167,7 +176,12 @@ class AuthController extends Controller
      */
     public function getUser(Request $request)
     {
+        // Use withoutGlobalScope to handle scenarios like checking why my own account is inactive
         $user = $request->user();
+        
+        // If the user object is already in the request (from the middleware), 
+        // the middleware might have already filtered it if it uses the model with global scope.
+        // But Sanctum normally just returns the model from the session/token.
 
         if (!$user) {
             return response()->json([
