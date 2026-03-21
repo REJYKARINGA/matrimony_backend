@@ -191,8 +191,8 @@ class UserController extends Controller
 
         $blockedUsers = BlockedUser::where('user_id', $currentUser->id)
             ->with([
-                'blockedUser:id,email',
-                'blockedUser.userProfile:first_name,last_name,profile_picture'
+                'blockedUser:id,email,matrimony_id,status',
+                'blockedUser.userProfile:user_id,first_name,last_name,profile_picture,date_of_birth,city,district,gender',
             ])
             ->paginate(10);
 
