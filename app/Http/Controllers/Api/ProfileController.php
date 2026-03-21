@@ -318,6 +318,9 @@ class ProfileController extends Controller
             'smoke.*' => 'string|in:never,occasionally,regularly',
             'alcohol' => 'sometimes|array',
             'alcohol.*' => 'string|in:never,occasionally,regularly',
+            'hide_viewed' => 'sometimes|boolean',
+            'hide_interested' => 'sometimes|boolean',
+            'sort_by' => 'sometimes|string|in:recent_login,newest,nearby,random',
         ]);
 
         if ($validator->fails()) {
@@ -354,7 +357,10 @@ class ProfileController extends Controller
                 'preferred_locations',
                 'drug_addiction',
                 'smoke',
-                'alcohol'
+                'alcohol',
+                'hide_viewed',
+                'hide_interested',
+                'sort_by'
             ]))
         );
 

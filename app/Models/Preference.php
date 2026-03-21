@@ -33,6 +33,9 @@ class Preference extends Model
         'drug_addiction',
         'smoke',
         'alcohol',
+        'hide_viewed',
+        'hide_interested',
+        'sort_by',
     ];
 
     protected $casts = [
@@ -51,6 +54,8 @@ class Preference extends Model
         'preferred_locations' => 'array',
         'smoke' => 'array',
         'alcohol' => 'array',
+        'hide_viewed' => 'boolean',
+        'hide_interested' => 'boolean',
     ];
 
     /**

@@ -107,29 +107,51 @@ class MatchingController extends Controller
 
         // Exclude users who have already been interacted with
         $interestedSentIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
-        $interestedReceivedIds = InterestSent::where('receiver_id', $user->id)->pluck('sender_id')->toArray();
         $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
         $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
-        $viewedProfileIds = \App\Models\ProfileView::where('viewer_id', $user->id)->pluck('viewed_profile_id')->toArray();
+        
+        $allExcludedIds = array_merge([$user->id], $interestedSentIds, $blockedUserIds, $blockedMeIds);
 
-        // Combine all excluded IDs
-        $allExcludedIds = array_unique(array_merge(
-            [$user->id], 
-            $interestedSentIds, 
-            $interestedReceivedIds, 
-            $blockedUserIds, 
-            $blockedMeIds,
-            $viewedProfileIds
-        ));
+        // Conditionally exclude based on persistent preferences
+        if (!$preferences || $preferences->hide_interested) {
+            $interestedReceivedIds = InterestSent::where('receiver_id', $user->id)->pluck('sender_id')->toArray();
+            $allExcludedIds = array_merge($allExcludedIds, $interestedReceivedIds);
+        }
 
+        if (!$preferences || $preferences->hide_viewed) {
+            $viewedProfileIds = \App\Models\ProfileView::where('viewer_id', $user->id)->pluck('viewed_profile_id')->toArray();
+            $allExcludedIds = array_merge($allExcludedIds, $viewedProfileIds);
+        }
+
+        $allExcludedIds = array_unique($allExcludedIds);
         $query->whereNotIn('users.id', $allExcludedIds);
 
-        // Primary sort by login date (the DATE part) so we can randomize within the day
-        // This keeps active users on top while giving fresh content on every refresh.
-        // Also use a truly random order for each request to satisfy the "refresh feeling".
-        $suggestions = $query->orderByRaw('DATE(users.last_login) DESC')
-            ->inRandomOrder()
-            ->paginate(12);
+        // Sorting Logic: Priority 1: Query Param, Priority 2: User Preference, Priority 3: Default 'random'
+        $sortBy = $request->query('sort_by', $preferences->sort_by ?? 'random');
+
+        switch ($sortBy) {
+            case 'recent_login':
+                $query->orderBy('users.last_login', 'DESC');
+                break;
+            case 'newest':
+                $query->orderBy('users.created_at', 'DESC');
+                break;
+            case 'nearby':
+                if (isset($lat)) {
+                    $query->orderBy('distance', 'ASC');
+                } else {
+                    $query->orderBy('users.last_login', 'DESC');
+                }
+                break;
+            case 'random':
+            default:
+                // Primary sort by login date (the DATE part) so we can randomize within the day
+                // This keeps active users on top while giving fresh content on every refresh.
+                $query->orderByRaw('DATE(users.last_login) DESC')->inRandomOrder();
+                break;
+        }
+
+        $suggestions = $query->paginate(12);
 
         return UserCardResource::collection($suggestions);
     }
