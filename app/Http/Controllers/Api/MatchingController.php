@@ -105,12 +105,22 @@ class MatchingController extends Controller
             }
         }
 
-        // Exclude users who have already received interest or are blocked/blocked by
-        $excludedUserIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
+        // Exclude users who have already been interacted with
+        $interestedSentIds = InterestSent::where('sender_id', $user->id)->pluck('receiver_id')->toArray();
+        $interestedReceivedIds = InterestSent::where('receiver_id', $user->id)->pluck('sender_id')->toArray();
         $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
         $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
+        $viewedProfileIds = \App\Models\ProfileView::where('viewer_id', $user->id)->pluck('viewed_profile_id')->toArray();
 
-        $allExcludedIds = array_unique(array_merge([$user->id], $excludedUserIds, $blockedUserIds, $blockedMeIds));
+        // Combine all excluded IDs
+        $allExcludedIds = array_unique(array_merge(
+            [$user->id], 
+            $interestedSentIds, 
+            $interestedReceivedIds, 
+            $blockedUserIds, 
+            $blockedMeIds,
+            $viewedProfileIds
+        ));
 
         $query->whereNotIn('users.id', $allExcludedIds);
 
