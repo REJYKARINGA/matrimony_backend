@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\BlockedUser;
 use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -239,26 +240,34 @@ class UserController extends Controller
 
         $reporter = $request->user();
         
-        $report = \App\Models\UserReport::create([
-            'reporter_id' => $reporter->id,
-            'reported_id' => $userId,
-            'reason' => $request->reason,
-            'status' => 'pending'
-        ]);
+        try {
+            $report = \App\Models\UserReport::create([
+                'reporter_id' => $reporter->id,
+                'reported_id' => $userId,
+                'reason' => $request->reason,
+                'status' => 'pending'
+            ]);
 
-        // Penalty check: 10 reports = deactivation
-        $count = \App\Models\UserReport::where('reported_id', $userId)->count();
-        if ($count >= 10) {
-            $user = \App\Models\User::find($userId);
-            if ($user && $user->status !== 'deactivated') {
-                $user->update(['status' => 'deactivated']);
+            // Penalty check: 10 reports = deactivation
+            $count = \App\Models\UserReport::where('reported_id', $userId)->count();
+            if ($count >= 10) {
+                $user = \App\Models\User::find($userId);
+                if ($user && $user->status !== 'deactivated') {
+                    $user->update(['status' => 'deactivated']);
+                }
             }
-        }
 
-        return response()->json([
-            'message' => 'User reported successfully' . ($count >= 10 ? ' and account deactivated' : ''),
-            'report' => $report,
-            'reports_count' => $count
-        ], 201);
+            return response()->json([
+                'message' => 'User reported successfully' . ($count >= 10 ? ' and account deactivated' : ''),
+                'report' => $report,
+                'reports_count' => $count
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error("Failed to report user {$userId}: " . $e->getMessage());
+            return response()->json([
+                'error' => 'Reporting is temporarily unavailable',
+                'details' => $e->getMessage()
+            ], 503);
+        }
     }
 }

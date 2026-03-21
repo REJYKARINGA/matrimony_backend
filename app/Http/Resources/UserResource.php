@@ -81,7 +81,13 @@ class UserResource extends JsonResource
             'contact_info' => [
                 'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
             ],
-            'reports_count' => \App\Models\UserReport::where('reported_id', $this->id)->count(),
+            'reports_count' => (function() {
+                try {
+                    return \App\Models\UserReport::where('reported_id', $this->id)->count();
+                } catch (\Exception $e) {
+                    return 0; // Fallback if table doesn't exist yet
+                }
+            })(),
 
             // Hide sensitive fields completely - never return these
             // password, role, status, email_verified, phone_verified, deleted_at, last_login

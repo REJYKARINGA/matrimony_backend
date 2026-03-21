@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\PasswordResetToken;
 use App\Models\Reference;
 use App\Models\UserLoginHistory;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -62,14 +63,18 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         // Record initial login history after registration
-        UserLoginHistory::create([
-            'user_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'device_id' => $request->device_id,
-            'location' => $request->location,
-            'login_at' => now(),
-        ]);
+        try {
+            UserLoginHistory::create([
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'device_id' => $request->device_id,
+                'location' => $request->location,
+                'login_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning("Failed to record registration login history: " . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -110,14 +115,18 @@ class AuthController extends Controller
         ]);
 
         // Record login history
-        UserLoginHistory::create([
-            'user_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'device_id' => $request->device_id, // Sent from app
-            'location' => $request->location,   // Optional from app
-            'login_at' => now(),
-        ]);
+        try {
+            UserLoginHistory::create([
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'device_id' => $request->device_id, // Sent from app
+                'location' => $request->location,   // Optional from app
+                'login_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning("Failed to record login history: " . $e->getMessage());
+        }
 
         $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount', 'interests', 'personalities']);
 
