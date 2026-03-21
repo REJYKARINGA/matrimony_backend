@@ -9,6 +9,7 @@ use App\Models\User;
 class BlockedUser extends Model
 {
     protected $table = 'blocked_users';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
         'blocked_user_id',
