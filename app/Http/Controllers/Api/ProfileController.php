@@ -91,6 +91,8 @@ class ProfileController extends Controller
             'personality_ids.*' => 'exists:personalities,id',
             'interest_ids' => 'sometimes|array',
             'interest_ids.*' => 'exists:interests_hobbies,id',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         if ($validator->fails()) {
@@ -153,6 +155,8 @@ class ProfileController extends Controller
             'smoke',
             'alcohol',
             'hide_photos',
+            'latitude',
+            'longitude',
         ]);
 
         $userProfile->fill($data);
