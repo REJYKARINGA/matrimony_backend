@@ -227,4 +227,38 @@ class UserController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Report a user
+     */
+    public function reportUser(Request $request, $userId)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $reporter = $request->user();
+        
+        $report = \App\Models\UserReport::create([
+            'reporter_id' => $reporter->id,
+            'reported_id' => $userId,
+            'reason' => $request->reason,
+            'status' => 'pending'
+        ]);
+
+        // Penalty check: 10 reports = deactivation
+        $count = \App\Models\UserReport::where('reported_id', $userId)->count();
+        if ($count >= 10) {
+            $user = \App\Models\User::find($userId);
+            if ($user && $user->status !== 'deactivated') {
+                $user->update(['status' => 'deactivated']);
+            }
+        }
+
+        return response()->json([
+            'message' => 'User reported successfully' . ($count >= 10 ? ' and account deactivated' : ''),
+            'report' => $report,
+            'reports_count' => $count
+        ], 201);
+    }
 }

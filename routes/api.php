@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users/blocked', [UserController::class, 'getBlockedUsers']);
     Route::post('users/{userId}/block', [UserController::class, 'blockUser']);
     Route::delete('users/{userId}/block', [UserController::class, 'unblockUser']);
+    Route::post('users/{userId}/report', [UserController::class, 'reportUser']);
 
     Route::apiResource('users', UserController::class);
 
