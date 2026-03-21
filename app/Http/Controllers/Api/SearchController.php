@@ -602,7 +602,9 @@ class SearchController extends Controller
             });
         }
 
-        $profiles = $query->paginate(20);
+        $profiles = $query->orderByRaw('DATE(users.last_login) DESC')
+            ->inRandomOrder()
+            ->paginate(20);
 
         // Add distance calculation
         if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {

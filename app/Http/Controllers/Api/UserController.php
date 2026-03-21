@@ -26,6 +26,8 @@ class UserController extends Controller
                     $q->where('is_primary', true)->limit(1);
                 }
             ])
+            ->orderByRaw('DATE(users.last_login) DESC')
+            ->inRandomOrder()
             ->paginate(15);
 
         return response()->json([
