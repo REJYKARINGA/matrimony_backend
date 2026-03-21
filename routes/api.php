@@ -82,12 +82,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('auth/update-info', [AuthController::class, 'updateInfo']);
     Route::delete('auth/delete-account', [AuthController::class, 'deleteAccount']);
 
-    Route::apiResource('users', UserController::class);
-
-    // Additional user routes
+    // Additional user routes - MUST be declared BEFORE apiResource to avoid
+    // 'blocked' being captured as a {user} wildcard parameter
+    Route::get('users/blocked', [UserController::class, 'getBlockedUsers']);
     Route::post('users/{userId}/block', [UserController::class, 'blockUser']);
     Route::delete('users/{userId}/block', [UserController::class, 'unblockUser']);
-    Route::get('users/blocked', [UserController::class, 'getBlockedUsers']);
+
+    Route::apiResource('users', UserController::class);
 
     // Profile routes
     Route::prefix('profiles')->group(function () {
