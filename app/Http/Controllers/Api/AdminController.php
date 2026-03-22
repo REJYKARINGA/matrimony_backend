@@ -156,9 +156,15 @@ class AdminController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('user_profiles.first_name', 'like', "%{$search}%")
                     ->orWhere('user_profiles.last_name', 'like', "%{$search}%")
-                    ->orWhere('user_profiles.religion', 'like', "%{$search}%")
-                    ->orWhere('user_profiles.education', 'like', "%{$search}%")
-                    ->orWhere('user_profiles.occupation', 'like', "%{$search}%")
+                    ->orWhereHas('religionModel', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('educationModel', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('occupationModel', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%");
+                    })
                     ->orWhere('users.matrimony_id', 'like', "%{$search}%")
                     ->orWhere('users.email', 'like', "%{$search}%");
             });
@@ -304,10 +310,12 @@ class AdminController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('religion', 'like', "%{$search}%")
-                    ->orWhere('marital_status', 'like', "%{$search}%")
+                $q->where('marital_status', 'like', "%{$search}%")
                     ->orWhere('min_age', 'like', "%{$search}%")
                     ->orWhere('max_age', 'like', "%{$search}%")
+                    ->orWhereHas('religionModel', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
                         $subQuery->where('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%");
