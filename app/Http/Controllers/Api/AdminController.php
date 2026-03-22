@@ -572,21 +572,25 @@ class AdminController extends Controller
 
         // Reporter Search (Matrimony ID or Name)
         if ($request->reporter_search) {
-            $query->whereHas('reporter', function($q) use ($request) {
-                $q->where('matrimony_id', 'like', '%' . $request->reporter_search . '%');
-            })->orWhereHas('reporter.userProfile', function($q) use ($request) {
-                $q->where('first_name', 'like', '%' . $request->reporter_search . '%')
-                  ->orWhere('last_name', 'like', '%' . $request->reporter_search . '%');
+            $query->where(function($q) use ($request) {
+                $q->whereHas('reporter', function($sq) use ($request) {
+                    $sq->where('matrimony_id', 'like', '%' . $request->reporter_search . '%');
+                })->orWhereHas('reporter.userProfile', function($sq) use ($request) {
+                    $sq->where('first_name', 'like', '%' . $request->reporter_search . '%')
+                      ->orWhere('last_name', 'like', '%' . $request->reporter_search . '%');
+                });
             });
         }
 
         // Reported User Search (Matrimony ID or Name)
         if ($request->reported_search) {
-            $query->whereHas('reported', function($q) use ($request) {
-                $q->where('matrimony_id', 'like', '%' . $request->reported_search . '%');
-            })->orWhereHas('reported.userProfile', function($q) use ($request) {
-                $q->where('first_name', 'like', '%' . $request->reported_search . '%')
-                  ->orWhere('last_name', 'like', '%' . $request->reported_search . '%');
+            $query->where(function($q) use ($request) {
+                $q->whereHas('reported', function($sq) use ($request) {
+                    $sq->where('matrimony_id', 'like', '%' . $request->reported_search . '%');
+                })->orWhereHas('reported.userProfile', function($sq) use ($request) {
+                    $sq->where('first_name', 'like', '%' . $request->reported_search . '%')
+                      ->orWhere('last_name', 'like', '%' . $request->reported_search . '%');
+                });
             });
         }
 
