@@ -12,7 +12,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Dashboard
     Route::get('/dashboard/stats', [AdminController::class, 'getDashboardStats']);
 
-    Route::get('/verifications/pending', [AdminController::class, 'getPendingVerifications']);
+    Route::get('/verifications', [AdminController::class, 'getVerifications']);
     Route::post('/verifications/{id}/approve', [AdminController::class, 'approveVerification']);
     Route::post('/verifications/{id}/reject', [AdminController::class, 'rejectVerification']);
 

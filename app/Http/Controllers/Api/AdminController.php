@@ -20,10 +20,12 @@ class AdminController extends Controller
     /**
      * Get pending verifications
      */
-    public function getPendingVerifications(Request $request)
+    public function getVerifications(Request $request)
     {
+        $status = $request->get('status', 'pending');
+        
         $query = UserVerification::with(['user.userProfile', 'user.profilePhotos'])
-            ->where('status', 'pending');
+            ->where('status', $status);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -42,7 +44,7 @@ class AdminController extends Controller
         }
 
         $verifications = $query->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(15);
 
         return response()->json($verifications);
     }
