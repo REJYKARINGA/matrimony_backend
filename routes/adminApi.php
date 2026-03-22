@@ -68,6 +68,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/personalities', [PersonalityController::class, 'createPersonality']);
     Route::put('/personalities/{id}', [PersonalityController::class, 'updatePersonality']);
     Route::delete('/personalities/{id}', [PersonalityController::class, 'deletePersonality']);
+    Route::put('/personalities/category/update', [PersonalityController::class, 'updateCategory']);
+    Route::delete('/personalities/category/delete', [PersonalityController::class, 'deleteCategory']);
     Route::post('/personalities/bulk-update-trending', [PersonalityController::class, 'bulkUpdateTrending']);
 
     // Wallet Transactions
