@@ -319,12 +319,12 @@ class AdminController extends Controller
         ], 400);
     }
 
-    /**
-     * Get users who do not have a profile yet
-     */
     public function getUsersWithoutProfile(Request $request)
     {
-        $users = User::whereDoesntHave('userProfile')->select('id', 'name', 'email')->get();
+        $users = User::withoutGlobalScope('active')
+            ->whereDoesntHave('userProfile')
+            ->select('id', 'email', 'phone')
+            ->get();
         return response()->json($users);
     }
 
