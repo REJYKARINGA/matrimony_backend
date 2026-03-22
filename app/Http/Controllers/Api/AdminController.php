@@ -142,8 +142,12 @@ class AdminController extends Controller
             'userProfile.occupationModel'
         ]);
 
-        if ($request->has('role') && $request->role !== 'all') {
-            $query->where('role', $request->role);
+        if ($request->has('role')) {
+            if ($request->role === 'trashed') {
+                $query->onlyTrashed();
+            } else if ($request->role !== 'all') {
+                $query->where('role', $request->role);
+            }
         }
 
         if ($request->has('search')) {
@@ -262,12 +266,38 @@ class AdminController extends Controller
      */
     public function deleteUser($id)
     {
-        $user = User::withoutGlobalScope('active')->findOrFail($id);
-        $user->delete();
+        $user = User::withoutGlobalScope('active')->withTrashed()->findOrFail($id);
+        
+        if ($user->trashed()) {
+            $user->forceDelete();
+            $message = 'User completely deleted';
+        } else {
+            $user->delete();
+            $message = 'User trashed successfully';
+        }
 
         return response()->json([
-            'message' => 'User deleted successfully'
+            'message' => $message
         ]);
+    }
+
+    /**
+     * Restore a soft-deleted user
+     */
+    public function restoreUser($id)
+    {
+        $user = User::withoutGlobalScope('active')->withTrashed()->findOrFail($id);
+        
+        if ($user->trashed()) {
+            $user->restore();
+            return response()->json([
+                'message' => 'User safely restored'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'User is not currently soft-deleted',
+        ], 400);
     }
 
     /**
