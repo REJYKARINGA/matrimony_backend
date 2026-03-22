@@ -564,6 +564,23 @@ class AdminController extends Controller
     }
 
     /**
+     * Get all users who have reported or been reported
+     */
+    public function getReportParticipants()
+    {
+        $reporterIds = UserReport::distinct()->pluck('reporter_id');
+        $reportedIds = UserReport::distinct()->pluck('reported_id');
+        
+        $userIds = $reporterIds->merge($reportedIds)->unique();
+        
+        $users = User::whereIn('id', $userIds)
+            ->with('userProfile')
+            ->get(['id', 'matrimony_id']);
+
+        return response()->json($users);
+    }
+
+    /**
      * Get all reports
      */
     public function getReports(Request $request)

@@ -39,6 +39,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::get('/preferences', [AdminController::class, 'getPreferences']);
 
     // Reports
+    Route::get('/reports/participants', [AdminController::class, 'getReportParticipants']);
     Route::get('/reports', [AdminController::class, 'getReports']);
     Route::post('/reports/{id}/resolve', [AdminController::class, 'resolveReport']);
 
