@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectGuestsTo(function ($request) {
             if ($request->is('api/*')) {
-                abort(401, 'Unauthenticated');
+                throw new \Illuminate\Auth\AuthenticationException('Unauthenticated.');
             }
             return route('login');
         });
