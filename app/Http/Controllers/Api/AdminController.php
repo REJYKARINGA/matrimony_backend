@@ -323,7 +323,7 @@ class AdminController extends Controller
     {
         $users = User::withoutGlobalScope('active')
             ->whereDoesntHave('userProfile')
-            ->select('id', 'email', 'phone')
+            ->select('id', 'matrimony_id', 'email', 'phone', 'role', 'status', 'email_verified', 'phone_verified')
             ->get();
         return response()->json($users);
     }
