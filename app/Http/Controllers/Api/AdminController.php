@@ -165,13 +165,105 @@ class AdminController extends Controller
      */
     public function toggleBlockUser($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::withoutGlobalScope('active')->findOrFail($id);
         $user->status = $user->status === 'active' ? 'blocked' : 'active';
         $user->save();
 
         return response()->json([
             'message' => 'User status updated successfully',
             'user' => $user
+        ]);
+    }
+
+    /**
+     * Create a new user
+     */
+    public function createUser(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:users',
+            'phone' => 'required',
+            'password' => 'required|min:6',
+            'role' => 'required|in:user,admin,mediator',
+            'status' => 'required|in:active,blocked',
+            'first_name' => 'required',
+            'last_name' => 'nullable',
+        ]);
+
+        $user = User::create([
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'role' => $request->role,
+            'status' => $request->status,
+            'email_verified' => $request->boolean('email_verified', true),
+            'phone_verified' => $request->boolean('phone_verified', true),
+        ]);
+
+        UserProfile::create([
+            'user_id' => $user->id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'gender' => $request->input('gender', 'male'),
+            // Dummy default values if needed, otherwise rely on nulls
+        ]);
+
+        return response()->json([
+            'message' => 'User created successfully',
+            'user' => $user->load('userProfile')
+        ], 201);
+    }
+
+    /**
+     * Update an existing user
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::withoutGlobalScope('active')->findOrFail($id);
+
+        $request->validate([
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'required',
+            'role' => 'required|in:user,admin,mediator',
+            'status' => 'required|in:active,blocked',
+            'first_name' => 'required',
+        ]);
+
+        $user->update([
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'role' => $request->role,
+            'status' => $request->status,
+            'email_verified' => $request->boolean('email_verified', $user->email_verified),
+            'phone_verified' => $request->boolean('phone_verified', $user->phone_verified),
+        ]);
+
+        if ($request->filled('password')) {
+            $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+        }
+
+        $profile = UserProfile::firstOrCreate(['user_id' => $user->id]);
+        $profile->update([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+        ]);
+
+        return response()->json([
+            'message' => 'User updated successfully',
+            'user' => $user->load('userProfile')
+        ]);
+    }
+
+    /**
+     * Soft delete a user
+     */
+    public function deleteUser($id)
+    {
+        $user = User::withoutGlobalScope('active')->findOrFail($id);
+        $user->delete();
+
+        return response()->json([
+            'message' => 'User deleted successfully'
         ]);
     }
 

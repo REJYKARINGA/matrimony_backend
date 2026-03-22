@@ -18,6 +18,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
 
     // Users
     Route::get('/users', [AdminController::class, 'getUsers']);
+    Route::post('/users', [AdminController::class, 'createUser']);
+    Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
     Route::post('/users/{id}/toggle-block', [AdminController::class, 'toggleBlockUser']);
 
     // User Profiles
