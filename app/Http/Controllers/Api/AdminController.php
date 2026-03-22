@@ -449,7 +449,13 @@ class AdminController extends Controller
             'bio'                => 'nullable|string',
             'hide_photos'        => 'nullable|boolean',
             'is_active_verified' => 'nullable|boolean',
+            'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->hasFile('profile_picture')) {
+            $path = $request->file('profile_picture')->store('profiles', 'public');
+            $validated['profile_picture'] = $path;
+        }
 
         $profile = UserProfile::create($validated);
         $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
@@ -493,7 +499,18 @@ class AdminController extends Controller
             'bio'                => 'nullable|string',
             'hide_photos'        => 'nullable|boolean',
             'is_active_verified' => 'nullable|boolean',
+            'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($request->hasFile('profile_picture')) {
+            $path = $request->file('profile_picture')->store('profiles', 'public');
+            $validated['profile_picture'] = $path;
+            
+            // Delete old picture if exists
+            if ($profile->profile_picture) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
+            }
+        }
 
         $profile->update($validated);
         $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
