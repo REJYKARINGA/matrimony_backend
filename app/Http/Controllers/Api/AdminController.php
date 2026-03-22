@@ -17,6 +17,7 @@ use App\Models\Notification;
 use App\Models\Religion;
 use App\Models\Caste;
 use App\Models\SubCaste;
+use App\Models\UserReport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -567,7 +568,7 @@ class AdminController extends Controller
      */
     public function getReports(Request $request)
     {
-        $query = \App\Models\UserReport::query();
+        $query = UserReport::query();
 
         // Reporter Search (Matrimony ID or Name)
         if ($request->reporter_search) {
@@ -612,14 +613,23 @@ class AdminController extends Controller
      */
     public function resolveReport(Request $request, $id)
     {
-        $report = \App\Models\UserReport::findOrFail($id);
-        $report->status = 'resolved';
-        $report->resolution_notes = $request->resolution_notes;
-        $report->reviewed_by = $request->user()->id;
-        $report->reviewed_at = now();
-        $report->save();
+        try {
+            Log::info('Attempting to resolve report', ['id' => $id, 'user_id' => auth()->id(), 'notes' => $request->resolution_notes]);
+            $report = UserReport::findOrFail($id);
+            
+            // Check if model has the columns
+            $report->update([
+                'status' => 'resolved',
+                'resolution_notes' => $request->resolution_notes,
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
 
-        return response()->json(['message' => 'Report resolved', 'report' => $report]);
+            return response()->json(['message' => 'Report resolved', 'report' => $report]);
+        } catch (\Exception $e) {
+            Log::error('Report Resolution Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to resolve report: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
