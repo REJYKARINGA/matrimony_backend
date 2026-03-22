@@ -15,6 +15,9 @@ class VerificationController extends Controller
     /**
      * Submit ID proof for verification
      */
+    /**
+     * Submit ID proof for verification
+     */
     public function submitVerification(Request $request)
     {
         $user = $request->user();
@@ -22,8 +25,8 @@ class VerificationController extends Controller
         $validator = Validator::make($request->all(), [
             'id_proof_type' => 'required|string|max:255',
             'id_proof_number' => 'nullable|string|max:255',
-            'id_proof_front' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'id_proof_back' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'id_proof_front' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            'id_proof_back' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -34,21 +37,29 @@ class VerificationController extends Controller
         }
 
         try {
-            // Generate professional filenames
-            $timestamp = time();
-            $userId = $user->id;
-
+            // Upload Front Side to Cloudinary
             $frontFile = $request->file('id_proof_front');
-            $frontExt = $frontFile->getClientOriginalExtension();
-            $frontFilename = "{$userId}_verification_front_{$timestamp}.{$frontExt}";
-            $frontPath = $frontFile->storeAs('id_proofs', $frontFilename, 'public');
+            $frontUpload = cloudinary()->uploadApi()->upload($frontFile->getRealPath(), [
+                'folder' => 'matrimony/verifications/' . $user->id,
+                'public_id' => 'id_front_' . $user->id . '_' . now()->timestamp,
+                'transformation' => [
+                    ['width' => 1200, 'height' => 1200, 'crop' => 'limit', 'quality' => 'auto:good'],
+                ],
+            ]);
+            $frontUrl = $frontUpload['secure_url'];
 
-            $backPath = null;
+            // Upload Back Side if provided
+            $backUrl = null;
             if ($request->hasFile('id_proof_back')) {
                 $backFile = $request->file('id_proof_back');
-                $backExt = $backFile->getClientOriginalExtension();
-                $backFilename = "{$userId}_verification_back_{$timestamp}.{$backExt}";
-                $backPath = $backFile->storeAs('id_proofs', $backFilename, 'public');
+                $backUpload = cloudinary()->uploadApi()->upload($backFile->getRealPath(), [
+                    'folder' => 'matrimony/verifications/' . $user->id,
+                    'public_id' => 'id_back_' . $user->id . '_' . now()->timestamp,
+                    'transformation' => [
+                        ['width' => 1200, 'height' => 1200, 'crop' => 'limit', 'quality' => 'auto:good'],
+                    ],
+                ]);
+                $backUrl = $backUpload['secure_url'];
             }
 
             $verification = UserVerification::updateOrCreate(
@@ -56,8 +67,8 @@ class VerificationController extends Controller
                 [
                     'id_proof_type' => $request->id_proof_type,
                     'id_proof_number' => $request->id_proof_number,
-                    'id_proof_front_url' => Storage::url($frontPath),
-                    'id_proof_back_url' => $backPath ? Storage::url($backPath) : null,
+                    'id_proof_front_url' => $frontUrl,
+                    'id_proof_back_url' => $backUrl,
                     'status' => 'pending',
                     'rejection_reason' => null,
                 ]
@@ -68,7 +79,7 @@ class VerificationController extends Controller
                 'verification' => $verification
             ]);
         } catch (\Exception $e) {
-            \Log::error("Verification Submission Error: " . $e->getMessage());
+            Log::error("Verification Submission Error: " . $e->getMessage());
             return response()->json([
                 'error' => 'An error occurred during submission',
                 'message' => $e->getMessage()
