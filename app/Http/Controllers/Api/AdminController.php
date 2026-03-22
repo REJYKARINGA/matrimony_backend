@@ -335,23 +335,62 @@ class AdminController extends Controller
             ->join('users', 'user_profiles.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
 
-        if ($request->has('search')) {
+        // Search by name (first+last concat), email, matrimony_id
+        if ($request->has('search') && $request->search !== '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('user_profiles.first_name', 'like', "%{$search}%")
                     ->orWhere('user_profiles.last_name', 'like', "%{$search}%")
-                    ->orWhereHas('religionModel', function ($sub) use ($search) {
-                        $sub->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('educationModel', function ($sub) use ($search) {
-                        $sub->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('occupationModel', function ($sub) use ($search) {
-                        $sub->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhere('users.matrimony_id', 'like', "%{$search}%")
-                    ->orWhere('users.email', 'like', "%{$search}%");
+                    ->orWhereRaw("CONCAT(user_profiles.first_name, ' ', user_profiles.last_name) like ?", ["%{$search}%"])
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('users.matrimony_id', 'like', "%{$search}%");
             });
+        }
+
+        // Gender filter
+        if ($request->has('gender') && $request->gender !== 'all' && $request->gender !== '') {
+            $query->where('user_profiles.gender', $request->gender);
+        }
+
+        // Religion filter
+        if ($request->has('religion_id') && $request->religion_id !== 'all' && $request->religion_id !== '') {
+            $query->where('user_profiles.religion_id', $request->religion_id);
+        }
+
+        // Education filter
+        if ($request->has('education_id') && $request->education_id !== 'all' && $request->education_id !== '') {
+            $query->where('user_profiles.education_id', $request->education_id);
+        }
+
+        // Occupation filter
+        if ($request->has('occupation_id') && $request->occupation_id !== 'all' && $request->occupation_id !== '') {
+            $query->where('user_profiles.occupation_id', $request->occupation_id);
+        }
+
+        // Profile active status filter
+        if ($request->has('is_active_verified') && $request->is_active_verified !== 'all' && $request->is_active_verified !== '') {
+            $query->where('user_profiles.is_active_verified', (bool) $request->is_active_verified);
+        }
+
+        // Verification status filter (from user.verification)
+        if ($request->has('verification_status') && $request->verification_status !== 'all' && $request->verification_status !== '') {
+            if ($request->verification_status === 'not_submitted') {
+                $query->whereDoesntHave('user.verification');
+            } else {
+                $query->whereHas('user.verification', function ($q) use ($request) {
+                    $q->where('status', $request->verification_status);
+                });
+            }
+        }
+
+        // Age range filter (calculated from date_of_birth)
+        if ($request->has('age_min') && $request->age_min !== '') {
+            $maxDob = now()->subYears((int) $request->age_min)->toDateString();
+            $query->where('user_profiles.date_of_birth', '<=', $maxDob);
+        }
+        if ($request->has('age_max') && $request->age_max !== '') {
+            $minDob = now()->subYears((int) $request->age_max + 1)->addDay()->toDateString();
+            $query->where('user_profiles.date_of_birth', '>=', $minDob);
         }
 
         $profiles = $query->select('user_profiles.*')
