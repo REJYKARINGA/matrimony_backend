@@ -162,6 +162,12 @@ class AdminController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->has('gender') && $request->gender !== 'all' && $request->gender !== '') {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('gender', $request->gender);
+            });
+        }
+
         if ($request->has('search') && $request->search !== '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
