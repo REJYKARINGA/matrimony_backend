@@ -506,9 +506,13 @@ class AdminController extends Controller
             $path = $request->file('profile_picture')->store('profiles', 'public');
             $validated['profile_picture'] = $path;
             
-            // Delete old picture if exists
-            if ($profile->profile_picture) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
+            // Delete old picture if it exists and is not a remote URL
+            if ($profile->profile_picture && !str_starts_with($profile->profile_picture, 'http')) {
+                try {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
+                } catch (\Exception $e) {
+                    // Ignore missing files or permission errors during delete
+                }
             }
         }
 
