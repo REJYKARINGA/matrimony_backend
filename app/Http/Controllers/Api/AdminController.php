@@ -150,7 +150,15 @@ class AdminController extends Controller
             }
         }
 
-        if ($request->has('search')) {
+        if ($request->has('email_verified') && $request->email_verified !== '') {
+            $query->where('email_verified', (bool) $request->email_verified);
+        }
+
+        if ($request->has('phone_verified') && $request->phone_verified !== '') {
+            $query->where('phone_verified', (bool) $request->phone_verified);
+        }
+
+        if ($request->has('search') && $request->search !== '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('email', 'like', "%{$search}%")
@@ -158,7 +166,8 @@ class AdminController extends Controller
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhereHas('userProfile', function ($q) use ($search) {
                         $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
                     });
             });
         }
