@@ -240,6 +240,18 @@ class UserController extends Controller
         $reporter = $request->user();
         
         try {
+            // Check if already reported by this user
+            $existingReport = \App\Models\UserReport::where('reporter_id', $reporter->id)
+                ->where('reported_id', $userId)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($existingReport) {
+                return response()->json([
+                    'error' => 'You have already reported this user'
+                ], 409);
+            }
+
             $report = \App\Models\UserReport::create([
                 'reporter_id' => $reporter->id,
                 'reported_id' => $userId,
