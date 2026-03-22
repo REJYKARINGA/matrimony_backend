@@ -29,13 +29,35 @@ class MessageController extends Controller
         // Fetch valid conversation messages using the IDs from the subquery
         $conversations = Message::whereIn('id', $latestMessageIds)
             ->with([
-                'sender:id,email',
-                'sender.userProfile:user_id,first_name,last_name,profile_picture',
-                'receiver:id,email',
-                'receiver.userProfile:user_id,first_name,last_name,profile_picture'
+                'sender:id,email,matrimony_id',
+                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified',
+                'receiver:id,email,matrimony_id',
+                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified'
             ])
             ->orderBy('sent_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->through(function ($message) use ($user) {
+                // Determine who the "other" user is in this conversation
+                $otherUser = ($message->sender_id === $user->id) ? $message->receiver : $message->sender;
+                
+                if ($otherUser) {
+                    // Check if contact is unlocked for the other user
+                    $isContactUnlocked = \App\Models\ContactUnlock::where('user_id', $user->id)
+                        ->where('unlocked_user_id', $otherUser->id)
+                        ->exists();
+                    
+                    // Check if primary photo is verified
+                    $isPrimaryPhotoVerified = \App\Models\ProfilePhoto::where('user_id', $otherUser->id)
+                        ->where('is_primary', true)
+                        ->where('is_verified', true)
+                        ->exists();
+
+                    $otherUser->setAttribute('is_contact_unlocked', $isContactUnlocked);
+                    $otherUser->setAttribute('is_primary_photo_verified', $isPrimaryPhotoVerified);
+                }
+
+                return $message;
+            });
 
         return response()->json([
             'conversations' => $conversations
@@ -138,10 +160,10 @@ class MessageController extends Controller
             });
         })
             ->with([
-                'sender:id,email',
-                'sender.userProfile:first_name,last_name,profile_picture',
-                'receiver:id,email',
-                'receiver.userProfile:first_name,last_name,profile_picture'
+                'sender:id,email,matrimony_id',
+                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified',
+                'receiver:id,email,matrimony_id',
+                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified'
             ])
             ->orderBy('sent_at', 'asc')
             ->get();
