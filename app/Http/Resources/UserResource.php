@@ -89,7 +89,17 @@ class UserResource extends JsonResource
                 try {
                     return \App\Models\UserReport::where('reported_id', $this->id)->count();
                 } catch (\Exception $e) {
-                    return 0; // Fallback if table doesn't exist yet
+                    return 0;
+                }
+            })(),
+            'is_reported_by_me' => (function() use ($currentUser) {
+                if (!$currentUser) return false;
+                try {
+                    return \App\Models\UserReport::where('reporter_id', $currentUser->id)
+                        ->where('reported_id', $this->id)
+                        ->exists();
+                } catch (\Exception $e) {
+                    return false;
                 }
             })(),
 
