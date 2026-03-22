@@ -140,8 +140,11 @@ class AdminController extends Controller
             'userProfile.subCasteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel'
-        ])
-            ->where('role', '!=', 'admin');
+        ]);
+
+        if ($request->has('role') && $request->role !== 'all') {
+            $query->where('role', $request->role);
+        }
 
         if ($request->has('search')) {
             $search = $request->search;
