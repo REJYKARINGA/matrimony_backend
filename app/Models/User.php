@@ -124,7 +124,7 @@ class User extends Authenticatable
      */
     public function userProfile(): HasOne
     {
-        return $this->hasOne(UserProfile::class, 'user_id');
+        return $this->hasOne(UserProfile::class , 'user_id');
     }
 
     /**
@@ -132,7 +132,7 @@ class User extends Authenticatable
      */
     public function familyDetails(): HasOne
     {
-        return $this->hasOne(FamilyDetail::class, 'user_id');
+        return $this->hasOne(FamilyDetail::class , 'user_id');
     }
 
     /**
@@ -140,7 +140,7 @@ class User extends Authenticatable
      */
     public function preferences(): HasOne
     {
-        return $this->hasOne(Preference::class, 'user_id');
+        return $this->hasOne(Preference::class , 'user_id');
     }
 
     /**
@@ -148,7 +148,7 @@ class User extends Authenticatable
      */
     public function profilePhotos(): HasMany
     {
-        return $this->hasMany(ProfilePhoto::class, 'user_id');
+        return $this->hasMany(ProfilePhoto::class , 'user_id');
     }
 
     /**
@@ -316,14 +316,14 @@ class User extends Authenticatable
      */
     public function respondedSuggestions()
     {
-        return $this->hasMany(Suggestion::class, 'responded_by');
+        return $this->hasMany(Suggestion::class , 'responded_by');
     }
     /**
      * Relationship with user verification
      */
     public function verification(): HasOne
     {
-        return $this->hasOne(UserVerification::class, 'user_id');
+        return $this->hasOne(UserVerification::class , 'user_id');
     }
 
     /**
@@ -331,7 +331,7 @@ class User extends Authenticatable
      */
     public function bankAccounts(): HasMany
     {
-        return $this->hasMany(BankAccount::class, 'user_id');
+        return $this->hasMany(BankAccount::class , 'user_id');
     }
 
     /**
@@ -339,7 +339,7 @@ class User extends Authenticatable
      */
     public function primaryBankAccount(): HasOne
     {
-        return $this->hasOne(BankAccount::class, 'user_id')->where('is_primary', true);
+        return $this->hasOne(BankAccount::class , 'user_id')->where('is_primary', true);
     }
 
     /**
@@ -347,7 +347,7 @@ class User extends Authenticatable
      */
     public function givenReferences(): HasMany
     {
-        return $this->hasMany(Reference::class, 'referenced_by_id');
+        return $this->hasMany(Reference::class , 'referenced_by_id');
     }
 
     /**
@@ -355,7 +355,7 @@ class User extends Authenticatable
      */
     public function receivedReference(): HasOne
     {
-        return $this->hasOne(Reference::class, 'referenced_user_id');
+        return $this->hasOne(Reference::class , 'referenced_user_id');
     }
 
     /**
@@ -363,7 +363,7 @@ class User extends Authenticatable
      */
     public function personalities()
     {
-        return $this->belongsToMany(Personality::class, 'user_personality', 'user_id', 'personality_id');
+        return $this->belongsToMany(Personality::class , 'user_personality', 'user_id', 'personality_id');
     }
 
     /**
@@ -371,15 +371,15 @@ class User extends Authenticatable
      */
     public function interests()
     {
-        return $this->belongsToMany(InterestHobby::class, 'user_interests', 'user_id', 'interest_id');
+        return $this->belongsToMany(InterestHobby::class , 'user_interests', 'user_id', 'interest_id');
     }
     public function photoRequestsSent()
     {
-        return $this->hasMany(PhotoRequest::class, 'requester_id');
+        return $this->hasMany(PhotoRequest::class , 'requester_id');
     }
 
     public function photoRequestsReceived()
     {
-        return $this->hasMany(PhotoRequest::class, 'receiver_id');
+        return $this->hasMany(PhotoRequest::class , 'receiver_id');
     }
 }
