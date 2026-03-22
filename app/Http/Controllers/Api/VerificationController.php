@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Models\UserVerification;
 
 class VerificationController extends Controller
@@ -32,39 +33,47 @@ class VerificationController extends Controller
             ], 422);
         }
 
-        // Generate professional filenames
-        $timestamp = time();
-        $userId = $user->id;
+        try {
+            // Generate professional filenames
+            $timestamp = time();
+            $userId = $user->id;
 
-        $frontFile = $request->file('id_proof_front');
-        $frontExt = $frontFile->getClientOriginalExtension();
-        $frontFilename = "{$userId}_verification_front_{$timestamp}.{$frontExt}";
-        $frontPath = $frontFile->storeAs('id_proofs', $frontFilename, 'public');
+            $frontFile = $request->file('id_proof_front');
+            $frontExt = $frontFile->getClientOriginalExtension();
+            $frontFilename = "{$userId}_verification_front_{$timestamp}.{$frontExt}";
+            $frontPath = $frontFile->storeAs('id_proofs', $frontFilename, 'public');
 
-        $backPath = null;
-        if ($request->hasFile('id_proof_back')) {
-            $backFile = $request->file('id_proof_back');
-            $backExt = $backFile->getClientOriginalExtension();
-            $backFilename = "{$userId}_verification_back_{$timestamp}.{$backExt}";
-            $backPath = $backFile->storeAs('id_proofs', $backFilename, 'public');
+            $backPath = null;
+            if ($request->hasFile('id_proof_back')) {
+                $backFile = $request->file('id_proof_back');
+                $backExt = $backFile->getClientOriginalExtension();
+                $backFilename = "{$userId}_verification_back_{$timestamp}.{$backExt}";
+                $backPath = $backFile->storeAs('id_proofs', $backFilename, 'public');
+            }
+
+            $verification = UserVerification::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'id_proof_type' => $request->id_proof_type,
+                    'id_proof_number' => $request->id_proof_number,
+                    'id_proof_front_url' => Storage::url($frontPath),
+                    'id_proof_back_url' => $backPath ? Storage::url($backPath) : null,
+                    'status' => 'pending',
+                    'rejection_reason' => null,
+                ]
+            );
+
+            return response()->json([
+                'message' => 'ID proof submitted successfully',
+                'verification' => $verification
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Verification Submission Error: " . $e->getMessage());
+            return response()->json([
+                'error' => 'An error occurred during submission',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $verification = UserVerification::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'id_proof_type' => $request->id_proof_type,
-                'id_proof_number' => $request->id_proof_number,
-                'id_proof_front_url' => Storage::url($frontPath),
-                'id_proof_back_url' => $backPath ? Storage::url($backPath) : null,
-                'status' => 'pending',
-                'rejection_reason' => null,
-            ]
-        );
-
-        return response()->json([
-            'message' => 'ID proof submitted successfully',
-            'verification' => $verification
-        ]);
     }
 
     /**
