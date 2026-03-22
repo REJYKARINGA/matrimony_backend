@@ -717,4 +717,61 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    // ==========================================
+    // Interest & Hobby Management
+    // ==========================================
+
+    public function getInterests(Request $request)
+    {
+        $query = \App\Models\InterestHobby::orderBy('trending_number', 'asc')
+            ->orderBy('interest_name', 'asc');
+
+        if ($request->has('search')) {
+            $query->where('interest_name', 'like', "%{$request->search}%")
+                ->orWhere('interest_type', 'like', "%{$request->search}%");
+        }
+
+        if ($request->has('type')) {
+            $query->where('interest_type', $request->type);
+        }
+
+        return response()->json($query->paginate(20));
+    }
+
+    public function storeInterest(Request $request)
+    {
+        $validated = $request->validate([
+            'interest_name' => 'required|string|max:100|unique:interests_hobbies,interest_name',
+            'interest_type' => 'required|string|max:50',
+            'trending_number' => 'integer',
+            'is_active' => 'boolean'
+        ]);
+
+        $interest = \App\Models\InterestHobby::create($validated);
+
+        return response()->json(['message' => 'Interest added', 'data' => $interest]);
+    }
+
+    public function updateInterest(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'interest_name' => 'required|string|max:100|unique:interests_hobbies,interest_name,' . $id,
+            'interest_type' => 'required|string|max:50',
+            'trending_number' => 'integer',
+            'is_active' => 'boolean'
+        ]);
+
+        $interest = \App\Models\InterestHobby::findOrFail($id);
+        $interest->update($validated);
+
+        return response()->json(['message' => 'Interest updated', 'data' => $interest]);
+    }
+
+    public function deleteInterest($id)
+    {
+        $interest = \App\Models\InterestHobby::findOrFail($id);
+        $interest->delete();
+        return response()->json(['message' => 'Interest deleted']);
+    }
 }

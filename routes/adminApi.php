@@ -58,6 +58,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/interests', [InterestHobbyController::class, 'createInterest']);
     Route::put('/interests/{id}', [InterestHobbyController::class, 'updateInterest']);
     Route::delete('/interests/{id}', [InterestHobbyController::class, 'deleteInterest']);
+    Route::put('/interests/category/update', [InterestHobbyController::class, 'updateCategory']);
+    Route::delete('/interests/category/delete', [InterestHobbyController::class, 'deleteCategory']);
     Route::post('/interests/bulk-update-trending', [InterestHobbyController::class, 'bulkUpdateTrending']);
 
     // Personality Management

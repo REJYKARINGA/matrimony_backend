@@ -216,4 +216,56 @@ class InterestHobbyController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Rename a category (updates all interests with that type)
+     */
+    public function updateCategory(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'old_type' => 'required|string',
+                'new_type' => 'required|string|max:50'
+            ]);
+
+            InterestHobby::where('interest_type', $validated['old_type'])
+                ->update(['interest_type' => $validated['new_type']]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Category renamed successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to rename category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a category (deletes all interests with that type)
+     */
+    public function deleteCategory(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'type' => 'required|string'
+            ]);
+
+            InterestHobby::where('interest_type', $validated['type'])->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Category and its interests deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
