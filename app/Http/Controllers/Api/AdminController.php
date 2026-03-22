@@ -14,7 +14,11 @@ use App\Models\Occupation;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Notification;
+use App\Models\Religion;
+use App\Models\Caste;
+use App\Models\SubCaste;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -468,58 +472,63 @@ class AdminController extends Controller
      */
     public function updateProfile(Request $request, $id)
     {
-        $profile = UserProfile::withTrashed()->findOrFail($id);
+        try {
+            $profile = UserProfile::withTrashed()->findOrFail($id);
 
-        $validated = $request->validate([
-            'first_name'         => 'sometimes|required|string|max:100',
-            'last_name'          => 'sometimes|required|string|max:100',
-            'date_of_birth'      => 'nullable|date',
-            'gender'             => 'nullable|in:male,female',
-            'height'             => 'nullable|integer',
-            'weight'             => 'nullable|integer',
-            'marital_status'     => 'nullable|string',
-            'mother_tongue'      => 'nullable|string|max:100',
-            'drug_addiction'     => 'nullable|boolean',
-            'smoke'              => 'nullable|boolean',
-            'alcohol'            => 'nullable|boolean',
-            'religion_id'        => 'nullable|integer',
-            'caste_id'           => 'nullable|integer',
-            'sub_caste_id'       => 'nullable|integer',
-            'education_id'       => 'nullable|integer',
-            'occupation_id'      => 'nullable|integer',
-            'annual_income'      => 'nullable|numeric',
-            'city'               => 'nullable|string|max:100',
-            'district'           => 'nullable|string|max:100',
-            'county'             => 'nullable|string|max:100',
-            'state'              => 'nullable|string|max:100',
-            'country'            => 'nullable|string|max:100',
-            'present_city'       => 'nullable|string|max:100',
-            'present_country'    => 'nullable|string|max:100',
-            'postal_code'        => 'nullable|string|max:20',
-            'bio'                => 'nullable|string',
-            'hide_photos'        => 'nullable|boolean',
-            'is_active_verified' => 'nullable|boolean',
-            'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+            $validated = $request->validate([
+                'first_name'         => 'sometimes|required|string|max:100',
+                'last_name'          => 'sometimes|required|string|max:100',
+                'date_of_birth'      => 'nullable|date',
+                'gender'             => 'nullable|in:male,female',
+                'height'             => 'nullable|integer',
+                'weight'             => 'nullable|integer',
+                'marital_status'     => 'nullable|string',
+                'mother_tongue'      => 'nullable|string|max:100',
+                'drug_addiction'     => 'nullable|boolean',
+                'smoke'              => 'nullable|boolean',
+                'alcohol'            => 'nullable|boolean',
+                'religion_id'        => 'nullable|integer',
+                'caste_id'           => 'nullable|integer',
+                'sub_caste_id'       => 'nullable|integer',
+                'education_id'       => 'nullable|integer',
+                'occupation_id'      => 'nullable|integer',
+                'annual_income'      => 'nullable|numeric',
+                'city'               => 'nullable|string|max:100',
+                'district'           => 'nullable|string|max:100',
+                'county'             => 'nullable|string|max:100',
+                'state'              => 'nullable|string|max:100',
+                'country'            => 'nullable|string|max:100',
+                'present_city'       => 'nullable|string|max:100',
+                'present_country'    => 'nullable|string|max:100',
+                'postal_code'        => 'nullable|string|max:20',
+                'bio'                => 'nullable|string',
+                'hide_photos'        => 'nullable|boolean',
+                'is_active_verified' => 'nullable|boolean',
+                'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        if ($request->hasFile('profile_picture')) {
-            $path = $request->file('profile_picture')->store('profiles', 'public');
-            $validated['profile_picture'] = $path;
-            
-            // Delete old picture if it exists and is not a remote URL
-            if ($profile->profile_picture && !str_starts_with($profile->profile_picture, 'http')) {
-                try {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
-                } catch (\Exception $e) {
-                    // Ignore missing files or permission errors during delete
+            if ($request->hasFile('profile_picture')) {
+                $path = $request->file('profile_picture')->store('profiles', 'public');
+                $validated['profile_picture'] = $path;
+                
+                // Delete old picture if it exists and is not a remote URL
+                if ($profile->profile_picture && strpos($profile->profile_picture, 'http') !== 0) {
+                    try {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
+                    } catch (\Exception $e) {
+                        // Ignore missing files or permission errors during delete
+                    }
                 }
             }
+
+            $profile->update($validated);
+            $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
+
+            return response()->json(['message' => 'Profile updated successfully', 'profile' => $profile]);
+        } catch (\Exception $e) {
+            Log::error("Failed to update profile ID $id: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to update profile', 'message' => $e->getMessage()], 500);
         }
-
-        $profile->update($validated);
-        $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
-
-        return response()->json(['message' => 'Profile updated successfully', 'profile' => $profile]);
     }
 
     /**
