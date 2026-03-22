@@ -313,7 +313,7 @@ class AdminController extends Controller
                 $q->where('marital_status', 'like', "%{$search}%")
                     ->orWhere('min_age', 'like', "%{$search}%")
                     ->orWhere('max_age', 'like', "%{$search}%")
-                    ->orWhereHas('religionModel', function ($sub) use ($search) {
+                    ->orWhereHas('religion', function ($sub) use ($search) {
                         $sub->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
@@ -326,33 +326,6 @@ class AdminController extends Controller
         $preferences = $query->select('preferences.*', 'users.id as user_id', 'users.matrimony_id')
             ->orderBy('preferences.updated_at', 'desc')
             ->paginate(15);
-
-        // Get all educations and occupations for mapping
-        $educations = Education::pluck('name', 'id');
-        $occupations = Occupation::pluck('name', 'id');
-
-        // Transform the data to include names instead of IDs
-        $preferences->getCollection()->transform(function ($preference) use ($educations, $occupations) {
-            // Convert education IDs to names
-            if (!empty($preference->education) && is_array($preference->education)) {
-                $preference->education_names = array_map(function ($id) use ($educations) {
-                    return $educations->get($id, "Unknown ID: $id");
-                }, $preference->education);
-            } else {
-                $preference->education_names = [];
-            }
-
-            // Convert occupation IDs to names
-            if (!empty($preference->occupation) && is_array($preference->occupation)) {
-                $preference->occupation_names = array_map(function ($id) use ($occupations) {
-                    return $occupations->get($id, "Unknown ID: $id");
-                }, $preference->occupation);
-            } else {
-                $preference->occupation_names = [];
-            }
-
-            return $preference;
-        });
 
         return response()->json($preferences);
     }
