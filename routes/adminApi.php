@@ -25,7 +25,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/users/{id}/toggle-block', [AdminController::class, 'toggleBlockUser']);
 
     // User Profiles
+    Route::get('/users-without-profile', [AdminController::class, 'getUsersWithoutProfile']);
     Route::get('/user-profiles', [AdminController::class, 'getUserProfiles']);
+    Route::post('/user-profiles', [AdminController::class, 'storeProfile']);
+    Route::put('/user-profiles/{id}', [AdminController::class, 'updateProfile']);
+    Route::delete('/user-profiles/{id}', [AdminController::class, 'deleteProfile']);
+    Route::post('/user-profiles/{id}/restore', [AdminController::class, 'restoreProfile']);
 
     // Family Details
     Route::get('/family-details', [AdminController::class, 'getFamilyDetails']);

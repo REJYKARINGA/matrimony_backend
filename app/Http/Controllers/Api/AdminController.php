@@ -320,11 +320,20 @@ class AdminController extends Controller
     }
 
     /**
+     * Get users who do not have a profile yet
+     */
+    public function getUsersWithoutProfile(Request $request)
+    {
+        $users = User::whereDoesntHave('userProfile')->select('id', 'name', 'email')->get();
+        return response()->json($users);
+    }
+
+    /**
      * Get all user profiles
      */
     public function getUserProfiles(Request $request)
     {
-        $query = UserProfile::with([
+        $query = UserProfile::withoutGlobalScope('active')->with([
             'user.verification',
             'religionModel',
             'casteModel',
@@ -334,6 +343,11 @@ class AdminController extends Controller
         ])
             ->join('users', 'user_profiles.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
+
+        // Handle trashed tab
+        if ($request->trashed == '1') {
+            $query->onlyTrashed();
+        }
 
         // Search by name (first+last concat), email, matrimony_id
         if ($request->has('search') && $request->search !== '') {
@@ -398,6 +412,124 @@ class AdminController extends Controller
             ->paginate(15);
 
         return response()->json($profiles);
+    }
+
+    /**
+     * Store a new user profile
+     */
+    public function storeProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id'            => 'required|exists:users,id',
+            'first_name'         => 'required|string|max:100',
+            'last_name'          => 'required|string|max:100',
+            'date_of_birth'      => 'nullable|date',
+            'gender'             => 'nullable|in:male,female',
+            'height'             => 'nullable|integer',
+            'weight'             => 'nullable|integer',
+            'marital_status'     => 'nullable|string',
+            'mother_tongue'      => 'nullable|string|max:100',
+            'drug_addiction'     => 'nullable|boolean',
+            'smoke'              => 'nullable|boolean',
+            'alcohol'            => 'nullable|boolean',
+            'religion_id'        => 'nullable|integer',
+            'caste_id'           => 'nullable|integer',
+            'sub_caste_id'       => 'nullable|integer',
+            'education_id'       => 'nullable|integer',
+            'occupation_id'      => 'nullable|integer',
+            'annual_income'      => 'nullable|numeric',
+            'city'               => 'nullable|string|max:100',
+            'district'           => 'nullable|string|max:100',
+            'county'             => 'nullable|string|max:100',
+            'state'              => 'nullable|string|max:100',
+            'country'            => 'nullable|string|max:100',
+            'present_city'       => 'nullable|string|max:100',
+            'present_country'    => 'nullable|string|max:100',
+            'postal_code'        => 'nullable|string|max:20',
+            'bio'                => 'nullable|string',
+            'hide_photos'        => 'nullable|boolean',
+            'is_active_verified' => 'nullable|boolean',
+        ]);
+
+        $profile = UserProfile::create($validated);
+        $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
+
+        return response()->json(['message' => 'Profile created successfully', 'profile' => $profile], 201);
+    }
+
+    /**
+     * Update an existing user profile
+     */
+    public function updateProfile(Request $request, $id)
+    {
+        $profile = UserProfile::withTrashed()->findOrFail($id);
+
+        $validated = $request->validate([
+            'first_name'         => 'sometimes|required|string|max:100',
+            'last_name'          => 'sometimes|required|string|max:100',
+            'date_of_birth'      => 'nullable|date',
+            'gender'             => 'nullable|in:male,female',
+            'height'             => 'nullable|integer',
+            'weight'             => 'nullable|integer',
+            'marital_status'     => 'nullable|string',
+            'mother_tongue'      => 'nullable|string|max:100',
+            'drug_addiction'     => 'nullable|boolean',
+            'smoke'              => 'nullable|boolean',
+            'alcohol'            => 'nullable|boolean',
+            'religion_id'        => 'nullable|integer',
+            'caste_id'           => 'nullable|integer',
+            'sub_caste_id'       => 'nullable|integer',
+            'education_id'       => 'nullable|integer',
+            'occupation_id'      => 'nullable|integer',
+            'annual_income'      => 'nullable|numeric',
+            'city'               => 'nullable|string|max:100',
+            'district'           => 'nullable|string|max:100',
+            'county'             => 'nullable|string|max:100',
+            'state'              => 'nullable|string|max:100',
+            'country'            => 'nullable|string|max:100',
+            'present_city'       => 'nullable|string|max:100',
+            'present_country'    => 'nullable|string|max:100',
+            'postal_code'        => 'nullable|string|max:20',
+            'bio'                => 'nullable|string',
+            'hide_photos'        => 'nullable|boolean',
+            'is_active_verified' => 'nullable|boolean',
+        ]);
+
+        $profile->update($validated);
+        $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
+
+        return response()->json(['message' => 'Profile updated successfully', 'profile' => $profile]);
+    }
+
+    /**
+     * Soft delete a profile (or force delete if already trashed)
+     */
+    public function deleteProfile($id)
+    {
+        $profile = UserProfile::withTrashed()->findOrFail($id);
+
+        if ($profile->trashed()) {
+            $profile->forceDelete();
+            return response()->json(['message' => 'Profile permanently deleted']);
+        }
+
+        $profile->delete();
+        return response()->json(['message' => 'Profile trashed successfully']);
+    }
+
+    /**
+     * Restore a trashed profile
+     */
+    public function restoreProfile($id)
+    {
+        $profile = UserProfile::withTrashed()->findOrFail($id);
+
+        if (!$profile->trashed()) {
+            return response()->json(['message' => 'Profile is not trashed'], 400);
+        }
+
+        $profile->restore();
+        return response()->json(['message' => 'Profile restored successfully']);
     }
 
     /**
