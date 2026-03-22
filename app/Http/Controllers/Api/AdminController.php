@@ -20,11 +20,28 @@ class AdminController extends Controller
     /**
      * Get pending verifications
      */
-    public function getPendingVerifications()
+    public function getPendingVerifications(Request $request)
     {
-        $verifications = UserVerification::with(['user.userProfile', 'user.profilePhotos'])
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'desc')
+        $query = UserVerification::with(['user.userProfile', 'user.profilePhotos'])
+            ->where('status', 'pending');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id_proof_number', 'like', "%{$search}%")
+                    ->orWhere('id_proof_type', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($qu) use ($search) {
+                        $qu->where('email', 'like', "%{$search}%")
+                            ->orWhere('matrimony_id', 'like', "%{$search}%")
+                            ->orWhereHas('userProfile', function ($qp) use ($search) {
+                                $qp->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                            });
+                    });
+            });
+        }
+
+        $verifications = $query->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return response()->json($verifications);
