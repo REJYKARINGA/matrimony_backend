@@ -158,6 +158,10 @@ class AdminController extends Controller
             $query->where('phone_verified', (bool) $request->phone_verified);
         }
 
+        if ($request->has('status') && $request->status !== 'all' && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
         if ($request->has('search') && $request->search !== '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
