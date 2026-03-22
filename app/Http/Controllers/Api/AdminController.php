@@ -565,17 +565,45 @@ class AdminController extends Controller
     /**
      * Get all reports
      */
-    public function getReports()
+    public function getReports(Request $request)
     {
-        $reports = \App\Models\UserReport::with([
+        $query = \App\Models\UserReport::query();
+
+        // Reporter Search (Matrimony ID or Name)
+        if ($request->reporter_search) {
+            $query->whereHas('reporter', function($q) use ($request) {
+                $q->where('matrimony_id', 'like', '%' . $request->reporter_search . '%');
+            })->orWhereHas('reporter.userProfile', function($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->reporter_search . '%')
+                  ->orWhere('last_name', 'like', '%' . $request->reporter_search . '%');
+            });
+        }
+
+        // Reported User Search (Matrimony ID or Name)
+        if ($request->reported_search) {
+            $query->whereHas('reported', function($q) use ($request) {
+                $q->where('matrimony_id', 'like', '%' . $request->reported_search . '%');
+            })->orWhereHas('reported.userProfile', function($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->reported_search . '%')
+                  ->orWhere('last_name', 'like', '%' . $request->reported_search . '%');
+            });
+        }
+
+        // Status Filter
+        if ($request->status && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $reports = $query->with([
             'reporter.userProfile', 
-            'reported' => function($query) {
-                $query->withCount('receivedUserReports')->with('userProfile');
+            'reported' => function($q) {
+                $q->withCount('receivedUserReports')->with('userProfile');
             }, 
             'reviewer.userProfile'
         ])
         ->orderBy('created_at', 'desc')
         ->paginate(10);
+
         return response()->json($reports);
     }
 
