@@ -560,7 +560,8 @@ class AdminController extends Controller
 
     public function getEducations(Request $request)
     {
-        $query = \App\Models\Education::orderBy('created_at', 'desc');
+        $query = \App\Models\Education::orderBy('order_number', 'asc')
+            ->orderBy('created_at', 'desc');
         if ($request->has('search')) {
             $query->where('name', 'like', "%{$request->search}%");
         }
@@ -569,24 +570,29 @@ class AdminController extends Controller
 
     public function storeEducation(Request $request)
     {
-        $request->validate(['name' => 'required|string|unique:education,name']);
-
-        $education = \App\Models\Education::create([
-            'name' => $request->name,
-            'is_active' => true,
-            'order_number' => 0,
-            'popularity_count' => 0
+        $validated = $request->validate([
+            'name' => 'required|string|unique:education,name',
+            'is_active' => 'boolean',
+            'order_number' => 'integer',
+            'popularity_count' => 'integer'
         ]);
+
+        $education = \App\Models\Education::create($validated);
 
         return response()->json(['message' => 'Education added', 'data' => $education]);
     }
 
     public function updateEducation(Request $request, $id)
     {
-        $request->validate(['name' => 'required|string|unique:education,name,' . $id]);
+        $validated = $request->validate([
+            'name' => 'required|string|unique:education,name,' . $id,
+            'is_active' => 'boolean',
+            'order_number' => 'integer',
+            'popularity_count' => 'integer'
+        ]);
 
         $education = \App\Models\Education::findOrFail($id);
-        $education->update(['name' => $request->name]);
+        $education->update($validated);
 
         return response()->json(['message' => 'Education updated', 'data' => $education]);
     }
@@ -604,7 +610,8 @@ class AdminController extends Controller
 
     public function getOccupations(Request $request)
     {
-        $query = \App\Models\Occupation::orderBy('created_at', 'desc');
+        $query = \App\Models\Occupation::orderBy('order_number', 'asc')
+            ->orderBy('created_at', 'desc');
         if ($request->has('search')) {
             $query->where('name', 'like', "%{$request->search}%");
         }
@@ -613,24 +620,29 @@ class AdminController extends Controller
 
     public function storeOccupation(Request $request)
     {
-        $request->validate(['name' => 'required|string|unique:occupations,name']);
-
-        $occupation = \App\Models\Occupation::create([
-            'name' => $request->name,
-            'is_active' => true,
-            'order_number' => 0,
-            'popularity_count' => 0
+        $validated = $request->validate([
+            'name' => 'required|string|unique:occupations,name',
+            'is_active' => 'boolean',
+            'order_number' => 'integer',
+            'popularity_count' => 'integer'
         ]);
+
+        $occupation = \App\Models\Occupation::create($validated);
 
         return response()->json(['message' => 'Occupation added', 'data' => $occupation]);
     }
 
     public function updateOccupation(Request $request, $id)
     {
-        $request->validate(['name' => 'required|string|unique:occupations,name,' . $id]);
+        $validated = $request->validate([
+            'name' => 'required|string|unique:occupations,name,' . $id,
+            'is_active' => 'boolean',
+            'order_number' => 'integer',
+            'popularity_count' => 'integer'
+        ]);
 
         $occupation = \App\Models\Occupation::findOrFail($id);
-        $occupation->update(['name' => $request->name]);
+        $occupation->update($validated);
 
         return response()->json(['message' => 'Occupation updated', 'data' => $occupation]);
     }
