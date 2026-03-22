@@ -13,6 +13,7 @@ use App\Models\Education;
 use App\Models\Occupation;
 use App\Models\Transaction;
 use App\Models\Wallet;
+use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -73,6 +74,16 @@ class AdminController extends Controller
             }
         });
 
+        // Create notification for the user
+        Notification::create([
+            'user_id' => $verification->user_id,
+            'sender_id' => $request->user()->id,
+            'type' => 'verification',
+            'title' => 'ID Verification Approved',
+            'message' => 'Your ID verification has been approved. Your profile is now verified.',
+            'is_read' => false,
+        ]);
+
         return response()->json([
             'message' => 'User verified successfully',
             'verification' => $verification
@@ -95,6 +106,16 @@ class AdminController extends Controller
             'rejection_reason' => $request->reason,
             'verified_at' => null, // reset if previously set
             'verified_by' => $request->user()->id
+        ]);
+
+        // Create notification for the user
+        Notification::create([
+            'user_id' => $verification->user_id,
+            'sender_id' => $request->user()->id,
+            'type' => 'verification',
+            'title' => 'ID Verification Rejected',
+            'message' => 'Your ID verification was rejected. Reason: ' . $request->reason,
+            'is_read' => false,
         ]);
 
         // Also ensure profile is NOT verified
