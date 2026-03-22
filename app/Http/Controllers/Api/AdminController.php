@@ -571,13 +571,18 @@ class AdminController extends Controller
         $reporterIds = UserReport::distinct()->pluck('reporter_id');
         $reportedIds = UserReport::distinct()->pluck('reported_id');
         
-        $userIds = $reporterIds->merge($reportedIds)->unique();
-        
-        $users = User::whereIn('id', $userIds)
+        $reporters = User::whereIn('id', $reporterIds)
+            ->with('userProfile')
+            ->get(['id', 'matrimony_id']);
+            
+        $reported = User::whereIn('id', $reportedIds)
             ->with('userProfile')
             ->get(['id', 'matrimony_id']);
 
-        return response()->json($users);
+        return response()->json([
+            'reporters' => $reporters,
+            'reported' => $reported
+        ]);
     }
 
     /**
