@@ -182,7 +182,7 @@ class AdminController extends Controller
      */
     public function getReports()
     {
-        $reports = \App\Models\Report::with(['reporter.userProfile', 'reportedUser.userProfile'])
+        $reports = \App\Models\UserReport::with(['reporter.userProfile', 'reported.userProfile'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         return response()->json($reports);
@@ -193,7 +193,7 @@ class AdminController extends Controller
      */
     public function resolveReport(Request $request, $id)
     {
-        $report = \App\Models\Report::findOrFail($id);
+        $report = \App\Models\UserReport::findOrFail($id);
         $report->status = 'resolved';
         $report->resolution_notes = $request->resolution_notes;
         $report->reviewed_by = $request->user()->id;
@@ -394,9 +394,9 @@ class AdminController extends Controller
 
             // Report Statistics
             try {
-                $totalReports = DB::table('reports')->count();
-                $pendingReports = DB::table('reports')->where('status', 'pending')->count();
-                $resolvedReports = DB::table('reports')->where('status', 'resolved')->count();
+                $totalReports = DB::table('user_reports')->count();
+                $pendingReports = DB::table('user_reports')->where('status', 'pending')->count();
+                $resolvedReports = DB::table('user_reports')->where('status', 'resolved')->count();
             } catch (\Exception $e) {
                 $totalReports = 0;
                 $pendingReports = 0;

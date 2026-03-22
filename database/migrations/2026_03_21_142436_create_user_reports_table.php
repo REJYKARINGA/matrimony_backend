@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('reporter_id')->constrained('users')->onDelete('cascade');
             $table->unsignedBigInteger('reported_id');
             $table->string('reason');
+            $table->text('resolution_notes')->nullable();
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->string('status')->default('pending');
             $table->timestamps();
         });
