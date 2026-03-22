@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('user_reports', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('reporter_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('reported_id');
+            $table->string('reason');
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
     }
