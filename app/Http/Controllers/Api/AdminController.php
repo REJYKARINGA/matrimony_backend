@@ -134,7 +134,7 @@ class AdminController extends Controller
      */
     public function getUsers(Request $request)
     {
-        $query = User::with([
+        $query = User::withoutGlobalScope('active')->with([
             'userProfile.religionModel',
             'userProfile.casteModel',
             'userProfile.subCasteModel',
