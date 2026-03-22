@@ -106,4 +106,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/sub-castes', [ReligionController::class, 'createSubCaste']);
     Route::put('/sub-castes/{id}', [ReligionController::class, 'updateSubCaste']);
     Route::delete('/sub-castes/{id}', [ReligionController::class, 'deleteSubCaste']);
+
+    // Audit & Security Logs
+    Route::get('/login-histories', [AdminController::class, 'getLoginHistories']);
+    Route::get('/activity-logs', [AdminController::class, 'getActivityLogs']);
 });

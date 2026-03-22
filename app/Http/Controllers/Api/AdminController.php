@@ -774,4 +774,56 @@ class AdminController extends Controller
         $interest->delete();
         return response()->json(['message' => 'Interest deleted']);
     }
+
+    // ==========================================
+    // Audit & Security Logs
+    // ==========================================
+
+    public function getLoginHistories(Request $request)
+    {
+        try {
+            $query = \App\Models\UserLoginHistory::with('user');
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('ip_address', 'like', "%{$search}%")
+                        ->orWhere('user_agent', 'like', "%{$search}%")
+                        ->orWhere('location', 'like', "%{$search}%")
+                        ->orWhereHas('user', function($qu) use ($search) {
+                            $qu->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            return response()->json($query->orderBy('login_at', 'desc')->paginate(20));
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch login history', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getActivityLogs(Request $request)
+    {
+        try {
+            $query = \App\Models\ActivityLog::with('user');
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('action', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%")
+                        ->orWhere('details', 'like', "%{$search}%")
+                        ->orWhereHas('user', function($qu) use ($search) {
+                            $qu->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch activity logs', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
