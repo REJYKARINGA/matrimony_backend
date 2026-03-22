@@ -333,7 +333,7 @@ class AdminController extends Controller
      */
     public function getUserProfiles(Request $request)
     {
-        $query = UserProfile::withoutGlobalScope('active')->with([
+        $query = UserProfile::with([
             'user.verification',
             'religionModel',
             'casteModel',
