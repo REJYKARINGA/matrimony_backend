@@ -782,7 +782,7 @@ class AdminController extends Controller
     public function getLoginHistories(Request $request)
     {
         try {
-            $query = \App\Models\UserLoginHistory::with('user');
+            $query = \App\Models\UserLoginHistory::with(['user.userProfile']);
 
             if ($request->has('search')) {
                 $search = $request->search;
@@ -791,8 +791,12 @@ class AdminController extends Controller
                         ->orWhere('user_agent', 'like', "%{$search}%")
                         ->orWhere('location', 'like', "%{$search}%")
                         ->orWhereHas('user', function($qu) use ($search) {
-                            $qu->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                            $qu->where('email', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%")
+                                ->orWhereHas('userProfile', function($qp) use ($search) {
+                                    $qp->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
                         });
                 });
             }
@@ -806,7 +810,7 @@ class AdminController extends Controller
     public function getActivityLogs(Request $request)
     {
         try {
-            $query = \App\Models\ActivityLog::with('user');
+            $query = \App\Models\ActivityLog::with(['user.userProfile']);
 
             if ($request->has('search')) {
                 $search = $request->search;
@@ -815,8 +819,12 @@ class AdminController extends Controller
                         ->orWhere('ip_address', 'like', "%{$search}%")
                         ->orWhere('details', 'like', "%{$search}%")
                         ->orWhereHas('user', function($qu) use ($search) {
-                            $qu->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                            $qu->where('email', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%")
+                                ->orWhereHas('userProfile', function($qp) use ($search) {
+                                    $qp->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
                         });
                 });
             }
