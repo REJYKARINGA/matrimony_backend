@@ -834,4 +834,38 @@ class AdminController extends Controller
             return response()->json(['error' => 'Failed to fetch activity logs', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function getContactUnlocks(Request $request)
+    {
+        try {
+            $query = \App\Models\ContactUnlock::with(['user.userProfile', 'unlockedUser.userProfile']);
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('payment_method', 'like', "%{$search}%")
+                        ->orWhereHas('user', function($qu) use ($search) {
+                            $qu->where('email', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%")
+                                ->orWhereHas('userProfile', function($qp) use ($search) {
+                                    $qp->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
+                        })
+                        ->orWhereHas('unlockedUser', function($qu) use ($search) {
+                            $qu->where('email', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%")
+                                ->orWhereHas('userProfile', function($qp) use ($search) {
+                                    $qp->where('first_name', 'like', "%{$search}%")
+                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                });
+                        });
+                });
+            }
+
+            return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch contact unlocks', 'message' => $e->getMessage()], 500);
+        }
+    }
 }

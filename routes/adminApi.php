@@ -110,4 +110,5 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Audit & Security Logs
     Route::get('/login-histories', [AdminController::class, 'getLoginHistories']);
     Route::get('/activity-logs', [AdminController::class, 'getActivityLogs']);
+    Route::get('/contact-unlocks', [AdminController::class, 'getContactUnlocks']);
 });
