@@ -382,4 +382,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(PhotoRequest::class , 'receiver_id');
     }
+
+    public function receivedUserReports(): HasMany
+    {
+        return $this->hasMany(UserReport::class, 'reported_id');
+    }
 }

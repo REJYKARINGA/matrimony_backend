@@ -567,9 +567,15 @@ class AdminController extends Controller
      */
     public function getReports()
     {
-        $reports = \App\Models\UserReport::with(['reporter.userProfile', 'reported.userProfile', 'reviewer.userProfile'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $reports = \App\Models\UserReport::with([
+            'reporter.userProfile', 
+            'reported' => function($query) {
+                $query->withCount('receivedUserReports')->with('userProfile');
+            }, 
+            'reviewer.userProfile'
+        ])
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
         return response()->json($reports);
     }
 
