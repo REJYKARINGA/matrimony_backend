@@ -77,6 +77,10 @@ class UserResource extends JsonResource
             'distance' => $this->when(isset($this->distance), $this->distance),
             'personalities' => PersonalityResource::collection($this->whenLoaded('personalities')),
             'interests' => InterestResource::collection($this->whenLoaded('interests')),
+            'is_photo_verified' => !$canViewPhotos || \App\Models\ProfilePhoto::where('user_id', $this->id)
+                ->where('is_primary', true)
+                ->where('is_verified', true)
+                ->exists(),
 
             'contact_info' => [
                 'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
