@@ -1331,7 +1331,7 @@ class AdminController extends Controller
     public function getEngagementPosters(Request $request)
     {
         try {
-            $query = \App\Models\EngagementPoster::with(['user.userProfile']);
+            $query = \App\Models\EngagementPoster::with(['user.userProfile', 'partner.userProfile']);
 
             if ($request->has('search')) {
                 $search = $request->search;

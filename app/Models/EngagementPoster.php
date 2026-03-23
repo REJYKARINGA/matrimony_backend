@@ -34,4 +34,9 @@ class EngagementPoster extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function partner()
+    {
+        return $this->belongsTo(User::class, 'partner_matrimony_id', 'matrimony_id');
+    }
 }
