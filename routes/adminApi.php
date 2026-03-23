@@ -48,6 +48,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/success-stories/{id}/approve', [AdminController::class, 'approveSuccessStory']);
     Route::post('/success-stories/{id}/reject', [AdminController::class, 'rejectSuccessStory']);
 
+    // Engagement Posters
+    Route::get('/engagement-posters', [AdminController::class, 'getEngagementPosters']);
+    Route::post('/engagement-posters/{id}/verify', [AdminController::class, 'verifyEngagementPoster']);
+    Route::delete('/engagement-posters/{id}', [AdminController::class, 'deleteEngagementPoster']);
+
     // Payments
     Route::get('/payments', [AdminController::class, 'getPayments']);
 

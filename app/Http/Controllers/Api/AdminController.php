@@ -1323,4 +1323,77 @@ class AdminController extends Controller
             return response()->json(['error' => 'Failed to fetch contact unlocks', 'message' => $e->getMessage()], 500);
         }
     }
+
+    // ==========================================
+    // Engagement Posters Management
+    // ==========================================
+
+    public function getEngagementPosters(Request $request)
+    {
+        try {
+            $query = \App\Models\EngagementPoster::with(['user.userProfile']);
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('announcement_title', 'like', "%{$search}%")
+                      ->orWhere('announcement_message', 'like', "%{$search}%")
+                      ->orWhere('partner_matrimony_id', 'like', "%{$search}%")
+                      ->orWhereHas('user', function($qu) use ($search) {
+                          $qu->where('email', 'like', "%{$search}%")
+                             ->orWhere('matrimony_id', 'like', "%{$search}%")
+                             ->orWhereHas('userProfile', function($qp) use ($search) {
+                                  $qp->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%");
+                             });
+                      });
+                });
+            }
+
+            return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch posters', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function verifyEngagementPoster($id)
+    {
+        try {
+            $poster = \App\Models\EngagementPoster::findOrFail($id);
+            $poster->is_verified = true;
+            $poster->save();
+
+            return response()->json(['message' => 'Poster verified successfully', 'data' => $poster]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to verify poster', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteEngagementPoster($id)
+    {
+        try {
+            $poster = \App\Models\EngagementPoster::findOrFail($id);
+            
+            // Delete image if exists
+            if ($poster->poster_image) {
+                if (str_contains($poster->poster_image, 'res.cloudinary.com')) {
+                    try {
+                        $urlParts = parse_url($poster->poster_image);
+                        $pathParts = explode('/', trim($urlParts['path'], '/'));
+                        $publicIdWithExt = end($pathParts);
+                        $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
+                        cloudinary()->uploadApi()->destroy('matrimony/engagement_posters/' . $poster->user_id . '/' . $publicId);
+                    } catch (\Exception $e) {}
+                } else {
+                    $oldImagePath = str_replace('/storage/', '', $poster->poster_image);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldImagePath);
+                }
+            }
+            
+            $poster->delete();
+            return response()->json(['message' => 'Poster deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to delete poster', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
