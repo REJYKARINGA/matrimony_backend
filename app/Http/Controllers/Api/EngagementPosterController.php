@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\EngagementPoster;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Log;
 
 class EngagementPosterController extends Controller
 {
@@ -53,7 +54,7 @@ class EngagementPosterController extends Controller
                 ]);
                 $data['poster_image'] = $uploadResult['secure_url'];
             } catch (\Exception $e) {
-                \Log::error('Cloudinary upload error: ' . $e->getMessage());
+                Log::error('Cloudinary upload error: ' . $e->getMessage());
                 return response()->json([
                     'error' => 'Failed to upload engagement poster',
                     'message' => $e->getMessage()
@@ -132,7 +133,7 @@ class EngagementPosterController extends Controller
                     $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
                     cloudinary()->uploadApi()->destroy('matrimony/engagement_posters/' . $poster->user_id . '/' . $publicId);
                 } catch (\Exception $e) {
-                    \Log::warning('Failed to delete old engagement poster from Cloudinary: ' . $e->getMessage());
+                    Log::warning('Failed to delete old engagement poster from Cloudinary: ' . $e->getMessage());
                 }
             } elseif ($poster->poster_image) {
                 // local fallback
@@ -147,7 +148,7 @@ class EngagementPosterController extends Controller
                 ]);
                 $data['poster_image'] = $uploadResult['secure_url'];
             } catch (\Exception $e) {
-                \Log::error('Cloudinary upload error: ' . $e->getMessage());
+                Log::error('Cloudinary upload error: ' . $e->getMessage());
                 return response()->json([
                     'error' => 'Failed to upload engagement poster',
                     'message' => $e->getMessage()
@@ -163,7 +164,7 @@ class EngagementPosterController extends Controller
                     $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
                     cloudinary()->uploadApi()->destroy('matrimony/engagement_posters/' . $poster->user_id . '/' . $publicId);
                 } catch (\Exception $e) {
-                    \Log::warning('Failed to delete old engagement poster from Cloudinary: ' . $e->getMessage());
+                    Log::warning('Failed to delete old engagement poster from Cloudinary: ' . $e->getMessage());
                 }
             } elseif ($poster->poster_image) {
                 $oldImagePath = str_replace('/storage/', '', $poster->poster_image);
@@ -203,7 +204,7 @@ class EngagementPosterController extends Controller
                 $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
                 cloudinary()->uploadApi()->destroy('matrimony/engagement_posters/' . $poster->user_id . '/' . $publicId);
             } catch (\Exception $e) {
-                \Log::warning('Failed to delete from Cloudinary: ' . $e->getMessage());
+                Log::warning('Failed to delete from Cloudinary: ' . $e->getMessage());
             }
         } elseif ($poster->poster_image) {
             $oldImagePath = str_replace('/storage/', '', $poster->poster_image);
