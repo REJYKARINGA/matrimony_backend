@@ -327,7 +327,7 @@ class EngagementPosterController extends Controller
     private function validatePartnerCompatibility(string $partnerMatrimonyId, int $authUserId, ?int $excludePosterId = null)
     {
         // Load the partner user with their profile
-        $partnerUser = User::where('matrimony_id', $partnerMatrimonyId)->with('profile')->first();
+        $partnerUser = User::where('matrimony_id', $partnerMatrimonyId)->with('userProfile')->first();
 
         if (!$partnerUser) {
             return response()->json([
@@ -337,10 +337,10 @@ class EngagementPosterController extends Controller
         }
 
         // Load the authenticated user with their profile
-        $authUser = User::with('profile')->find($authUserId);
+        $authUser = User::with('userProfile')->find($authUserId);
 
-        $authProfile    = $authUser?->profile;
-        $partnerProfile = $partnerUser->profile;
+        $authProfile    = $authUser?->userProfile;
+        $partnerProfile = $partnerUser->userProfile;
 
         // --- Gender check (opposite gender required) ---
         $authGender    = $authProfile?->gender;
