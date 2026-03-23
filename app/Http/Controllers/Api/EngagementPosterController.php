@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\EngagementPoster;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Models\ProfilePhoto;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +32,13 @@ class EngagementPosterController extends Controller
      */
     public function myPoster()
     {
-        $poster = EngagementPoster::with('user')->where('user_id', auth()->id())->first();
+        $user = auth()->user();
+        $poster = EngagementPoster::with('user')
+            ->where(function($query) use ($user) {
+                $query->where('user_id', $user->id)
+                      ->orWhere('partner_matrimony_id', $user->matrimony_id);
+            })
+            ->first();
 
         if (!$poster) {
             return response()->json([
@@ -38,9 +46,113 @@ class EngagementPosterController extends Controller
             ], 404);
         }
 
+        // Fetch partner primary photo
+        $partnerPhoto = null;
+        if ($poster->partner_matrimony_id) {
+            $partner = User::where('matrimony_id', $poster->partner_matrimony_id)->first();
+            if ($partner) {
+                $photo = ProfilePhoto::where('user_id', $partner->id)
+                    ->where('is_primary', true)
+                    ->first();
+                if ($photo) {
+                    $partnerPhoto = $photo->full_photo_url;
+                }
+            }
+        }
+
+        // Fetch auth user's own primary photo
+        $userPhoto = null;
+        $ownPhoto = ProfilePhoto::where('user_id', auth()->id())
+            ->where('is_primary', true)
+            ->first();
+        if ($ownPhoto) {
+            $userPhoto = $ownPhoto->full_photo_url;
+        }
+
         return response()->json([
             'success' => true,
-            'engagement_poster' => $poster
+            'engagement_poster' => $poster,
+            'user_primary_photo' => $userPhoto,
+            'partner_primary_photo' => $partnerPhoto,
+            'is_owner' => $poster->user_id === auth()->id()
+        ]);
+    }
+
+    /**
+     * Partner accepts the engagement poster.
+     */
+    public function accept($id)
+    {
+        $poster = EngagementPoster::find($id);
+
+        if (!$poster) {
+            return response()->json(['error' => 'Engagement poster not found'], 404);
+        }
+
+        // Verify the auth user is indeed the partner
+        $currentUser = auth()->user();
+        if ($poster->partner_matrimony_id !== $currentUser->matrimony_id) {
+            return response()->json(['error' => 'Unauthorized. You are not the partner in this engagement.'], 403);
+        }
+
+        if ($poster->partner_status === 'confirmed') {
+            return response()->json(['message' => 'Poster already confirmed'], 200);
+        }
+
+        $poster->update([
+            'partner_status' => 'confirmed'
+        ]);
+
+        // Notify the creator
+        Notification::create([
+            'user_id' => $poster->user_id,
+            'sender_id' => $currentUser->id,
+            'type' => 'engagement_poster_accepted',
+            'title' => 'Engagement Confirmed',
+            'message' => "{$currentUser->userProfile->first_name} has accepted your engagement announcement!",
+            'reference_id' => $poster->id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Engagement confirmed successfully',
+            'poster' => $poster
+        ]);
+    }
+
+    /**
+     * Partner rejects the engagement poster.
+     */
+    public function reject($id)
+    {
+        $poster = EngagementPoster::find($id);
+
+        if (!$poster) {
+            return response()->json(['error' => 'Engagement poster not found'], 404);
+        }
+
+        $currentUser = auth()->user();
+        if ($poster->partner_matrimony_id !== $currentUser->matrimony_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $poster->update([
+            'partner_status' => 'rejected'
+        ]);
+
+        // Notify the creator
+        Notification::create([
+            'user_id' => $poster->user_id,
+            'sender_id' => $currentUser->id,
+            'type' => 'engagement_poster_rejected',
+            'title' => 'Engagement Rejected',
+            'message' => "{$currentUser->userProfile->first_name} has rejected the engagement announcement.",
+            'reference_id' => $poster->id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Engagement rejected successfully'
         ]);
     }
 
@@ -101,9 +213,21 @@ class EngagementPosterController extends Controller
 
         $poster = EngagementPoster::create($data);
 
+        // Send notification to partner
+        $partnerUser = User::where('matrimony_id', $request->partner_matrimony_id)->first();
+        if ($partnerUser) {
+            Notification::create([
+                'user_id' => $partnerUser->id,
+                'sender_id' => auth()->id(),
+                'type' => 'engagement_poster',
+                'title' => 'Engagement Announcement',
+                'message' => auth()->user()->userProfile->first_name . " has added you as a partner in an engagement announcement. Please review and accept.",
+                'reference_id' => $poster->id
+            ]);
+        }
+
         return response()->json([
-            'success' => true,
-            'message' => 'Engagement poster created successfully.',
+            'message' => 'Engagement poster created successfully, awaiting partner and admin approval',
             'engagement_poster' => $poster->load('user')
         ], 201);
     }
@@ -150,6 +274,7 @@ class EngagementPosterController extends Controller
             'display_expire_at'     => 'nullable|date',
         ]);
 
+        $isPartnerChanged = false;
         // If partner_matrimony_id is changing, validate not self
         if ($request->has('partner_matrimony_id') && $request->partner_matrimony_id) {
             $partnerUser = User::where('matrimony_id', $request->partner_matrimony_id)->first();
@@ -170,6 +295,7 @@ class EngagementPosterController extends Controller
             // Reset partner_status to pending when partner ID changes
             if ($request->partner_matrimony_id !== $poster->partner_matrimony_id) {
                 $poster->partner_status = 'pending';
+                $isPartnerChanged = true;
             }
         }
 
@@ -236,9 +362,23 @@ class EngagementPosterController extends Controller
 
         $poster->update($data);
 
+        // If partner ID changed, send notification to new partner
+        if ($isPartnerChanged) {
+            $partnerUser = User::where('matrimony_id', $poster->partner_matrimony_id)->first();
+            if ($partnerUser) {
+                Notification::create([
+                    'user_id' => $partnerUser->id,
+                    'sender_id' => auth()->id(),
+                    'type' => 'engagement_poster',
+                    'title' => 'Engagement Announcement',
+                    'message' => auth()->user()->userProfile->first_name . " has added you as a partner in an engagement announcement. Please review and accept.",
+                    'reference_id' => $poster->id
+                ]);
+            }
+        }
+
         return response()->json([
-            'success' => true,
-            'message' => 'Engagement poster updated successfully.',
+            'message' => 'Engagement poster updated successfully',
             'engagement_poster' => $poster->load('user')
         ]);
     }
@@ -306,6 +446,16 @@ class EngagementPosterController extends Controller
 
         $poster->partner_status = $request->status;
         $poster->save();
+
+        // Notify the creator
+        Notification::create([
+            'user_id' => $poster->user_id,
+            'sender_id' => auth()->id(),
+            'type' => 'engagement_poster_response',
+            'title' => 'Engagement ' . ucfirst($request->status),
+            'message' => auth()->user()->userProfile->first_name . " has " . $request->status . " your engagement announcement.",
+            'reference_id' => $poster->id
+        ]);
 
         return response()->json([
             'success' => true,
