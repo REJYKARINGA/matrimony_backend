@@ -11,6 +11,7 @@ class EngagementPoster extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'poster_image',
         'engagement_date',
         'announcement_title',
