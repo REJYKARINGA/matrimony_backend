@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EngagementPoster;
 use App\Models\User;
+use App\Models\UserProfile;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
@@ -66,17 +67,12 @@ class EngagementPosterController extends Controller
             ], 400);
         }
 
-        // Check if the partner matromonty ID is already confirmed in another poster
-        $alreadyConfirmed = EngagementPoster::where('partner_matrimony_id', $request->partner_matrimony_id)
-            ->where('partner_status', 'confirmed')
-            ->exists();
-
-        if ($alreadyConfirmed) {
-            return response()->json([
-                'error'  => 'Partner already confirmed in another engagement.',
-                'reason' => 'The Matrimony ID ' . $request->partner_matrimony_id . ' has already confirmed an engagement with someone else. Please verify and use the correct partner ID.',
-            ], 422);
-        }
+        // Validate: opposite gender, same religion, not already confirmed
+        $validationError = $this->validatePartnerCompatibility(
+            $request->partner_matrimony_id,
+            auth()->id()
+        );
+        if ($validationError) return $validationError;
 
         $data = $request->except('poster_image');
         $data['user_id'] = auth()->id();
@@ -163,18 +159,13 @@ class EngagementPosterController extends Controller
                 ], 400);
             }
 
-            // Check if partner ID is already confirmed in a DIFFERENT poster
-            $alreadyConfirmed = EngagementPoster::where('partner_matrimony_id', $request->partner_matrimony_id)
-                ->where('partner_status', 'confirmed')
-                ->where('id', '!=', $poster->id) // exclude current poster
-                ->exists();
-
-            if ($alreadyConfirmed) {
-                return response()->json([
-                    'error'  => 'Partner already confirmed in another engagement.',
-                    'reason' => 'The Matrimony ID ' . $request->partner_matrimony_id . ' has already confirmed an engagement with someone else. Please verify and use the correct partner ID.',
-                ], 422);
-            }
+            // Validate: opposite gender, same religion, not already confirmed (excluding current poster)
+            $validationError = $this->validatePartnerCompatibility(
+                $request->partner_matrimony_id,
+                auth()->id(),
+                $poster->id
+            );
+            if ($validationError) return $validationError;
 
             // Reset partner_status to pending when partner ID changes
             if ($request->partner_matrimony_id !== $poster->partner_matrimony_id) {
@@ -321,5 +312,81 @@ class EngagementPosterController extends Controller
             'message' => 'You have ' . $request->status . ' the engagement.',
             'engagement_poster' => $poster
         ]);
+    }
+
+    /**
+     * Validate partner compatibility:
+     *  - Must be opposite gender
+     *  - Must share the same religion
+     *  - Must not already be confirmed in another engagement poster
+     *
+     * @param string $partnerMatrimonyId
+     * @param int    $authUserId
+     * @param int|null $excludePosterId  Exclude this poster ID from the "already confirmed" check (for updates)
+     */
+    private function validatePartnerCompatibility(string $partnerMatrimonyId, int $authUserId, ?int $excludePosterId = null)
+    {
+        // Load the partner user with their profile
+        $partnerUser = User::where('matrimony_id', $partnerMatrimonyId)->with('profile')->first();
+
+        if (!$partnerUser) {
+            return response()->json([
+                'error'  => 'Partner not found.',
+                'reason' => 'No user found with Matrimony ID ' . $partnerMatrimonyId . '. Please verify the ID and try again.',
+            ], 422);
+        }
+
+        // Load the authenticated user with their profile
+        $authUser = User::with('profile')->find($authUserId);
+
+        $authProfile    = $authUser?->profile;
+        $partnerProfile = $partnerUser->profile;
+
+        // --- Gender check (opposite gender required) ---
+        $authGender    = $authProfile?->gender;
+        $partnerGender = $partnerProfile?->gender;
+
+        $oppositeGenders = [
+            'male'   => 'female',
+            'female' => 'male',
+        ];
+
+        if ($authGender && $partnerGender) {
+            $expectedPartnerGender = $oppositeGenders[strtolower($authGender)] ?? null;
+            if ($expectedPartnerGender && strtolower($partnerGender) !== $expectedPartnerGender) {
+                return response()->json([
+                    'error'  => 'Gender mismatch.',
+                    'reason' => 'Engagement is only allowed between a male and a female. The Matrimony ID ' . $partnerMatrimonyId . ' does not have the opposite gender.',
+                ], 422);
+            }
+        }
+
+        // --- Religion check (same religion required) ---
+        $authReligionId    = $authProfile?->religion_id;
+        $partnerReligionId = $partnerProfile?->religion_id;
+
+        if ($authReligionId && $partnerReligionId && $authReligionId !== $partnerReligionId) {
+            return response()->json([
+                'error'  => 'Religion mismatch.',
+                'reason' => 'The partner\'s religion does not match yours. Engagement posters require both partners to share the same religion.',
+            ], 422);
+        }
+
+        // --- Already confirmed in another poster check ---
+        $query = EngagementPoster::where('partner_matrimony_id', $partnerMatrimonyId)
+            ->where('partner_status', 'confirmed');
+
+        if ($excludePosterId) {
+            $query->where('id', '!=', $excludePosterId);
+        }
+
+        if ($query->exists()) {
+            return response()->json([
+                'error'  => 'Partner already confirmed in another engagement.',
+                'reason' => 'The Matrimony ID ' . $partnerMatrimonyId . ' has already confirmed an engagement with someone else. Please verify and use the correct partner ID.',
+            ], 422);
+        }
+
+        return null; // All checks passed
     }
 }
