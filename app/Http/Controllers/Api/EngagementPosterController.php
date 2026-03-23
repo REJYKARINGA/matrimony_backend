@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EngagementPoster;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +25,25 @@ class EngagementPosterController extends Controller
     }
 
     /**
+     * Display the authenticated user's poster.
+     */
+    public function myPoster()
+    {
+        $poster = EngagementPoster::with('user')->where('user_id', auth()->id())->first();
+
+        if (!$poster) {
+            return response()->json([
+                'error' => 'Engagement poster not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'engagement_poster' => $poster
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -33,13 +53,22 @@ class EngagementPosterController extends Controller
             'engagement_date' => 'required|date',
             'announcement_title' => 'required|string|max:255',
             'announcement_message' => 'required|string',
+            'partner_matrimony_id' => 'required|string|exists:users,matrimony_id',
             'is_active' => 'nullable|string', // Accept string from Multipart
             'is_verified' => 'nullable|string',
             'display_expire_at' => 'required|date',
         ]);
 
+        $partnerUser = User::where('matrimony_id', $request->partner_matrimony_id)->first();
+        if ($partnerUser && $partnerUser->id === auth()->id()) {
+            return response()->json([
+                'error' => 'You cannot enter your own Matrimony ID as a partner.'
+            ], 400);
+        }
+
         $data = $request->except('poster_image');
         $data['user_id'] = auth()->id();
+        $data['partner_status'] = 'pending';
 
         // Handle Booleans from Multipart strings
         $data['is_active'] = filter_var($request->is_active ?? true, FILTER_VALIDATE_BOOLEAN);
@@ -216,6 +245,40 @@ class EngagementPosterController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Engagement poster deleted successfully'
+        ]);
+    }
+
+    /**
+     * Partner confirms or rejects the engagement.
+     */
+    public function respondToEngagement(Request $request, string $id)
+    {
+        $request->validate([
+            'status' => 'required|in:confirmed,rejected'
+        ]);
+
+        $poster = EngagementPoster::find($id);
+
+        if (!$poster) {
+            return response()->json([
+                'error' => 'Engagement poster not found'
+            ], 404);
+        }
+
+        // Check if the authenticated user is the requested partner
+        if (auth()->user()->matrimony_id !== $poster->partner_matrimony_id) {
+            return response()->json([
+                'error' => 'You are not authorized to respond to this engagement announcement.'
+            ], 403);
+        }
+
+        $poster->partner_status = $request->status;
+        $poster->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You have ' . $request->status . ' the engagement.',
+            'engagement_poster' => $poster
         ]);
     }
 }

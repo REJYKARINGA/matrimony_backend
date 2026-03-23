@@ -19,6 +19,8 @@ class EngagementPoster extends Model
         'is_active',
         'is_verified',
         'display_expire_at',
+        'partner_matrimony_id',
+        'partner_status',
     ];
 
     protected $casts = [

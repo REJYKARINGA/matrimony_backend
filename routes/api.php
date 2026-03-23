@@ -155,6 +155,8 @@ Route::middleware('auth:sanctum')->group(function () {
         );
 
         // Engagement Poster routes
+        Route::get('engagement-posters/my', [EngagementPosterController::class, 'myPoster']);
+        Route::post('engagement-posters/{id}/partner-confirm', [EngagementPosterController::class, 'respondToEngagement']);
         Route::apiResource('engagement-posters', EngagementPosterController::class);
 
         // Search routes
