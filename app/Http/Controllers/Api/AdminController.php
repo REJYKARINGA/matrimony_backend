@@ -1363,6 +1363,31 @@ class AdminController extends Controller
             $poster->is_verified = true;
             $poster->save();
 
+            // Notify Creator
+            \App\Models\Notification::create([
+                'user_id' => $poster->user_id,
+                'sender_id' => auth()->id(), // Admin's user ID
+                'type' => 'engagement_poster_verified',
+                'title' => 'Poster Verified',
+                'message' => 'Congratulations! Your engagement poster has been verified by the admin and is now visible to everyone.',
+                'reference_id' => $poster->id
+            ]);
+
+            // Notify Partner if exists
+            if ($poster->partner_matrimony_id) {
+                $partnerUser = \App\Models\User::where('matrimony_id', $poster->partner_matrimony_id)->first();
+                if ($partnerUser) {
+                    \App\Models\Notification::create([
+                        'user_id' => $partnerUser->id,
+                        'sender_id' => auth()->id(),
+                        'type' => 'engagement_poster_verified',
+                        'title' => 'Poster Verified',
+                        'message' => 'Congratulations! The engagement announcement you are part of has been verified by the admin and is now visible to everyone.',
+                        'reference_id' => $poster->id
+                    ]);
+                }
+            }
+
             return response()->json(['message' => 'Poster verified successfully', 'data' => $poster]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to verify poster', 'message' => $e->getMessage()], 500);
