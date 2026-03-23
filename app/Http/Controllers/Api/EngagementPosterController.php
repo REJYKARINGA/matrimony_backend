@@ -66,6 +66,18 @@ class EngagementPosterController extends Controller
             ], 400);
         }
 
+        // Check if the partner matromonty ID is already confirmed in another poster
+        $alreadyConfirmed = EngagementPoster::where('partner_matrimony_id', $request->partner_matrimony_id)
+            ->where('partner_status', 'confirmed')
+            ->exists();
+
+        if ($alreadyConfirmed) {
+            return response()->json([
+                'error'  => 'Partner already confirmed in another engagement.',
+                'reason' => 'The Matrimony ID ' . $request->partner_matrimony_id . ' has already confirmed an engagement with someone else. Please verify and use the correct partner ID.',
+            ], 422);
+        }
+
         $data = $request->except('poster_image');
         $data['user_id'] = auth()->id();
         $data['partner_status'] = 'pending';
@@ -132,14 +144,43 @@ class EngagementPosterController extends Controller
         }
 
         $request->validate([
-            'poster_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Allow file upload
-            'engagement_date' => 'nullable|date', // Allow partial updates
-            'announcement_title' => 'nullable|string|max:255',
-            'announcement_message' => 'nullable|string',
-            'is_active' => 'nullable|string', // Accept string from Multipart
-            'is_verified' => 'nullable|string', // Accept string from Multipart
-            'display_expire_at' => 'nullable|date',
+            'poster_image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'engagement_date'       => 'nullable|date',
+            'announcement_title'    => 'nullable|string|max:255',
+            'announcement_message'  => 'nullable|string',
+            'partner_matrimony_id'  => 'nullable|string|exists:users,matrimony_id', // Validate partner ID exists
+            'is_active'             => 'nullable|string',
+            'is_verified'           => 'nullable|string',
+            'display_expire_at'     => 'nullable|date',
         ]);
+
+        // If partner_matrimony_id is changing, validate not self
+        if ($request->has('partner_matrimony_id') && $request->partner_matrimony_id) {
+            $partnerUser = User::where('matrimony_id', $request->partner_matrimony_id)->first();
+            if ($partnerUser && $partnerUser->id === auth()->id()) {
+                return response()->json([
+                    'error' => 'You cannot enter your own Matrimony ID as a partner.'
+                ], 400);
+            }
+
+            // Check if partner ID is already confirmed in a DIFFERENT poster
+            $alreadyConfirmed = EngagementPoster::where('partner_matrimony_id', $request->partner_matrimony_id)
+                ->where('partner_status', 'confirmed')
+                ->where('id', '!=', $poster->id) // exclude current poster
+                ->exists();
+
+            if ($alreadyConfirmed) {
+                return response()->json([
+                    'error'  => 'Partner already confirmed in another engagement.',
+                    'reason' => 'The Matrimony ID ' . $request->partner_matrimony_id . ' has already confirmed an engagement with someone else. Please verify and use the correct partner ID.',
+                ], 422);
+            }
+
+            // Reset partner_status to pending when partner ID changes
+            if ($request->partner_matrimony_id !== $poster->partner_matrimony_id) {
+                $poster->partner_status = 'pending';
+            }
+        }
 
         $data = $request->except('poster_image');
 
