@@ -10,6 +10,7 @@ class Suggestion extends Model
     protected $fillable = [
         'user_id',
         'title',
+        'category',
         'description',
         'status',
         'response_text',

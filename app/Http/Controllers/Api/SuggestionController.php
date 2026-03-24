@@ -20,21 +20,38 @@ class SuggestionController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'user_photos' => 'nullable|array|max:3',
-            'user_photos.*' => 'string',
+            'user_photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
-        $request->merge(['user_id' => auth()->id()]);
+        $suggestion = new Suggestion();
+        $suggestion->user_id = auth()->id();
+        $suggestion->title = $request->title;
+        $suggestion->category = $request->category;
+        $suggestion->description = $request->description;
 
-        $suggestion = Suggestion::create($request->all());
+        if ($request->hasFile('user_photos')) {
+            $photoPaths = [];
+            foreach ($request->file('user_photos') as $photo) {
+                if (env('CLOUDINARY_URL')) {
+                    $uploadResult = cloudinary()->uploadApi()->upload($photo->getRealPath(), [
+                        'folder' => 'matrimony/suggestions/' . auth()->id()
+                    ]);
+                    $photoPaths[] = $uploadResult['secure_url'];
+                } else {
+                    $path = $photo->store('suggestions/' . auth()->id(), 'public');
+                    $photoPaths[] = '/storage/' . $path;
+                }
+            }
+            $suggestion->user_photos = $photoPaths; // The model should ideally cast this to array or json
+        }
+
+        $suggestion->save();
 
         return response()->json([
             'suggestion' => $suggestion->load('user')

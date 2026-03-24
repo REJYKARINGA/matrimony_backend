@@ -1605,14 +1605,30 @@ class AdminController extends Controller
             $validated = $request->validate([
                 'status'        => 'required|in:pending,in_progress,completed,rejected',
                 'response_text' => 'nullable|string|max:2000',
+                'response_photo'=> 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             ]);
 
-            $suggestion->update([
-                'status'        => $validated['status'],
-                'response_text' => $validated['response_text'] ?? $suggestion->response_text,
-                'responded_by'  => auth()->id(),
-                'responded_at'  => now(),
-            ]);
+            $suggestion->status = $validated['status'];
+            if ($request->has('response_text')) {
+                $suggestion->response_text = $validated['response_text'];
+            }
+
+            if ($request->hasFile('response_photo')) {
+                $photo = $request->file('response_photo');
+                if (env('CLOUDINARY_URL')) {
+                    $uploadResult = cloudinary()->uploadApi()->upload($photo->getRealPath(), [
+                        'folder' => 'matrimony/suggestions/responses'
+                    ]);
+                    $suggestion->response_photo = $uploadResult['secure_url'];
+                } else {
+                    $path = $photo->store('suggestions/responses', 'public');
+                    $suggestion->response_photo = '/storage/' . $path;
+                }
+            }
+
+            $suggestion->responded_by = auth()->id();
+            $suggestion->responded_at = now();
+            $suggestion->save();
 
             return response()->json(['message' => 'Suggestion updated successfully', 'data' => $suggestion->load('user.userProfile', 'responder.userProfile')]);
         } catch (\Exception $e) {
