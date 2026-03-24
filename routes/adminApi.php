@@ -126,4 +126,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::get('/login-histories', [AdminController::class, 'getLoginHistories']);
     Route::get('/activity-logs', [AdminController::class, 'getActivityLogs']);
     Route::get('/contact-unlocks', [AdminController::class, 'getContactUnlocks']);
+
+    // Suggestions
+    Route::get('/suggestions', [AdminController::class, 'getSuggestions']);
+    Route::put('/suggestions/{id}/respond', [AdminController::class, 'respondToSuggestion']);
+    Route::delete('/suggestions/{id}', [AdminController::class, 'deleteSuggestion']);
 });

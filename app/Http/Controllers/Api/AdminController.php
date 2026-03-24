@@ -1545,4 +1545,89 @@ class AdminController extends Controller
             return response()->json(['error' => 'Failed to delete poster', 'message' => $e->getMessage()], 500);
         }
     }
+
+    // ==========================================
+    // Suggestions Management
+    // ==========================================
+
+    public function getSuggestions(Request $request)
+    {
+        try {
+            $query = \App\Models\Suggestion::with(['user.userProfile', 'responder.userProfile']);
+
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($qu) use ($search) {
+                          $qu->where('email', 'like', "%{$search}%")
+                             ->orWhere('matrimony_id', 'like', "%{$search}%")
+                             ->orWhereHas('userProfile', function ($qp) use ($search) {
+                                 $qp->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                             });
+                      });
+                });
+            }
+
+            if ($request->has('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            $stats = [
+                'total'       => \App\Models\Suggestion::count(),
+                'pending'     => \App\Models\Suggestion::where('status', 'pending')->count(),
+                'in_progress' => \App\Models\Suggestion::where('status', 'in_progress')->count(),
+                'completed'   => \App\Models\Suggestion::where('status', 'completed')->count(),
+                'rejected'    => \App\Models\Suggestion::where('status', 'rejected')->count(),
+            ];
+
+            $suggestions = $query->orderBy('created_at', 'desc')->paginate(15);
+
+            return response()->json([
+                'data'         => $suggestions->items(),
+                'current_page' => $suggestions->currentPage(),
+                'last_page'    => $suggestions->lastPage(),
+                'total'        => $suggestions->total(),
+                'stats'        => $stats,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch suggestions', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function respondToSuggestion(Request $request, $id)
+    {
+        try {
+            $suggestion = \App\Models\Suggestion::findOrFail($id);
+
+            $validated = $request->validate([
+                'status'        => 'required|in:pending,in_progress,completed,rejected',
+                'response_text' => 'nullable|string|max:2000',
+            ]);
+
+            $suggestion->update([
+                'status'        => $validated['status'],
+                'response_text' => $validated['response_text'] ?? $suggestion->response_text,
+                'responded_by'  => auth()->id(),
+                'responded_at'  => now(),
+            ]);
+
+            return response()->json(['message' => 'Suggestion updated successfully', 'data' => $suggestion->load('user.userProfile', 'responder.userProfile')]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update suggestion', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteSuggestion($id)
+    {
+        try {
+            $suggestion = \App\Models\Suggestion::findOrFail($id);
+            $suggestion->delete();
+            return response()->json(['message' => 'Suggestion deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to delete suggestion', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
