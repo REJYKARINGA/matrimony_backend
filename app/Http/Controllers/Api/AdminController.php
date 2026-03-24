@@ -782,7 +782,23 @@ class AdminController extends Controller
             ->orderBy('preferences.updated_at', 'desc')
             ->paginate(15);
 
-        return response()->json($preferences);
+        // Calculate global stats for preferences insight
+        $stats = [
+            'most_common_status' => Preference::groupBy('marital_status')->selectRaw('marital_status, count(*) as count')->orderByDesc('count')->limit(1)->pluck('marital_status')->first(),
+            'most_common_religion' => Religion::whereHas('preferences')->withCount('preferences')->orderByDesc('preferences_count')->limit(1)->pluck('name')->first(),
+            'avg_age_min' => round(Preference::avg('min_age')),
+            'avg_age_max' => round(Preference::avg('max_age')),
+            'most_common_drug' => Preference::groupBy('drug_addiction')->selectRaw('drug_addiction, count(*) as count')->orderByDesc('count')->limit(1)->pluck('drug_addiction')->first(),
+            'total_processed' => Preference::count()
+        ];
+
+        return response()->json([
+            'data' => $preferences->items(),
+            'current_page' => $preferences->currentPage(),
+            'last_page' => $preferences->lastPage(),
+            'total' => $preferences->total(),
+            'stats' => $stats
+        ]);
     }
 
     /**
