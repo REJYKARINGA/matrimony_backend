@@ -784,8 +784,8 @@ class AdminController extends Controller
 
         // Calculate global stats for preferences insight
         $stats = [
-            'most_common_status' => Preference::groupBy('marital_status')->selectRaw('marital_status, count(*) as count')->orderByDesc('count')->limit(1)->pluck('marital_status')->first(),
-            'most_common_religion' => Religion::whereHas('preferences')->withCount('preferences')->orderByDesc('preferences_count')->limit(1)->pluck('name')->first(),
+            'most_common_status' => Preference::whereNotNull('marital_status')->groupBy('marital_status')->selectRaw('marital_status, count(*) as count')->orderByDesc('count')->limit(1)->pluck('marital_status')->first(),
+            'most_common_religion' => Religion::find(Preference::whereNotNull('religion_id')->groupBy('religion_id')->selectRaw('religion_id, count(*) as count')->orderByDesc('count')->limit(1)->pluck('religion_id')->first())?->name,
             'avg_age_min' => round(Preference::avg('min_age')),
             'avg_age_max' => round(Preference::avg('max_age')),
             'avg_height_min' => round(Preference::avg('min_height')),
