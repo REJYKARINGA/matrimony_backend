@@ -1630,6 +1630,25 @@ class AdminController extends Controller
             $suggestion->responded_at = now();
             $suggestion->save();
 
+            // Notify the user about the update
+            $statusLabels = [
+                'pending' => 'Under Review',
+                'in_progress' => 'In Development',
+                'completed' => 'Completed',
+                'rejected' => 'Rejected'
+            ];
+            
+            $statusLabel = $statusLabels[$suggestion->status] ?? $suggestion->status;
+
+            \App\Models\Notification::create([
+                'user_id' => $suggestion->user_id,
+                'sender_id' => auth()->id(),
+                'type' => 'suggestion_update',
+                'title' => 'Suggestion Update',
+                'message' => "Your feature request '{$suggestion->title}' has been updated to: {$statusLabel}.",
+                'reference_id' => $suggestion->id
+            ]);
+
             return response()->json(['message' => 'Suggestion updated successfully', 'data' => $suggestion->load('user.userProfile', 'responder.userProfile')]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to update suggestion', 'message' => $e->getMessage()], 500);
