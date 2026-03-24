@@ -926,6 +926,60 @@ class AdminController extends Controller
                 ['status' => 'Pending', 'count' => $pendingMatches],
             ];
 
+            // Wallet Statistics
+            try {
+                $totalWalletBalance = DB::table('wallets')->sum('balance') ?? 0;
+                $totalWalletTransactions = DB::table('transactions')->count();
+            } catch (\Exception $e) {
+                $totalWalletBalance = 0;
+                $totalWalletTransactions = 0;
+            }
+
+            // Data Management Statistics
+            try {
+                $totalEducations = DB::table('education')->count();
+                $totalOccupations = DB::table('occupations')->count();
+                $totalInterestsLibrary = DB::table('interests_hobbies')->count();
+                $totalReligions = DB::table('religions')->count();
+                $totalCastes = DB::table('castes')->count();
+            } catch (\Exception $e) {
+                $totalEducations = 0; $totalOccupations = 0; $totalInterestsLibrary = 0; $totalReligions = 0; $totalCastes = 0;
+            }
+
+            // Engagement Poster Statistics
+            try {
+                $totalPosters = DB::table('engagement_posters')->count();
+                $verifiedPosters = DB::table('engagement_posters')->where('is_verified', true)->count();
+            } catch (\Exception $e) {
+                $totalPosters = 0; $verifiedPosters = 0;
+            }
+
+            // Family & Preference Statistics
+            try {
+                $totalFamilyDetails = DB::table('family_details')->count();
+                $totalPreferences = DB::table('preferences')->count();
+            } catch (\Exception $e) {
+                $totalFamilyDetails = 0; $totalPreferences = 0;
+            }
+
+            // Contact Unlock Statistics
+            try {
+                $totalContactUnlocks = DB::table('contact_unlocks')->count();
+            } catch (\Exception $e) {
+                $totalContactUnlocks = 0;
+            }
+
+            // Audit Logs Statistics
+            try {
+                $totalLoginHistories = DB::table('user_login_histories')->count();
+                $totalActivityLogs = DB::table('activity_logs')->count();
+                $logsToday = DB::table('activity_logs')
+                    ->whereDate('created_at', now()->toDateString())
+                    ->count();
+            } catch (\Exception $e) {
+                $totalLoginHistories = 0; $totalActivityLogs = 0; $logsToday = 0;
+            }
+
             return response()->json([
                 'users' => [
                     'total' => $totalUsers,
@@ -945,6 +999,8 @@ class AdminController extends Controller
                     'male' => $maleProfiles,
                     'female' => $femaleProfiles,
                     'genderDistribution' => $genderDistribution,
+                    'familyDetails' => $totalFamilyDetails,
+                    'preferences' => $totalPreferences,
                 ],
                 'matches' => [
                     'total' => $totalMatches,
@@ -956,6 +1012,7 @@ class AdminController extends Controller
                     'total' => $totalInterests,
                     'accepted' => $acceptedInterests,
                     'pending' => $pendingInterests,
+                    'libraryTotal' => $totalInterestsLibrary,
                 ],
                 'reports' => [
                     'total' => $totalReports,
@@ -972,7 +1029,28 @@ class AdminController extends Controller
                     'totalRevenue' => (float) $totalRevenue,
                     'revenueThisMonth' => (float) $revenueThisMonth,
                     'revenueGrowth' => $revenueGrowth,
+                    'walletBalance' => (float) $totalWalletBalance,
+                    'walletTransactions' => $totalWalletTransactions,
                 ],
+                'content' => [
+                    'posters' => $totalPosters,
+                    'postersVerified' => $verifiedPosters,
+                ],
+                'dataManagement' => [
+                    'education' => $totalEducations,
+                    'occupation' => $totalOccupations,
+                    'interests' => $totalInterestsLibrary,
+                    'religions' => $totalReligions,
+                    'castes' => $totalCastes,
+                ],
+                'unlocks' => [
+                    'total' => $totalContactUnlocks,
+                ],
+                'audit' => [
+                    'loginHistories' => $totalLoginHistories,
+                    'activityLogs' => $totalActivityLogs,
+                    'logsToday' => $logsToday,
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
