@@ -913,6 +913,13 @@ class AdminController extends Controller
                 ['gender' => 'Female', 'count' => $femaleProfiles],
             ];
 
+            // Religion distribution
+            $religionDistribution = DB::table('user_profiles')
+                ->join('religions', 'user_profiles.religion_id', '=', 'religions.id')
+                ->select('religions.name as religion', DB::raw('count(*) as count'))
+                ->groupBy('religions.name')
+                ->get();
+
             // Verification status distribution
             $verificationDistribution = [
                 ['status' => 'Pending', 'count' => $pendingVerifications],
@@ -999,6 +1006,7 @@ class AdminController extends Controller
                     'male' => $maleProfiles,
                     'female' => $femaleProfiles,
                     'genderDistribution' => $genderDistribution,
+                    'religionDistribution' => $religionDistribution,
                     'familyDetails' => $totalFamilyDetails,
                     'preferences' => $totalPreferences,
                 ],
