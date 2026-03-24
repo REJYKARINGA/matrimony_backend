@@ -13,7 +13,9 @@ class SuggestionController extends Controller
      */
     public function index()
     {
-        $suggestions = Suggestion::with('user', 'responder')->paginate(15);
+        $suggestions = Suggestion::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'suggestions' => $suggestions
