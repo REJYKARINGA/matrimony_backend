@@ -788,6 +788,8 @@ class AdminController extends Controller
             'most_common_religion' => Religion::whereHas('preferences')->withCount('preferences')->orderByDesc('preferences_count')->limit(1)->pluck('name')->first(),
             'avg_age_min' => round(Preference::avg('min_age')),
             'avg_age_max' => round(Preference::avg('max_age')),
+            'avg_height_min' => round(Preference::avg('min_height')),
+            'avg_height_max' => round(Preference::avg('max_height')),
             'most_common_drug' => Preference::groupBy('drug_addiction')->selectRaw('drug_addiction, count(*) as count')->orderByDesc('count')->limit(1)->pluck('drug_addiction')->first(),
             'total_processed' => Preference::count()
         ];
