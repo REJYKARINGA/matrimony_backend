@@ -782,15 +782,35 @@ class AdminController extends Controller
             ->orderBy('preferences.updated_at', 'desc')
             ->paginate(15);
 
-        // Calculate global stats for preferences insight
+        // Top 2 Marital Statuses
+        $statusStats = Preference::whereNotNull('marital_status')->groupBy('marital_status')->selectRaw('marital_status, count(*) as count')->orderByDesc('count')->limit(2)->get();
+        // Top 2 Religions
+        $religionStats = Preference::whereNotNull('religion_id')->groupBy('religion_id')->selectRaw('religion_id, count(*) as count')->orderByDesc('count')->limit(2)->get()->map(fn($r) => Religion::find($r->religion_id)?->name)->filter();
+        
+        $mostCommonReligionId = Preference::whereNotNull('religion_id')->groupBy('religion_id')->selectRaw('religion_id, count(*) as count')->orderByDesc('count')->limit(1)->pluck('religion_id')->first();
+        
+        // Helper to get top 2 names from JSON ID arrays
+        $getTopNames = function($query, $column, $modelClass) {
+            $idArrays = $query->whereNotNull($column)->pluck($column);
+            $counts = [];
+            foreach ($idArrays as $arr) { if (is_array($arr)) { foreach ($arr as $id) { $counts[$id] = ($counts[$id] ?? 0) + 1; } } }
+            arsort($counts);
+            return collect(array_slice($counts, 0, 2, true))->map(fn($c, $id) => $modelClass::find($id)?->name)->filter()->values()->toArray();
+        };
+
+        $topCastes = $getTopNames(Preference::where('religion_id', $mostCommonReligionId), 'caste_ids', Caste::class);
+        $topSubCastes = $getTopNames(Preference::where('religion_id', $mostCommonReligionId), 'sub_caste_ids', SubCaste::class);
+        $topDrugs = Preference::groupBy('drug_addiction')->selectRaw('drug_addiction, count(*) as count')->orderByDesc('count')->limit(2)->pluck('drug_addiction')->toArray();
+
         $stats = [
-            'most_common_status' => Preference::whereNotNull('marital_status')->groupBy('marital_status')->selectRaw('marital_status, count(*) as count')->orderByDesc('count')->limit(1)->pluck('marital_status')->first(),
-            'most_common_religion' => Religion::find(Preference::whereNotNull('religion_id')->groupBy('religion_id')->selectRaw('religion_id, count(*) as count')->orderByDesc('count')->limit(1)->pluck('religion_id')->first())?->name,
-            'avg_age_min' => round(Preference::avg('min_age')),
-            'avg_age_max' => round(Preference::avg('max_age')),
-            'avg_height_min' => round(Preference::avg('min_height')),
-            'avg_height_max' => round(Preference::avg('max_height')),
-            'most_common_drug' => Preference::groupBy('drug_addiction')->selectRaw('drug_addiction, count(*) as count')->orderByDesc('count')->limit(1)->pluck('drug_addiction')->first(),
+            'status' => $statusStats->pluck('marital_status')->toArray(),
+            'religion' => $religionStats->values()->toArray(),
+            'caste' => $topCastes,
+            'sub_caste' => $topSubCastes,
+            'avg_age' => ['min' => round(Preference::avg('min_age')), 'max' => round(Preference::avg('max_age'))],
+            'avg_height' => ['min' => round(Preference::avg('min_height')), 'max' => round(Preference::avg('max_height'))],
+            'avg_income' => ['min' => round(Preference::avg('min_income')), 'max' => round(Preference::avg('max_income'))],
+            'lifestyle' => $topDrugs,
             'total_processed' => Preference::count()
         ];
 
