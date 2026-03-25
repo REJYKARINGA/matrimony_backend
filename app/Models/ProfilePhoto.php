@@ -16,12 +16,16 @@ class ProfilePhoto extends Model
         'photo_url',
         'is_primary',
         'is_verified',
+        'is_rejected',
+        'rejection_reason',
         'verified_by',
+        'verification_date',
     ];
 
     protected $casts = [
         'is_primary' => 'boolean',
         'is_verified' => 'boolean',
+        'is_rejected' => 'boolean',
         'upload_date' => 'datetime',
         'verification_date' => 'datetime',
     ];
