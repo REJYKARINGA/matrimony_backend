@@ -1714,22 +1714,22 @@ class AdminController extends Controller
         // Fetch users who have photos matching the status
         $query = User::with(['userProfile', 'profilePhotos' => function($q) use ($status) {
             if ($status === 'pending') {
-                $q->where('is_verified', false)->whereNull('verification_date');
+                $q->where('is_verified', false)->where('is_rejected', false);
             } elseif ($status === 'verified') {
                 $q->where('is_verified', true);
             } elseif ($status === 'rejected') {
-                $q->where('is_verified', false)->whereNotNull('verification_date');
+                $q->where('is_rejected', true);
             }
             $q->orderBy('upload_date', 'desc');
         }]);
 
         $query->whereHas('profilePhotos', function($q) use ($status) {
             if ($status === 'pending') {
-                $q->where('is_verified', false)->whereNull('verification_date');
+                $q->where('is_verified', false)->where('is_rejected', false);
             } elseif ($status === 'verified') {
                 $q->where('is_verified', true);
             } elseif ($status === 'rejected') {
-                $q->where('is_verified', false)->whereNotNull('verification_date');
+                $q->where('is_rejected', true);
             }
         });
 
@@ -1760,6 +1760,8 @@ class AdminController extends Controller
         
         $photo->update([
             'is_verified' => true,
+            'is_rejected' => false,
+            'rejection_reason' => null,
             'verified_by' => auth()->id(),
             'verification_date' => now()
         ]);
@@ -1789,6 +1791,8 @@ class AdminController extends Controller
         
         $photo->update([
             'is_verified' => false,
+            'is_rejected' => true,
+            'rejection_reason' => $request->get('reason', 'The photo does not meet our guidelines.'),
             'verified_by' => auth()->id(),
             'verification_date' => now()
         ]);
