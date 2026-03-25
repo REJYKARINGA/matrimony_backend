@@ -550,7 +550,9 @@ class ProfileController extends Controller
             'userProfile.occupationModel',
             'familyDetails',
             'preferences',
-            'profilePhotos',
+            'profilePhotos' => function($q) {
+                $q->where('is_rejected', false);
+            },
             'verification',
             'personalities',
             'interests'
@@ -731,6 +733,9 @@ class ProfileController extends Controller
             'userProfile.casteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
+            'profilePhotos' => function($q) {
+                $q->where('is_rejected', false);
+            },
         ])
             ->where('id', '!=', $user->id) // Exclude current user
             ->where('status', 'active') // Only active users
