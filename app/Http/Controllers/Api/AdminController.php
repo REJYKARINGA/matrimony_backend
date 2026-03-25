@@ -1788,6 +1788,7 @@ class AdminController extends Controller
     public function rejectProfilePhoto(Request $request, $id)
     {
         $photo = ProfilePhoto::findOrFail($id);
+        $wasAlreadyRejected = $photo->is_rejected;
         
         $photo->update([
             'is_verified' => false,
@@ -1826,13 +1827,15 @@ class AdminController extends Controller
             'user_id' => $photo->user_id,
             'sender_id' => auth()->id(),
             'type' => 'photo_verification',
-            'title' => 'Photo Rejected',
-            'message' => 'Your recent photo upload was rejected as it did not meet our community standards.',
+            'title' => $wasAlreadyRejected ? 'Rejection Reason Updated' : 'Photo Rejected',
+            'message' => $wasAlreadyRejected 
+                ? 'The moderator has updated the feedback on your photo: "' . $photo->rejection_reason . '"'
+                : 'Your recent photo upload was rejected as it did not meet our community standards.',
             'is_read' => false
         ]);
 
         return response()->json([
-            'message' => 'Photo rejected successfully',
+            'message' => $wasAlreadyRejected ? 'Rejection reason updated successfully' : 'Photo rejected successfully',
             'photo' => $photo
         ]);
     }
