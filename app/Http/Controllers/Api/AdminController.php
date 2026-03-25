@@ -1035,6 +1035,7 @@ class AdminController extends Controller
                 $recentSuggestions = DB::table('suggestions')
                     ->join('users', 'suggestions.user_id', '=', 'users.id')
                     ->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                    ->where('suggestions.status', 'pending')
                     ->select(
                         'suggestions.id',
                         'suggestions.title',
