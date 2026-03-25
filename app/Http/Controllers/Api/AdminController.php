@@ -1711,19 +1711,31 @@ class AdminController extends Controller
     {
         $status = $request->get('status', 'pending');
         
-        $query = ProfilePhoto::with(['user.userProfile', 'user.profilePhotos']);
+        // Fetch users who have photos matching the status
+        $query = User::with(['userProfile', 'profilePhotos' => function($q) use ($status) {
+            if ($status === 'pending') {
+                $q->where('is_verified', false)->whereNull('verification_date');
+            } elseif ($status === 'verified') {
+                $q->where('is_verified', true);
+            } elseif ($status === 'rejected') {
+                $q->where('is_verified', false)->whereNotNull('verification_date');
+            }
+            $q->orderBy('upload_date', 'desc');
+        }]);
 
-        if ($status === 'pending') {
-            $query->where('is_verified', false)->whereNull('verification_date');
-        } elseif ($status === 'verified') {
-            $query->where('is_verified', true);
-        } elseif ($status === 'rejected') {
-            $query->where('is_verified', false)->whereNotNull('verification_date');
-        }
+        $query->whereHas('profilePhotos', function($q) use ($status) {
+            if ($status === 'pending') {
+                $q->where('is_verified', false)->whereNull('verification_date');
+            } elseif ($status === 'verified') {
+                $q->where('is_verified', true);
+            } elseif ($status === 'rejected') {
+                $q->where('is_verified', false)->whereNotNull('verification_date');
+            }
+        });
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($qu) use ($search) {
+            $query->where(function ($qu) use ($search) {
                 $qu->where('email', 'like', "%{$search}%")
                     ->orWhere('matrimony_id', 'like', "%{$search}%")
                     ->orWhereHas('userProfile', function ($qp) use ($search) {
@@ -1734,9 +1746,9 @@ class AdminController extends Controller
             });
         }
 
-        $photos = $query->orderBy('upload_date', 'desc')->paginate(20);
+        $users = $query->orderBy('created_at', 'desc')->paginate(12);
 
-        return response()->json($photos);
+        return response()->json($users);
     }
 
     /**
