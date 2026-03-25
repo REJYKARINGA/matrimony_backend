@@ -18,6 +18,7 @@ use App\Models\Religion;
 use App\Models\Caste;
 use App\Models\SubCaste;
 use App\Models\UserReport;
+use App\Models\ProfilePhoto;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -1701,5 +1702,98 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to delete suggestion', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Get all profile photos (pending/verified/rejected)
+     */
+    public function getProfilePhotos(Request $request)
+    {
+        $status = $request->get('status', 'pending');
+        
+        $query = ProfilePhoto::with(['user.userProfile']);
+
+        if ($status === 'pending') {
+            $query->where('is_verified', false)->whereNull('verification_date');
+        } elseif ($status === 'verified') {
+            $query->where('is_verified', true);
+        } elseif ($status === 'rejected') {
+            $query->where('is_verified', false)->whereNotNull('verification_date');
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($qu) use ($search) {
+                $qu->where('email', 'like', "%{$search}%")
+                    ->orWhere('matrimony_id', 'like', "%{$search}%")
+                    ->orWhereHas('userProfile', function ($qp) use ($search) {
+                        $qp->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
+                    });
+            });
+        }
+
+        $photos = $query->orderBy('upload_date', 'desc')->paginate(20);
+
+        return response()->json($photos);
+    }
+
+    /**
+     * Verify a profile photo
+     */
+    public function verifyProfilePhoto(Request $request, $id)
+    {
+        $photo = ProfilePhoto::findOrFail($id);
+        
+        $photo->update([
+            'is_verified' => true,
+            'verified_by' => auth()->id(),
+            'verification_date' => now()
+        ]);
+
+        // Notify user
+        \App\Models\Notification::create([
+            'user_id' => $photo->user_id,
+            'sender_id' => auth()->id(),
+            'type' => 'photo_verification',
+            'title' => 'Photo Verified',
+            'message' => 'One of your uploaded photos has been verified and is now visible to others.',
+            'is_read' => false
+        ]);
+
+        return response()->json([
+            'message' => 'Photo verified successfully',
+            'photo' => $photo
+        ]);
+    }
+
+    /**
+     * Reject a profile photo
+     */
+    public function rejectProfilePhoto(Request $request, $id)
+    {
+        $photo = ProfilePhoto::findOrFail($id);
+        
+        $photo->update([
+            'is_verified' => false,
+            'verified_by' => auth()->id(),
+            'verification_date' => now()
+        ]);
+
+        // Notify user
+        \App\Models\Notification::create([
+            'user_id' => $photo->user_id,
+            'sender_id' => auth()->id(),
+            'type' => 'photo_verification',
+            'title' => 'Photo Rejected',
+            'message' => 'Your recent photo upload was rejected as it did not meet our community standards.',
+            'is_read' => false
+        ]);
+
+        return response()->json([
+            'message' => 'Photo rejected successfully',
+            'photo' => $photo
+        ]);
     }
 }

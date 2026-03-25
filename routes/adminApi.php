@@ -131,4 +131,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::get('/suggestions', [AdminController::class, 'getSuggestions']);
     Route::put('/suggestions/{id}/respond', [AdminController::class, 'respondToSuggestion']);
     Route::delete('/suggestions/{id}', [AdminController::class, 'deleteSuggestion']);
+
+    // Profile Photo Verification
+    Route::get('/profile-photos', [AdminController::class, 'getProfilePhotos']);
+    Route::post('/profile-photos/{id}/verify', [AdminController::class, 'verifyProfilePhoto']);
+    Route::post('/profile-photos/{id}/reject', [AdminController::class, 'rejectProfilePhoto']);
 });
