@@ -1797,6 +1797,30 @@ class AdminController extends Controller
             'verification_date' => now()
         ]);
 
+        // If the rejected photo was primary, assign a new primary
+        if ($photo->is_primary) {
+            $photo->is_primary = false;
+            $photo->save();
+
+            // Find the most recently uploaded photo that is NOT rejected
+            $newPrimary = ProfilePhoto::where('user_id', $photo->user_id)
+                ->where('id', '!=', $photo->id)
+                ->where('is_rejected', false)
+                ->orderBy('upload_date', 'desc')
+                ->first();
+
+            if ($newPrimary) {
+                $newPrimary->update(['is_primary' => true]);
+                // Sync with user profiles table
+                \App\Models\UserProfile::where('user_id', $photo->user_id)
+                    ->update(['profile_picture' => $newPrimary->photo_url]);
+            } else {
+                // If no photos left, clear profile picture from UserProfile
+                \App\Models\UserProfile::where('user_id', $photo->user_id)
+                    ->update(['profile_picture' => null]);
+            }
+        }
+
         // Notify user
         \App\Models\Notification::create([
             'user_id' => $photo->user_id,
