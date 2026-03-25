@@ -1025,6 +1025,34 @@ class AdminController extends Controller
                 $totalLoginHistories = 0; $totalActivityLogs = 0; $logsToday = 0;
             }
 
+            // Feature Request / Suggestion Statistics
+            try {
+                $totalSuggestions    = DB::table('suggestions')->count();
+                $pendingSuggestions  = DB::table('suggestions')->where('status', 'pending')->count();
+                $inProgressSuggestions = DB::table('suggestions')->where('status', 'in_progress')->count();
+                $completedSuggestions  = DB::table('suggestions')->where('status', 'completed')->count();
+                $rejectedSuggestions   = DB::table('suggestions')->where('status', 'rejected')->count();
+                $recentSuggestions = DB::table('suggestions')
+                    ->join('users', 'suggestions.user_id', '=', 'users.id')
+                    ->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                    ->select(
+                        'suggestions.id',
+                        'suggestions.title',
+                        'suggestions.category',
+                        'suggestions.status',
+                        'suggestions.created_at',
+                        'users.matrimony_id',
+                        \DB::raw("TRIM(CONCAT(COALESCE(user_profiles.first_name,''), ' ', COALESCE(user_profiles.last_name,''))) as user_name"),
+                        'users.email as user_email'
+                    )
+                    ->orderBy('suggestions.created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+            } catch (\Exception $e) {
+                $totalSuggestions = 0; $pendingSuggestions = 0; $inProgressSuggestions = 0;
+                $completedSuggestions = 0; $rejectedSuggestions = 0; $recentSuggestions = [];
+            }
+
             return response()->json([
                 'users' => [
                     'total' => $totalUsers,
@@ -1096,7 +1124,15 @@ class AdminController extends Controller
                     'loginHistories' => $totalLoginHistories,
                     'activityLogs' => $totalActivityLogs,
                     'logsToday' => $logsToday,
-                ]
+                ],
+                'featureRequests' => [
+                    'total'       => $totalSuggestions,
+                    'pending'     => $pendingSuggestions,
+                    'in_progress' => $inProgressSuggestions,
+                    'completed'   => $completedSuggestions,
+                    'rejected'    => $rejectedSuggestions,
+                    'recent'      => $recentSuggestions,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
