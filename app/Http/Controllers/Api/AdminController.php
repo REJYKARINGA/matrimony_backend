@@ -1711,7 +1711,7 @@ class AdminController extends Controller
     {
         $status = $request->get('status', 'pending');
         
-        $query = ProfilePhoto::with(['user.userProfile']);
+        $query = ProfilePhoto::with(['user.userProfile', 'user.profilePhotos']);
 
         if ($status === 'pending') {
             $query->where('is_verified', false)->whereNull('verification_date');
