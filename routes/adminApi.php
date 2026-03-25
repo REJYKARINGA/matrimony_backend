@@ -136,4 +136,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::get('/profile-photos', [AdminController::class, 'getProfilePhotos']);
     Route::post('/profile-photos/{id}/verify', [AdminController::class, 'verifyProfilePhoto']);
     Route::post('/profile-photos/{id}/reject', [AdminController::class, 'rejectProfilePhoto']);
+
+    // User Profile Verification (Moderation of changed fields)
+    Route::get('/profile-verifications', [AdminController::class, 'getProfileVerifications']);
+    Route::post('/profile-verifications/{id}/approve', [AdminController::class, 'approveProfileVerification']);
 });

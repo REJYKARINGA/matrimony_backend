@@ -1839,4 +1839,59 @@ class AdminController extends Controller
             'photo' => $photo
         ]);
     }
+
+    /**
+     * Get profiles pending verification or with changed fields
+     */
+    public function getProfileVerifications(Request $request)
+    {
+        $query = UserProfile::with('user')
+            ->where(function($q) {
+                $q->where('is_active_verified', false)
+                  ->orWhereNotNull('changed_fields');
+            });
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($qu) use ($search) {
+                      $qu->where('email', 'like', "%{$search}%")
+                         ->orWhere('matrimony_id', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $profiles = $query->orderBy('updated_at', 'desc')->paginate(15);
+        
+        return response()->json($profiles);
+    }
+
+    /**
+     * Approve profile changes
+     */
+    public function approveProfileVerification(Request $request, $id)
+    {
+        $profile = UserProfile::findOrFail($id);
+        
+        $profile->update([
+            'is_active_verified' => true,
+            'changed_fields' => null
+        ]);
+
+        Notification::create([
+            'user_id' => $profile->user_id,
+            'sender_id' => auth()->id(),
+            'type' => 'profile_verification',
+            'title' => 'Profile Approved',
+            'message' => 'Your profile updates have been reviewed and approved by the moderator.',
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Profile changes approved successfully',
+            'profile' => $profile
+        ]);
+    }
 }
