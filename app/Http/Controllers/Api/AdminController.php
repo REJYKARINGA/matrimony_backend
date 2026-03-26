@@ -50,8 +50,21 @@ class AdminController extends Controller
             });
         }
 
-        $verifications = $query->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'name') {
+            $query->leftJoin('user_profiles', 'user_verifications.user_id', '=', 'user_profiles.user_id')
+                ->orderBy('user_profiles.first_name', $sortDir)
+                ->orderBy('user_profiles.last_name', $sortDir)
+                ->select('user_verifications.*');
+        } elseif ($sortBy === 'updated_at') {
+            $query->orderBy('user_verifications.updated_at', $sortDir);
+        } else {
+            $query->orderBy('user_verifications.created_at', $sortDir);
+        }
+
+        $verifications = $query->paginate(15);
 
         return response()->json($verifications);
     }
@@ -188,7 +201,21 @@ class AdminController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'name') {
+            $query->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                ->orderBy('user_profiles.first_name', $sortDir)
+                ->orderBy('user_profiles.last_name', $sortDir)
+                ->select('users.*');
+        } elseif ($sortBy === 'updated_at') {
+            $query->orderBy('users.updated_at', $sortDir);
+        } else {
+            $query->orderBy('users.created_at', $sortDir);
+        }
+
+        $users = $query->paginate(15);
         return response()->json($users);
     }
 
@@ -413,9 +440,19 @@ class AdminController extends Controller
             $query->where('user_profiles.date_of_birth', '>=', $minDob);
         }
 
-        $profiles = $query->select('user_profiles.*')
-            ->orderBy('user_profiles.created_at', 'desc')
-            ->paginate(15);
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'name') {
+            $query->orderBy('user_profiles.first_name', $sortDir)
+                  ->orderBy('user_profiles.last_name', $sortDir);
+        } elseif ($sortBy === 'updated_at') {
+            $query->orderBy('user_profiles.updated_at', $sortDir);
+        } else {
+            $query->orderBy('user_profiles.created_at', $sortDir);
+        }
+
+        $profiles = $query->select('user_profiles.*')->paginate(15);
 
         return response()->json($profiles);
     }
@@ -622,15 +659,29 @@ class AdminController extends Controller
             $query->where('status', $request->status);
         }
 
-        $reports = $query->with([
+        $query->with([
             'reporter.userProfile', 
             'reported' => function($q) {
                 $q->withCount('receivedUserReports')->with('userProfile');
             }, 
             'reviewer.userProfile'
-        ])
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
+        ]);
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'name') {
+            $query->leftJoin('user_profiles', 'user_reports.reported_id', '=', 'user_profiles.user_id')
+                ->orderBy('user_profiles.first_name', $sortDir)
+                ->orderBy('user_profiles.last_name', $sortDir)
+                ->select('user_reports.*');
+        } elseif ($sortBy === 'updated_at') {
+            $query->orderBy('user_reports.updated_at', $sortDir);
+        } else {
+            $query->orderBy('user_reports.created_at', $sortDir);
+        }
+
+        $reports = $query->paginate(10);
 
         return response()->json($reports);
     }
@@ -1446,7 +1497,21 @@ class AdminController extends Controller
                 });
             }
 
-            return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+            if ($sortBy === 'name') {
+                $query->leftJoin('user_profiles', 'activity_logs.user_id', '=', 'user_profiles.user_id')
+                    ->orderBy('user_profiles.first_name', $sortDir)
+                    ->orderBy('user_profiles.last_name', $sortDir)
+                    ->select('activity_logs.*');
+            } elseif ($sortBy === 'updated_at') {
+                $query->orderBy('activity_logs.updated_at', $sortDir);
+            } else {
+                $query->orderBy('activity_logs.created_at', $sortDir);
+            }
+
+            return response()->json($query->paginate(20));
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to fetch activity logs', 'message' => $e->getMessage()], 500);
         }
@@ -1746,8 +1811,21 @@ class AdminController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(12);
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
+        if ($sortBy === 'name') {
+            $query->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                ->orderBy('user_profiles.first_name', $sortDir)
+                ->orderBy('user_profiles.last_name', $sortDir)
+                ->select('users.*');
+        } elseif ($sortBy === 'updated_at') {
+            $query->orderBy('users.updated_at', $sortDir);
+        } else {
+            $query->orderBy('users.created_at', $sortDir);
+        }
+
+        $users = $query->paginate(12);
         return response()->json($users);
     }
 
@@ -1863,7 +1941,17 @@ class AdminController extends Controller
             });
         }
 
-        $profiles = $query->orderBy('updated_at', 'desc')->paginate(15);
+        $sortBy = $request->get('sort_by', 'updated_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'name') {
+            $query->orderBy('first_name', $sortDir)
+                  ->orderBy('last_name', $sortDir);
+        } else {
+            $query->orderBy('updated_at', $sortDir);
+        }
+
+        $profiles = $query->paginate(15);
         
         return response()->json($profiles);
     }
