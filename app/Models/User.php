@@ -152,6 +152,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Relationship with approved profile photos only
+     */
+    public function approvedProfilePhotos(): HasMany
+    {
+        return $this->hasMany(ProfilePhoto::class, 'user_id')
+            ->where('is_verified', true)
+            ->where('is_rejected', false);
+    }
+
+    /**
      * Relationship with interests sent
      */
     public function interestsSent()

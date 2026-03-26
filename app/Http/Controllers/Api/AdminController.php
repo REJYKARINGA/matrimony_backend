@@ -1712,7 +1712,7 @@ class AdminController extends Controller
         $status = $request->get('status', 'pending');
         
         // Fetch users who have photos matching the status
-        $query = User::with(['userProfile', 'profilePhotos' => function($q) use ($status) {
+        $query = User::with(['userProfile', 'approvedProfilePhotos', 'profilePhotos' => function($q) use ($status) {
             if ($status === 'pending') {
                 $q->where('is_verified', false)->where('is_rejected', false);
             } elseif ($status === 'verified') {
