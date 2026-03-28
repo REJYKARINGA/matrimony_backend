@@ -322,7 +322,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'recipient_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric|min:10'
+            'amount' => 'required|numeric|min:500'
         ]);
 
         $sender = $request->user();
@@ -355,7 +355,7 @@ class PaymentController extends Controller
                 'sender_id' => $sender->id,
                 'type' => 'wallet_transfer_otp',
                 'title' => 'Cash Transfer OTP',
-                'message' => "{$sender->matrimony_id} wants to send you ₹" . number_format($request->amount, 0) . ". Your OTP is: $otp. Give this code to them ONLY if you know them.",
+                'message' => "Transfer OTP: $otp for ₹" . number_format($request->amount, 0),
             ]);
         } catch (\Exception $e) {
             \Log::error("Failed to send transfer notification: " . $e->getMessage());
@@ -371,7 +371,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'recipient_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric|min:10',
+            'amount' => 'required|numeric|min:500',
             'otp' => 'required|string|size:6'
         ]);
 
