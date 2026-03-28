@@ -10,7 +10,9 @@ use App\Models\Transaction;
 use App\Models\Reference;
 use App\Models\User;
 use App\Models\WalletTransferOtp;
+use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
 
 class PaymentController extends Controller
@@ -346,6 +348,19 @@ class PaymentController extends Controller
             'expires_at' => now()->addMinutes(10)
         ]);
 
+        // Send In-App Notification to Recipient
+        try {
+            Notification::create([
+                'user_id' => $recipient->id,
+                'sender_id' => $sender->id,
+                'type' => 'wallet_transfer_otp',
+                'title' => 'Cash Transfer OTP',
+                'message' => "{$sender->matrimony_id} wants to send you ₹" . number_format($request->amount, 0) . ". Your OTP is: $otp. Give this code to them ONLY if you know them.",
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Failed to send transfer notification: " . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'OTP sent to ' . ($recipient->userProfile->first_name ?? 'Recipient'),
             'otp' => env('APP_ENV') === 'local' ? $otp : null
@@ -410,6 +425,19 @@ class PaymentController extends Controller
                 'status' => 'success',
                 'description' => "Received ₹" . number_format($amount, 0) . " from {$sender->matrimony_id}"
             ]);
+
+            // Notify Recipient of received money
+            try {
+                Notification::create([
+                    'user_id' => $recipient->id,
+                    'sender_id' => $sender->id,
+                    'type' => 'wallet_transfer_received',
+                    'title' => 'Wallet Cash Received!',
+                    'message' => "Successfully received ₹" . number_format($amount, 0) . " from {$sender->matrimony_id}. New balance updated.",
+                ]);
+            } catch (\Exception $e) {
+                // Ignore notification error to not break transaction
+            }
         });
 
         return response()->json([
