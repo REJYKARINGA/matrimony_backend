@@ -8,6 +8,9 @@ use App\Models\Wallet;
 use App\Models\ContactUnlock;
 use App\Models\Transaction;
 use App\Models\Reference;
+use App\Models\User;
+use App\Models\WalletTransferOtp;
+use Illuminate\Support\Facades\DB;
 use Razorpay\Api\Api;
 
 class PaymentController extends Controller
@@ -284,6 +287,135 @@ class PaymentController extends Controller
             'count' => $count,
             'daily_limit' => config('services.daily_unlock_limit', 20),
             'remaining' => config('services.daily_unlock_limit', 20) - $count
+        ]);
+    }
+
+    public function searchUser(Request $request)
+    {
+        $request->validate(['query' => 'required|string|min:3']);
+        $query = $request->input('query');
+
+        $users = User::withoutGlobalScope('active')
+            ->where(function($q) use ($query) {
+                $q->where('matrimony_id', 'LIKE', "%$query%")
+                  ->orWhere('phone', 'LIKE', "%$query%");
+            })
+            ->with('userProfile:user_id,first_name,last_name')
+            ->select('id', 'matrimony_id', 'phone', 'role')
+            ->limit(5)
+            ->get()
+            ->map(function($u) {
+                return [
+                    'id' => $u->id,
+                    'matrimony_id' => $u->matrimony_id,
+                    'name' => $u->userProfile ? $u->userProfile->first_name . ' ' . $u->userProfile->last_name : 'No Name',
+                    'role' => $u->role
+                ];
+            });
+
+        return response()->json(['users' => $users]);
+    }
+
+    public function requestTransferOtp(Request $request)
+    {
+        $request->validate([
+            'recipient_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:10'
+        ]);
+
+        $sender = $request->user();
+        $recipient = User::findOrFail($request->recipient_id);
+        
+        if ($sender->id === $recipient->id) {
+            return response()->json(['error' => 'You cannot transfer to yourself'], 400);
+        }
+
+        $totalAmount = $request->amount * 1.10; // 10% fee
+        $wallet = Wallet::where('user_id', $sender->id)->first();
+        if (!$wallet || $wallet->balance < $totalAmount) {
+            return response()->json(['error' => 'Insufficient balance (Required: ₹' . number_format($totalAmount, 2) . ')'], 400);
+        }
+
+        $otp = rand(111111, 999999);
+        
+        WalletTransferOtp::create([
+            'sender_id' => $sender->id,
+            'recipient_id' => $recipient->id,
+            'amount' => $request->amount,
+            'otp' => $otp,
+            'expires_at' => now()->addMinutes(10)
+        ]);
+
+        return response()->json([
+            'message' => 'OTP sent to ' . ($recipient->userProfile->first_name ?? 'Recipient'),
+            'otp' => env('APP_ENV') === 'local' ? $otp : null
+        ]);
+    }
+
+    public function transferWallet(Request $request)
+    {
+        $request->validate([
+            'recipient_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:10',
+            'otp' => 'required|string|size:6'
+        ]);
+
+        $sender = $request->user();
+        $recipient = User::findOrFail($request->recipient_id);
+
+        $transferOtp = WalletTransferOtp::where([
+            'sender_id' => $sender->id,
+            'recipient_id' => $recipient->id,
+            'amount' => $request->amount,
+            'otp' => $request->otp
+        ])->valid()->latest()->first();
+
+        if (!$transferOtp) {
+            return response()->json(['error' => 'Invalid or expired OTP. Please ask the recipient for the latest code.'], 400);
+        }
+
+        $amount = (float) $request->amount;
+        $fee = $amount * 0.10;
+        $totalDeduction = $amount + $fee;
+
+        $senderWallet = Wallet::where('user_id', $sender->id)->first();
+        if (!$senderWallet || $senderWallet->balance < $totalDeduction) {
+            return response()->json(['error' => 'Insufficient balance'], 400);
+        }
+
+        \DB::transaction(function() use ($sender, $recipient, $senderWallet, $amount, $fee, $totalDeduction, $transferOtp) {
+            // Deduct from sender
+            $senderWallet->decrement('balance', $totalDeduction);
+            
+            // Add to recipient
+            $recipientWallet = Wallet::firstOrCreate(['user_id' => $recipient->id], ['balance' => 0]);
+            $recipientWallet->increment('balance', $amount);
+
+            // Mark OTP as used
+            $transferOtp->update(['verified_at' => now()]);
+
+            // Create Transactions
+            Transaction::create([
+                'user_id' => $sender->id,
+                'type' => 'wallet_transfer',
+                'amount' => $totalDeduction,
+                'status' => 'success',
+                'description' => "Sent ₹" . number_format($amount, 0) . " to {$recipient->matrimony_id} (Fee: ₹" . number_format($fee, 0) . ")"
+            ]);
+
+            Transaction::create([
+                'user_id' => $recipient->id,
+                'type' => 'wallet_transfer',
+                'amount' => $amount,
+                'status' => 'success',
+                'description' => "Received ₹" . number_format($amount, 0) . " from {$sender->matrimony_id}"
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transfer complete!',
+            'new_balance' => $senderWallet->fresh()->balance
         ]);
     }
 }
