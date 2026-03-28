@@ -1310,9 +1310,16 @@ class AdminController extends Controller
             $totalRecharge = Transaction::where('type', 'wallet_recharge')
                 ->where('status', 'success')
                 ->sum('amount');
-            $totalSpent = Transaction::where('type', 'contact_unlock')
+            $totalSpent = Transaction::whereIn('type', ['contact_unlock', 'usage_fee', 'payout'])
                 ->where('status', 'success')
                 ->sum('amount');
+            
+            // For transfers, we only count the 'Sent' side as spent to avoid double counting if we just want to know how much moved
+            $totalSpent += Transaction::where('type', 'wallet_transfer')
+                ->where('status', 'success')
+                ->where('description', 'like', 'Sent%')
+                ->sum('amount');
+
             $totalTransactions = Transaction::count();
 
             return response()->json([
@@ -1342,8 +1349,11 @@ class AdminController extends Controller
                 'user.userProfile.educationModel',
                 'user.userProfile.occupationModel'
             ])
-                ->join('users', 'transactions.user_id', '=', 'users.id')
-                ->where('users.role', '!=', 'admin');
+                ->leftJoin('users', 'transactions.user_id', '=', 'users.id')
+                ->where(function($q) {
+                    $q->whereNull('users.role')
+                      ->orWhere('users.role', '!=', 'admin');
+                });
 
             // Search functionality
             if ($request->has('search')) {
@@ -1367,7 +1377,7 @@ class AdminController extends Controller
             // Filter functionality
             if ($request->has('filter') && $request->filter !== 'all') {
                 $filter = $request->filter;
-                if (in_array($filter, ['wallet_recharge', 'contact_unlock'])) {
+                if (in_array($filter, ['wallet_recharge', 'contact_unlock', 'wallet_transfer', 'usage_fee', 'payout'])) {
                     $query->where('transactions.type', $filter);
                 } elseif (in_array($filter, ['success', 'pending', 'failed'])) {
                     $query->where('transactions.status', $filter);
