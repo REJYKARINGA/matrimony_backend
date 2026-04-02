@@ -118,9 +118,10 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Update last login
+        // Update last login and activity
         $user->update([
-            'last_login' => now()
+            'last_login' => now(),
+            'last_active_at' => now()
         ]);
 
         // Record login history
@@ -196,8 +197,11 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Update last login whenever the app is opened/user info is fetched
-        $user->update(['last_login' => now()]);
+        // Update last login and activity whenever the app is opened/user info is fetched
+        $user->update([
+            'last_login' => now(),
+            'last_active_at' => now()
+        ]);
 
         $user->load(['userProfile', 'familyDetails', 'preferences', 'profilePhotos', 'verification', 'primaryBankAccount', 'interests', 'personalities']);
 
