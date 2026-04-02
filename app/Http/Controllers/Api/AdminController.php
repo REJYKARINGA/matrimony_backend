@@ -210,6 +210,8 @@ class AdminController extends Controller
                 ->orderBy('user_profiles.first_name', $sortDir)
                 ->orderBy('user_profiles.last_name', $sortDir)
                 ->select('users.*');
+        } elseif ($sortBy === 'last_active_at') {
+            $query->orderBy('users.last_active_at', $sortDir);
         } elseif ($sortBy === 'updated_at') {
             $query->orderBy('users.updated_at', $sortDir);
         } else {
@@ -447,6 +449,8 @@ class AdminController extends Controller
         if ($sortBy === 'name') {
             $query->orderBy('user_profiles.first_name', $sortDir)
                   ->orderBy('user_profiles.last_name', $sortDir);
+        } elseif ($sortBy === 'last_active_at') {
+            $query->orderBy('users.last_active_at', $sortDir);
         } elseif ($sortBy === 'updated_at') {
             $query->orderBy('user_profiles.updated_at', $sortDir);
         } else {
