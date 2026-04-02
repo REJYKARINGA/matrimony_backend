@@ -51,6 +51,7 @@ class User extends Authenticatable
         'last_hit_date',
         'daily_hits_count',
         'last_usage_deduction_at',
+        'last_active_at',
     ];
 
     /**
@@ -117,6 +118,7 @@ class User extends Authenticatable
         'email_verified' => 'boolean',
         'phone_verified' => 'boolean',
         'last_login' => 'datetime',
+        'last_active_at' => 'datetime',
     ];
 
     /**

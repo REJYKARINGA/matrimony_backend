@@ -11,6 +11,16 @@ class TrackDailyUsage
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        
+        if ($user) {
+            // Update last_active_at if null or more than 5 minutes since last update
+            if (!$user->last_active_at || $user->last_active_at->diffInMinutes(now()) >= 5) {
+                // Use DB directly to avoid triggering model events if not necessary, 
+                // but since we added it to fillable, update() is fine.
+                $user->update(['last_active_at' => now()]);
+            }
+        }
+
         if (!$user || $user->role === 'admin')
             return $next($request);
 

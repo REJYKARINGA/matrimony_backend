@@ -102,6 +102,7 @@ class UserResource extends JsonResource
                     return false;
                 }
             })(),
+            'last_active_at' => $this->last_active_at ? $this->last_active_at->toDateTimeString() : null,
 
             // Hide sensitive fields completely - never return these
             // password, role, status, email_verified, phone_verified, deleted_at, last_login

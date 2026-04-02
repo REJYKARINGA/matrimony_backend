@@ -93,6 +93,7 @@ class UserCardResource extends JsonResource
                     return false;
                 }
             })(),
+            'last_active_at' => $this->last_active_at ? $this->last_active_at->toDateTimeString() : null,
         ];
     }
 }

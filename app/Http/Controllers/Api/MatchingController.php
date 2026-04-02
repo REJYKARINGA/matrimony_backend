@@ -131,7 +131,7 @@ class MatchingController extends Controller
 
         switch ($sortBy) {
             case 'recent_login':
-                $query->orderBy('users.last_login', 'DESC');
+                $query->orderBy('users.last_active_at', 'DESC');
                 break;
             case 'newest':
                 $query->orderBy('users.created_at', 'DESC');
@@ -140,14 +140,13 @@ class MatchingController extends Controller
                 if (isset($lat)) {
                     $query->orderBy('distance', 'ASC');
                 } else {
-                    $query->orderBy('users.last_login', 'DESC');
+                    $query->orderBy('users.last_active_at', 'DESC');
                 }
                 break;
             case 'random':
             default:
-                // Primary sort by login date (the DATE part) so we can randomize within the day
-                // This keeps active users on top while giving fresh content on every refresh.
-                $query->orderByRaw('DATE(users.last_login) DESC')->inRandomOrder();
+                // Primary sort by active time to keep content fresh
+                $query->orderBy('users.last_active_at', 'DESC');
                 break;
         }
 

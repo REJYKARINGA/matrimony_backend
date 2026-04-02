@@ -602,8 +602,11 @@ class SearchController extends Controller
             });
         }
 
-        $profiles = $query->orderByRaw('DATE(users.last_login) DESC')
-            ->inRandomOrder()
+        if ($request->field == 'online') {
+            $query->where('last_active_at', '>=', now()->subMinutes(15));
+        }
+
+        $profiles = $query->orderBy('last_active_at', 'DESC')
             ->paginate(20);
 
         // Add distance calculation
