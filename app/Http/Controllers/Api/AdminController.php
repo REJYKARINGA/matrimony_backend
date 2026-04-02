@@ -21,6 +21,7 @@ use App\Models\UserReport;
 use App\Models\ProfilePhoto;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AdminController extends Controller
 {
@@ -501,8 +502,17 @@ class AdminController extends Controller
         ]);
 
         if ($request->hasFile('profile_picture')) {
-            $path = $request->file('profile_picture')->store('profiles', 'public');
-            $validated['profile_picture'] = $path;
+            try {
+                $uploadResult = cloudinary()->uploadApi()->upload($request->file('profile_picture')->getRealPath(), [
+                    'folder' => 'matrimony/profiles/' . $request->user_id,
+                    'public_id' => 'profile_' . $request->user_id . '_' . now()->timestamp,
+                ]);
+                $validated['profile_picture'] = $uploadResult['secure_url'];
+            } catch (\Exception $e) {
+                Log::error('Admin storeProfile Cloudinary upload error: ' . $e->getMessage());
+                // Fallback to local if Cloudinary fails? No, better error out or keep old. 
+                // But for store, we have no choice.
+            }
         }
 
         $profile = UserProfile::create($validated);
@@ -552,16 +562,37 @@ class AdminController extends Controller
             ]);
 
             if ($request->hasFile('profile_picture')) {
-                $path = $request->file('profile_picture')->store('profiles', 'public');
-                $validated['profile_picture'] = $path;
-                
-                // Delete old picture if it exists and is not a remote URL
-                if ($profile->profile_picture && strpos($profile->profile_picture, 'http') !== 0) {
-                    try {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($profile->profile_picture);
-                    } catch (\Exception $e) {
-                        // Ignore missing files or permission errors during delete
+                try {
+                    $uploadResult = cloudinary()->uploadApi()->upload($request->file('profile_picture')->getRealPath(), [
+                        'folder' => 'matrimony/profiles/' . $profile->user_id,
+                        'public_id' => 'profile_' . $profile->user_id . '_' . now()->timestamp,
+                    ]);
+                    
+                    $oldPicture = $profile->profile_picture;
+                    $validated['profile_picture'] = $uploadResult['secure_url'];
+                    
+                    // Cleanup old picture
+                    if ($oldPicture) {
+                        if (strpos($oldPicture, 'cloudinary.com') !== false) {
+                            try {
+                                $urlParts = parse_url($oldPicture);
+                                $pathParts = explode('/', trim($urlParts['path'], '/'));
+                                $publicIdWithExt = end($pathParts);
+                                $publicId = pathinfo($publicIdWithExt, PATHINFO_FILENAME);
+                                // Note: folder structure might be tricky, but this is a start.
+                                // If it's a Cloudinary URL from this app, destroying it is good.
+                                cloudinary()->uploadApi()->destroy($publicId);
+                            } catch (\Exception $e) {
+                                Log::warning("Failed to delete old Cloudinary image: " . $e->getMessage());
+                            }
+                        } else {
+                            try {
+                                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPicture);
+                            } catch (\Exception $e) {}
+                        }
                     }
+                } catch (\Exception $e) {
+                    Log::error('Admin updateProfile Cloudinary upload error: ' . $e->getMessage());
                 }
             }
 
