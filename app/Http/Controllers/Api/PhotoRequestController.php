@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
 use App\Models\PhotoRequest;
 use App\Models\User;
+use App\Models\Notification;
 
 class PhotoRequestController extends Controller
 {
@@ -34,20 +34,31 @@ class PhotoRequestController extends Controller
 
         $photoRequest = PhotoRequest::create([
             'requester_id' => $user->id,
-            'receiver_id' => $receiverId,
-            'status' => 'pending'
+            'receiver_id'  => $receiverId,
+            'status'       => 'pending',
+        ]);
+
+        // Notify the receiver about the new photo request
+        $senderName = trim(($user->userProfile->first_name ?? '') . ' ' . ($user->userProfile->last_name ?? ''));
+        Notification::create([
+            'user_id'      => $receiverId,
+            'sender_id'    => $user->id,
+            'type'         => 'photo_request',
+            'title'        => 'New Photo Request',
+            'message'      => ($senderName ?: 'Someone') . ' has requested access to your photos.',
+            'reference_id' => $photoRequest->id,
         ]);
 
         return response()->json([
             'message' => 'Photo request sent successfully',
-            'data' => $photoRequest
+            'data'    => $photoRequest,
         ], 201);
     }
 
     public function acceptRequest(Request $request, $id)
     {
         $user = $request->user();
-        
+
         $photoRequest = PhotoRequest::find($id);
         if (!$photoRequest || $photoRequest->receiver_id != $user->id) {
             return response()->json(['error' => 'Photo request not found or unauthorized'], 404);
@@ -56,16 +67,27 @@ class PhotoRequestController extends Controller
         $photoRequest->status = 'accepted';
         $photoRequest->save();
 
+        // Notify the requester that their request was accepted
+        $acceptorName = trim(($user->userProfile->first_name ?? '') . ' ' . ($user->userProfile->last_name ?? ''));
+        Notification::create([
+            'user_id'      => $photoRequest->requester_id,
+            'sender_id'    => $user->id,
+            'type'         => 'photo_request_accepted',
+            'title'        => 'Photo Request Accepted!',
+            'message'      => ($acceptorName ?: 'A user') . ' accepted your photo request. You can now view their photos.',
+            'reference_id' => $photoRequest->id,
+        ]);
+
         return response()->json([
             'message' => 'Photo request accepted',
-            'data' => $photoRequest
+            'data'    => $photoRequest,
         ]);
     }
 
     public function rejectRequest(Request $request, $id)
     {
         $user = $request->user();
-        
+
         $photoRequest = PhotoRequest::find($id);
         if (!$photoRequest || $photoRequest->receiver_id != $user->id) {
             return response()->json(['error' => 'Photo request not found or unauthorized'], 404);
@@ -76,21 +98,22 @@ class PhotoRequestController extends Controller
 
         return response()->json([
             'message' => 'Photo request rejected',
-            'data' => $photoRequest
+            'data'    => $photoRequest,
         ]);
     }
 
     public function getPendingRequests(Request $request)
     {
         $user = $request->user();
-        
+
+        // Return ALL incoming requests with status, newest first
         $requests = PhotoRequest::with(['requester.userProfile', 'requester.profilePhotos'])
             ->where('receiver_id', $user->id)
-            ->where('status', 'pending')
+            ->orderBy('updated_at', 'desc')
             ->get();
 
         return response()->json([
-            'requests' => $requests
+            'requests' => $requests,
         ]);
     }
 }
