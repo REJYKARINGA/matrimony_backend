@@ -96,6 +96,17 @@ class PhotoRequestController extends Controller
         $photoRequest->status = 'rejected';
         $photoRequest->save();
 
+        // Notify the requester that their request was rejected
+        $rejectorName = trim(($user->userProfile->first_name ?? '') . ' ' . ($user->userProfile->last_name ?? ''));
+        Notification::create([
+            'user_id'      => $photoRequest->requester_id,
+            'sender_id'    => $user->id,
+            'type'         => 'photo_request_rejected',
+            'title'        => 'Photo Request Status Update',
+            'message'      => ($rejectorName ?: 'A user') . ' declined your photo access request.',
+            'reference_id' => $photoRequest->id,
+        ]);
+
         return response()->json([
             'message' => 'Photo request rejected',
             'data'    => $photoRequest,
