@@ -66,7 +66,7 @@ class UserResource extends JsonResource
                 $clonedProfile = clone $this->userProfile;
                 if (!$canViewPhotos) {
                     // Only provide the primary photo URL if it exists, for blurred display
-                    $clonedProfile->profile_picture = $primaryPhoto ? $primaryPhoto->photo_path : null;
+                    $clonedProfile->profile_picture = $primaryPhoto ? $primaryPhoto->photo_url : null;
                 }
                 $userProfileResource = new UserProfileResource($clonedProfile);
             }
