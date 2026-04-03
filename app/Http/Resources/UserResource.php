@@ -51,14 +51,22 @@ class UserResource extends JsonResource
                 }
             }
 
-            $profilePhotos = $canViewPhotos ? ProfilePhotoResource::collection($this->whenLoaded('profilePhotos')) : [];
+            // Even if hidden, we might want to show a blurred version of the primary photo
+            $primaryPhoto = \App\Models\ProfilePhoto::where('user_id', $this->id)
+                ->where('is_primary', true)
+                ->first();
+
+            $profilePhotos = $canViewPhotos 
+                ? ProfilePhotoResource::collection($this->whenLoaded('profilePhotos')) 
+                : ($primaryPhoto ? [new ProfilePhotoResource($primaryPhoto)] : []);
 
             // Modify the userProfile resource conditionally
             $userProfileResource = null;
             if ($this->relationLoaded('userProfile') && $this->userProfile) {
                 $clonedProfile = clone $this->userProfile;
                 if (!$canViewPhotos) {
-                    $clonedProfile->profile_picture = null;
+                    // Only provide the primary photo URL if it exists, for blurred display
+                    $clonedProfile->profile_picture = $primaryPhoto ? $primaryPhoto->photo_path : null;
                 }
                 $userProfileResource = new UserProfileResource($clonedProfile);
             }
