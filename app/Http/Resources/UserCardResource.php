@@ -27,6 +27,7 @@ class UserCardResource extends JsonResource
 
         $canViewPhotos = true;
         $hasPhotoRequestPending = false;
+        $hasPhotoRequestRejected = false;
         
         if ($profile && $profile->hide_photos) {
             $canViewPhotos = false;
@@ -47,6 +48,9 @@ class UserCardResource extends JsonResource
                     }
                     if ($photoRequestStatus === 'pending') {
                         $hasPhotoRequestPending = true;
+                    }
+                    if ($photoRequestStatus === 'rejected') {
+                        $hasPhotoRequestRejected = true;
                     }
                 }
             }
@@ -71,6 +75,7 @@ class UserCardResource extends JsonResource
             'has_hidden_photos' => !$canViewPhotos,
             'is_photo_verified' => $isPhotoVerified,
             'photo_request_pending' => $hasPhotoRequestPending,
+            'photo_request_rejected' => $hasPhotoRequestRejected,
             'distance' => $this->when(isset($this->distance), function () {
                 return round($this->distance, 1);
             }),
