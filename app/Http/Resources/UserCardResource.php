@@ -67,7 +67,7 @@ class UserCardResource extends JsonResource
             'city' => $profile ? $profile->city : null,
             'present_city' => $profile ? $profile->present_city : null,
             'present_country' => $profile ? $profile->present_country : null,
-            'profile_picture' => ($profile && $canViewPhotos) ? $profile->profile_picture : null,
+            'profile_picture' => $profile ? ($canViewPhotos ? $profile->profile_picture : ($primaryPhoto ? $primaryPhoto->photo_path : null)) : null,
             'has_hidden_photos' => !$canViewPhotos,
             'is_photo_verified' => $isPhotoVerified,
             'photo_request_pending' => $hasPhotoRequestPending,
