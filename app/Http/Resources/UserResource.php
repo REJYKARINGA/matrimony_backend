@@ -27,29 +27,30 @@ class UserResource extends JsonResource
         }
 
         $canViewPhotos = true;
-        $hasPhotoRequestPending = false;
+        $photoRequestStatus = null;
         
-            $photoRequestStatus = null;
-            if ($this->userProfile && $this->userProfile->hide_photos) {
-                $canViewPhotos = false;
-                if ($currentUser) {
-                    if ($currentUser->id === $this->id) {
+        if ($currentUser && $currentUser->id !== $this->id) {
+            $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
+                ->where('receiver_id', $this->id)
+                ->value('status');
+        }
+
+        if ($this->userProfile && $this->userProfile->hide_photos) {
+            $canViewPhotos = false;
+            if ($currentUser) {
+                if ($currentUser->id === $this->id) {
+                    $canViewPhotos = true;
+                } else {
+                    $ownerSentInterest = \App\Models\InterestSent::where('sender_id', $this->id)
+                        ->where('receiver_id', $currentUser->id)
+                        ->exists();
+
+                    if ($ownerSentInterest || $photoRequestStatus === 'accepted') {
                         $canViewPhotos = true;
-                    } else {
-                        $ownerSentInterest = \App\Models\InterestSent::where('sender_id', $this->id)
-                            ->where('receiver_id', $currentUser->id)
-                            ->exists();
-
-                        $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
-                            ->where('receiver_id', $this->id)
-                            ->value('status');
-
-                        if ($ownerSentInterest || $photoRequestStatus === 'accepted') {
-                            $canViewPhotos = true;
-                        }
                     }
                 }
             }
+        }
 
             // Even if hidden, we might want to show a blurred version of the primary photo
             $primaryPhoto = \App\Models\ProfilePhoto::where('user_id', $this->id)

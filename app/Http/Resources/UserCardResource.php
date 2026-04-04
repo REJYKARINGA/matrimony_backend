@@ -29,6 +29,19 @@ class UserCardResource extends JsonResource
         $hasPhotoRequestPending = false;
         $hasPhotoRequestRejected = false;
         
+        if ($currentUser && $currentUser->id !== $this->id) {
+            $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
+                ->where('receiver_id', $this->id)
+                ->value('status');
+            
+            if ($photoRequestStatus === 'pending') {
+                $hasPhotoRequestPending = true;
+            }
+            if ($photoRequestStatus === 'rejected') {
+                $hasPhotoRequestRejected = true;
+            }
+        }
+
         if ($profile && $profile->hide_photos) {
             $canViewPhotos = false;
             if ($currentUser) {
@@ -39,18 +52,8 @@ class UserCardResource extends JsonResource
                         ->where('receiver_id', $currentUser->id)
                         ->exists();
 
-                    $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
-                        ->where('receiver_id', $this->id)
-                        ->value('status');
-
-                    if ($ownerSentInterest || $photoRequestStatus === 'accepted') {
+                    if ($ownerSentInterest || ($photoRequestStatus ?? null) === 'accepted') {
                         $canViewPhotos = true;
-                    }
-                    if ($photoRequestStatus === 'pending') {
-                        $hasPhotoRequestPending = true;
-                    }
-                    if ($photoRequestStatus === 'rejected') {
-                        $hasPhotoRequestRejected = true;
                     }
                 }
             }
