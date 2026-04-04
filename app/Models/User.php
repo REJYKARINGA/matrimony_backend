@@ -236,6 +236,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Relationship with users who blocked this user
+     */
+    public function blockedBy()
+    {
+        return $this->hasMany('App\Models\BlockedUser', 'blocked_id');
+    }
+
+
+
+    /**
      * Relationship with user subscriptions
      */
     public function userSubscriptions()

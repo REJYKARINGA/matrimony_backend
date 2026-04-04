@@ -74,7 +74,15 @@ class SearchController extends Controller
                     }
                 })
                     ->where('id', '!=', $user->id)
-                    
+                    ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    })
+                    ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                        $q->where('requester_id', $user->id)->where('status', 'rejected');
+                    })
+                    ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                        $q->where('sender_id', $user->id)->where('status', 'rejected');
+                    })
                     ->count();
 
                 if ($count > 0) {
@@ -117,7 +125,15 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
                 ->count();
 
             if ($count > 0) {
@@ -155,7 +171,15 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
                 ->count();
 
             if ($count > 0) {
@@ -193,7 +217,15 @@ class SearchController extends Controller
                 }
             })
                 ->where('id', '!=', $user->id)
-                
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
                 ->count();
 
             if ($count > 0) {
@@ -215,7 +247,15 @@ class SearchController extends Controller
 
             $count = User::join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
-                
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                     $q->where('is_active_verified', true);
                     if ($user->userProfile && $user->userProfile->religion_id) {
@@ -273,7 +313,17 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
+                ->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -305,7 +355,17 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
+                ->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -338,7 +398,17 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
+                ->count();
 
             if ($count > 0) {
                 $categories[] = [
@@ -368,7 +438,17 @@ class SearchController extends Controller
                     if ($oppositeGender)
                         $q->where('gender', $oppositeGender);
                 }
-            })->where('id', '!=', $user->id)->count();
+            })->where('id', '!=', $user->id)
+                ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
+                ->count();
 
         if ($count > 0) {
             $categories[] = [
@@ -439,7 +519,15 @@ class SearchController extends Controller
             'userProfile.occupationModel',
         ])
             ->where('id', '!=', $user->id)
-            
+            ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                $q->where('requester_id', $user->id)->where('status', 'rejected');
+            })
+            ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                $q->where('sender_id', $user->id)->where('status', 'rejected');
+            })
             ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch, $userProfile) {
                 $q->where('is_active_verified', true);
 

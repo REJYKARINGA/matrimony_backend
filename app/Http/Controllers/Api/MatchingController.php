@@ -32,6 +32,15 @@ class MatchingController extends Controller
             ->where('users.id', '!=', $user->id)
             ->whereHas('userProfile', function ($q) {
                 $q->where('is_active_verified', true);
+            })
+            ->whereDoesntHave('blockedBy', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                $q->where('requester_id', $user->id)->where('status', 'rejected');
+            })
+            ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                $q->where('sender_id', $user->id)->where('status', 'rejected');
             });
 
         // Add distance calculation if current user has location
@@ -236,13 +245,18 @@ class MatchingController extends Controller
         $blockedUserIds = \App\Models\BlockedUser::where('user_id', $user->id)->pluck('blocked_user_id')->toArray();
         $blockedMeIds = \App\Models\BlockedUser::where('blocked_user_id', $user->id)->pluck('user_id')->toArray();
         $alreadyPickedIds = DailyTopPick::where('user_id', $user->id)->pluck('picked_user_id')->toArray();
+        $rejectedPhotoRequestIds = \App\Models\PhotoRequest::where('requester_id', $user->id)
+            ->where('status', 'rejected')
+            ->pluck('receiver_id')
+            ->toArray();
 
         $allExcludedIds = array_unique(array_merge(
             [$user->id], 
             $interactedIds, 
             $blockedUserIds, 
             $blockedMeIds,
-            $alreadyPickedIds
+            $alreadyPickedIds,
+            $rejectedPhotoRequestIds
         ));
 
         $query->whereNotIn('users.id', $allExcludedIds);
