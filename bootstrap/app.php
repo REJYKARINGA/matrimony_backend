@@ -34,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'is_admin' => \App\Http\Middleware\IsAdmin::class,
             'track_usage' => \App\Http\Middleware\TrackDailyUsage::class,
+            'check_status' => \App\Http\Middleware\CheckUserStatus::class,
+        ]);
+
+        $middleware->api(append: [
+            \App\Http\Middleware\CheckUserStatus::class,
         ]);
 
         $middleware->redirectGuestsTo(function ($request) {

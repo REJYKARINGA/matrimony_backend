@@ -23,7 +23,7 @@ class MatchingController extends Controller
         $user = $request->user();
         $preferences = $user->preferences;
 
-        $query = User::with([
+        $query = User::active()->with([
             'userProfile.casteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
@@ -207,7 +207,7 @@ class MatchingController extends Controller
         $preferences = $user->preferences;
         
         // Basic query for potential matches
-        $query = User::where('users.id', '!=', $user->id)
+        $query = User::active()->where('users.id', '!=', $user->id)
             
             ->whereHas('userProfile', function ($q) use ($user) {
                 $q->where('is_active_verified', true);
@@ -330,7 +330,7 @@ class MatchingController extends Controller
 
         $totalUserIds = $matchedUserIds->merge($unlockedUserIds)->unique();
 
-        $chattableUsers = User::whereIn('id', $totalUserIds)
+        $chattableUsers = User::active()->whereIn('id', $totalUserIds)
             ->with([
                 'userProfile.casteModel',
                 'userProfile.educationModel',

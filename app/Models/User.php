@@ -66,6 +66,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted()
@@ -77,11 +85,6 @@ class User extends Authenticatable
             if (!$user->reference_code) {
                 $user->reference_code = static::generateReferenceCode();
             }
-        });
-
-        // Add Global Scope to filter out inactive users
-        static::addGlobalScope('active', function (\Illuminate\Database\Eloquent\Builder $builder) {
-            $builder->where('users.status', 'active');
         });
     }
 
