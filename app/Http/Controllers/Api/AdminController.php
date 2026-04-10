@@ -240,7 +240,7 @@ class AdminController extends Controller
             // 1. Notify users who unlocked this contact
             $unlockers = \App\Models\ContactUnlock::where('unlocked_user_id', $user->id)->pluck('user_id')->unique();
             foreach ($unlockers as $unlockerId) {
-                Notification::create([
+                $notification = Notification::create([
                     'user_id' => $unlockerId,
                     'sender_id' => $user->id,
                     'type' => 'scam_alert',
@@ -248,6 +248,9 @@ class AdminController extends Controller
                     'message' => "Safety Alert: A profile you recently unlocked ({$user->matrimony_id}) has been blocked by our security team for: {$user->block_reason}. If you have contacted them on WhatsApp, please be extremely cautious.",
                     'is_read' => false,
                 ]);
+
+                // Dispatch real-time event
+                event(new \App\Events\ScamAlertEvent($unlockerId, $notification->message));
             }
             
             // 2. Notify users who interacted with this user (Interest sent/received)
@@ -259,7 +262,7 @@ class AdminController extends Controller
                 // Skip if already notified in step 1
                 if ($unlockers->contains($interactedId)) continue;
                 
-                Notification::create([
+                $notification = Notification::create([
                     'user_id' => $interactedId,
                     'sender_id' => $user->id,
                     'type' => 'scam_alert',
@@ -267,6 +270,9 @@ class AdminController extends Controller
                     'message' => "Safety Alert: A profile you interacted with ({$user->matrimony_id}) has been blocked for suspicious activity. If you have moved the chat to WhatsApp, please stop communicating with them immediately.",
                     'is_read' => false,
                 ]);
+
+                // Dispatch real-time event
+                event(new \App\Events\ScamAlertEvent($interactedId, $notification->message));
             }
         } else {
             $user->block_reason = null;
