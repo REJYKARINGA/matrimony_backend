@@ -22,7 +22,6 @@ class CheckUserStatus
             // Define routes that are ALWAYS allowed even for inactive/blocked users
             // These allow the user to see WHY they were blocked or log out.
             $allowedRoutes = [
-                'api/auth/user',
                 'api/notifications',
                 'api/auth/logout',
             ];
