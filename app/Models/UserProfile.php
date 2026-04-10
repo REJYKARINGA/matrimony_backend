@@ -13,6 +13,7 @@ class UserProfile extends Model
     protected $table = 'user_profiles';
     protected $fillable = [
         'user_id',
+        'created_by',
         'first_name',
         'last_name',
         'date_of_birth',
@@ -68,11 +69,20 @@ class UserProfile extends Model
     ];
 
     /**
-     * Relationship with user
+     * Relationship with the profile owner
      */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relationship with the user who created this profile
+     * (can be admin, mediator, or the user themselves)
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function religionModel()

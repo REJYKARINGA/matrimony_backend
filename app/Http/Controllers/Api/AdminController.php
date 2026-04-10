@@ -515,8 +515,11 @@ class AdminController extends Controller
             }
         }
 
+        // Always capture who created this profile (admin / mediator / user — any authenticated role)
+        $validated['created_by'] = $request->user()->id;
+
         $profile = UserProfile::create($validated);
-        $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
+        $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel', 'createdBy']);
 
         return response()->json(['message' => 'Profile created successfully', 'profile' => $profile], 201);
     }
