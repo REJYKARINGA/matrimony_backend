@@ -245,7 +245,7 @@ class AdminController extends Controller
                     'sender_id' => $user->id,
                     'type' => 'scam_alert',
                     'title' => 'Security Warning',
-                    'message' => "Safety Alert: A profile you recently unlocked ({$user->matrimony_id}) has been blocked by our security team for: {$user->block_reason}. We advise caution.",
+                    'message' => "Safety Alert: A profile you recently unlocked ({$user->matrimony_id}) has been blocked by our security team for: {$user->block_reason}. If you have contacted them on WhatsApp, please be extremely cautious.",
                     'is_read' => false,
                 ]);
             }
@@ -264,7 +264,7 @@ class AdminController extends Controller
                     'sender_id' => $user->id,
                     'type' => 'scam_alert',
                     'title' => 'Security Warning',
-                    'message' => "Safety Alert: A profile you interacted with ({$user->matrimony_id}) has been blocked for suspicious activity. Please do not share sensitive information.",
+                    'message' => "Safety Alert: A profile you interacted with ({$user->matrimony_id}) has been blocked for suspicious activity. If you have moved the chat to WhatsApp, please stop communicating with them immediately.",
                     'is_read' => false,
                 ]);
             }
