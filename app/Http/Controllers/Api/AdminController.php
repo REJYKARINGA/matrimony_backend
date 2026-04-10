@@ -264,11 +264,11 @@ class AdminController extends Controller
         ]);
 
         UserProfile::create([
-            'user_id' => $user->id,
+            'user_id'    => $user->id,
+            'created_by' => $request->user()->id,  // track who created this profile
             'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'gender' => $request->input('gender', 'male'),
-            // Dummy default values if needed, otherwise rely on nulls
+            'last_name'  => $request->last_name,
+            'gender'     => $request->input('gender', 'male'),
         ]);
 
         return response()->json([
@@ -376,7 +376,8 @@ class AdminController extends Controller
             'casteModel',
             'subCasteModel',
             'educationModel',
-            'occupationModel'
+            'occupationModel',
+            'createdBy',
         ])
             ->join('users', 'user_profiles.user_id', '=', 'users.id')
             ->where('users.role', '!=', 'admin');
