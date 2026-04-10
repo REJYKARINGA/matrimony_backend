@@ -600,8 +600,13 @@ class AdminController extends Controller
                 }
             }
 
+            // Backfill created_by if it was never set (profiles created before this feature)
+            if (is_null($profile->created_by)) {
+                $validated['created_by'] = $request->user()->id;
+            }
+
             $profile->update($validated);
-            $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel']);
+            $profile->load(['user.verification', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel', 'createdBy']);
 
             return response()->json(['message' => 'Profile updated successfully', 'profile' => $profile]);
         } catch (\Exception $e) {
