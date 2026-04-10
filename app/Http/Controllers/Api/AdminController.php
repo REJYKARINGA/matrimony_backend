@@ -32,8 +32,9 @@ class AdminController extends Controller
     {
         $status = $request->get('status', 'pending');
         
-        $query = UserVerification::with(['user.userProfile', 'user.profilePhotos'])
-            ->where('status', $status);
+        $query = UserVerification::with([
+            'user' => fn($q) => $q->withoutGlobalScope('active')->with(['userProfile', 'profilePhotos'])
+        ])->where('status', $status);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -654,12 +655,12 @@ class AdminController extends Controller
         $reporterIds = UserReport::distinct()->pluck('reporter_id');
         $reportedIds = UserReport::distinct()->pluck('reported_id');
         
-        $reporters = User::whereIn('id', $reporterIds)
-            ->with('userProfile')
+        $reporters = User::withoutGlobalScope('active')->whereIn('id', $reporterIds)
+            ->with(['userProfile', 'user_profile'])
             ->get(['id', 'matrimony_id']);
             
-        $reported = User::whereIn('id', $reportedIds)
-            ->with('userProfile')
+        $reported = User::withoutGlobalScope('active')->whereIn('id', $reportedIds)
+            ->with(['userProfile', 'user_profile'])
             ->get(['id', 'matrimony_id']);
 
         return response()->json([
@@ -679,7 +680,7 @@ class AdminController extends Controller
         if ($request->reporter_search) {
             $query->where(function($q) use ($request) {
                 $q->whereHas('reporter', function($sq) use ($request) {
-                    $sq->where('matrimony_id', 'like', '%' . $request->reporter_search . '%');
+                    $sq->withoutGlobalScope('active')->where('matrimony_id', 'like', '%' . $request->reporter_search . '%');
                 })->orWhereHas('reporter.userProfile', function($sq) use ($request) {
                     $sq->where('first_name', 'like', '%' . $request->reporter_search . '%')
                       ->orWhere('last_name', 'like', '%' . $request->reporter_search . '%');
@@ -691,7 +692,7 @@ class AdminController extends Controller
         if ($request->reported_search) {
             $query->where(function($q) use ($request) {
                 $q->whereHas('reported', function($sq) use ($request) {
-                    $sq->where('matrimony_id', 'like', '%' . $request->reported_search . '%');
+                    $sq->withoutGlobalScope('active')->where('matrimony_id', 'like', '%' . $request->reported_search . '%');
                 })->orWhereHas('reported.userProfile', function($sq) use ($request) {
                     $sq->where('first_name', 'like', '%' . $request->reported_search . '%')
                       ->orWhere('last_name', 'like', '%' . $request->reported_search . '%');
@@ -705,11 +706,11 @@ class AdminController extends Controller
         }
 
         $query->with([
-            'reporter.userProfile', 
+            'reporter' => fn($q) => $q->withoutGlobalScope('active')->with('userProfile'), 
             'reported' => function($q) {
-                $q->withCount('receivedUserReports')->with('userProfile');
+                $q->withoutGlobalScope('active')->withCount('receivedUserReports')->with('userProfile');
             }, 
-            'reviewer.userProfile'
+            'reviewer' => fn($q) => $q->withoutGlobalScope('active')->with('userProfile')
         ]);
 
         $sortBy = $request->get('sort_by', 'created_at');
