@@ -2030,11 +2030,44 @@ class AdminController extends Controller
             'title' => 'Profile Approved',
             'message' => 'Your profile updates have been reviewed and approved by the moderator.',
             'is_read' => false,
-        ]);
-
-        return response()->json([
+        ]);        return response()->json([
             'message' => 'Profile changes approved successfully',
-            'profile' => $profile
+            'profile' => $profile->load(['user', 'religionModel', 'casteModel', 'subCasteModel', 'educationModel', 'occupationModel'])
         ]);
+    }
+
+    /**
+     * Get all photo requests for monitoring
+     */
+    public function getAllPhotoRequests(Request $request)
+    {
+        $query = \App\Models\PhotoRequest::with(['requester.userProfile', 'receiver.userProfile']);
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('search') && $request->search !== '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('requester.userProfile', function($qu) use ($search) {
+                    $qu->where('first_name', 'like', "%{$search}%")
+                       ->orWhere('last_name', 'like', "%{$search}%")
+                       ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
+                })->orWhereHas('receiver.userProfile', function($qu) use ($search) {
+                    $qu->where('first_name', 'like', "%{$search}%")
+                       ->orWhere('last_name', 'like', "%{$search}%")
+                       ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$search}%"]);
+                });
+            });
+        }
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortDir);
+
+        $requests = $query->paginate(15);
+        
+        return response()->json($requests);
     }
 }
