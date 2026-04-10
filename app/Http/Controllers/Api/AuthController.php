@@ -112,9 +112,13 @@ class AuthController extends Controller
 
         // Specifically check if the account is inactive
         if ($user->status !== 'active') {
+             $message = $user->status === 'blocked' 
+                ? 'Your account has been blocked because you were reported by other users.'
+                : 'Your account is deactivated. Please contact support to reactivate.';
+             
              return response()->json([
-                'error' => 'Account is inactive',
-                'message' => 'Your account is deactivated. Please contact support to reactivate.'
+                'error' => 'Account blocked/inactive',
+                'message' => $message
             ], 403);
         }
 

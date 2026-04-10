@@ -274,6 +274,17 @@ class AdminController extends Controller
                 // Dispatch real-time event
                 event(new \App\Events\ScamAlertEvent($interactedId, $notification->message));
             }
+
+            // 3. Notify the blocked user themselves
+            Notification::create([
+                'user_id' => $user->id,
+                'type' => 'account_alert',
+                'title' => 'Account Blocked',
+                'message' => "Your account has been blocked because you were reported by other users. Reason: {$user->block_reason}.",
+                'is_read' => false,
+            ]);
+            event(new \App\Events\ScamAlertEvent($user->id, "Your account has been blocked because you were reported by other users."));
+
         } else {
             $user->block_reason = null;
         }
