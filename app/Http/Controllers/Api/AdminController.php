@@ -227,10 +227,51 @@ class AdminController extends Controller
     /**
      * Toggle block/unblock user
      */
-    public function toggleBlockUser($id)
+    public function toggleBlockUser(Request $request, $id)
     {
         $user = User::withoutGlobalScope('active')->findOrFail($id);
-        $user->status = $user->status === 'active' ? 'blocked' : 'active';
+        
+        $newStatus = $user->status === 'active' ? 'blocked' : 'active';
+        $user->status = $newStatus;
+        
+        if ($newStatus === 'blocked') {
+            $user->block_reason = $request->input('block_reason', 'Suspicious activity');
+            
+            // 1. Notify users who unlocked this contact
+            $unlockers = \App\Models\ContactUnlock::where('unlocked_user_id', $user->id)->pluck('user_id')->unique();
+            foreach ($unlockers as $unlockerId) {
+                Notification::create([
+                    'user_id' => $unlockerId,
+                    'sender_id' => $user->id,
+                    'type' => 'scam_alert',
+                    'title' => 'Security Warning',
+                    'message' => "Safety Alert: A profile you recently unlocked ({$user->matrimony_id}) has been blocked by our security team for: {$user->block_reason}. We advise caution.",
+                    'is_read' => false,
+                ]);
+            }
+            
+            // 2. Notify users who interacted with this user (Interest sent/received)
+            $interactedUserIds = \App\Models\InterestSent::where('sender_id', $user->id)->pluck('receiver_id')
+                ->merge(\App\Models\InterestSent::where('receiver_id', $user->id)->pluck('sender_id'))
+                ->unique();
+                
+            foreach ($interactedUserIds as $interactedId) {
+                // Skip if already notified in step 1
+                if ($unlockers->contains($interactedId)) continue;
+                
+                Notification::create([
+                    'user_id' => $interactedId,
+                    'sender_id' => $user->id,
+                    'type' => 'scam_alert',
+                    'title' => 'Security Warning',
+                    'message' => "Safety Alert: A profile you interacted with ({$user->matrimony_id}) has been blocked for suspicious activity. Please do not share sensitive information.",
+                    'is_read' => false,
+                ]);
+            }
+        } else {
+            $user->block_reason = null;
+        }
+        
         $user->save();
 
         return response()->json([

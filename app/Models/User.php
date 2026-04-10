@@ -45,6 +45,7 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'block_reason',
         'email_verified',
         'phone_verified',
         'last_login',
