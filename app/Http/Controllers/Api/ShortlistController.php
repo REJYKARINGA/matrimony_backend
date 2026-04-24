@@ -17,6 +17,7 @@ class ShortlistController extends Controller
     {
         $user = $request->user();
         $shortlisted = ShortlistedProfile::where('user_id', $user->id)
+            ->whereHas('shortlistedUser')
             ->with(['shortlistedUser.userProfile.casteModel', 'shortlistedUser.userProfile.educationModel', 'shortlistedUser.userProfile.occupationModel'])
             ->paginate(10);
 

@@ -78,6 +78,10 @@ class User extends Authenticatable
      */
     protected static function booted()
     {
+        static::addGlobalScope('active', function ($builder) {
+            $builder->whereNotIn('users.status', ['deactivated', 'deleted']);
+        });
+
         static::creating(function ($user) {
             if (!$user->matrimony_id) {
                 $user->matrimony_id = static::generateMatrimonyId();

@@ -175,6 +175,7 @@ class MatchingController extends Controller
         // Check if we already have a pick for today
         $pick = DailyTopPick::where('user_id', $user->id)
             ->where('picked_date', $today)
+            ->whereHas('pickedUser')
             ->with(['pickedUser.userProfile.casteModel', 'pickedUser.userProfile.educationModel', 'pickedUser.userProfile.occupationModel'])
             ->first();
 
@@ -430,6 +431,7 @@ class MatchingController extends Controller
         $user = $request->user();
 
         $interests = InterestSent::where('sender_id', $user->id)
+            ->whereHas('receiver')
             ->with([
                 'receiver.userProfile.casteModel',
                 'receiver.userProfile.educationModel',
@@ -482,6 +484,7 @@ class MatchingController extends Controller
         $user = $request->user();
 
         $interests = InterestSent::where('receiver_id', $user->id)
+            ->whereHas('sender')
             ->with([
                 'sender.userProfile.casteModel',
                 'sender.userProfile.educationModel',

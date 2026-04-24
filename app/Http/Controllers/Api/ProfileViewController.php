@@ -21,6 +21,7 @@ class ProfileViewController extends Controller
         // Get unique visitors with their latest view time
         $visitors = ProfileView::where('viewed_profile_id', $user->id)
             ->where('viewer_id', '!=', $user->id) // Exclude self-views
+            ->whereHas('viewer')
             ->with([
                 'viewer.userProfile.religionModel',
                 'viewer.userProfile.casteModel',
@@ -89,6 +90,7 @@ class ProfileViewController extends Controller
 
         $visited = ProfileView::where('viewer_id', $user->id)
             ->where('viewed_profile_id', '!=', $user->id)
+            ->whereHas('viewedUser')
             ->with([
                 'viewedUser.userProfile.religionModel',
                 'viewedUser.userProfile.casteModel',
@@ -127,6 +129,7 @@ class ProfileViewController extends Controller
         $user = $request->user();
 
         $unlocked = \App\Models\ContactUnlock::where('user_id', $user->id)
+            ->whereHas('unlockedUser')
             ->with([
                 'unlockedUser.userProfile.religionModel',
                 'unlockedUser.userProfile.casteModel',
