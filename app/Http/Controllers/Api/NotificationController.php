@@ -14,9 +14,27 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $settings = $user->notificationSettings;
 
-        $notifications = Notification::where('user_id', $user->id)
-            ->with([
+        $query = Notification::where('user_id', $user->id);
+
+        if ($settings) {
+            $excludedTypes = [];
+            if (!$settings->notify_matches) $excludedTypes[] = 'match';
+            if (!$settings->notify_messages) $excludedTypes[] = 'message';
+            if (!$settings->notify_profile_views) $excludedTypes[] = 'profile_view';
+            if (!$settings->notify_interests) {
+                $excludedTypes[] = 'interest';
+                $excludedTypes[] = 'photo_request';
+                $excludedTypes[] = 'photo_request_accepted';
+            }
+            
+            if (!empty($excludedTypes)) {
+                $query->whereNotIn('type', $excludedTypes);
+            }
+        }
+
+        $notifications = $query->with([
                 'sender:id,email',
                 'sender.userProfile:user_id,first_name,last_name,profile_picture'
             ])
