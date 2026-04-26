@@ -31,6 +31,7 @@ use App\Models\Reference;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\InterestHobby;
 use App\Models\Personality;
+use App\Models\NotificationSetting;
 
 class User extends Authenticatable
 {
@@ -307,6 +308,14 @@ class User extends Authenticatable
     public function notifications()
     {
         return $this->hasMany('App\Models\Notification', 'user_id');
+    }
+
+    /**
+     * Relationship with notification settings
+     */
+    public function notificationSettings(): HasOne
+    {
+        return $this->hasOne(NotificationSetting::class);
     }
 
     /**

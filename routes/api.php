@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\ReferenceController;
+use App\Http\Controllers\Api\NotificationSettingController;
 use App\Events\TestEvent;
 
 /* |-------------------------------------------------------------------------- | API Routes |-------------------------------------------------------------------------- | | Here is where you can register API routes for your application. These | routes are loaded by the RouteServiceProvider and all of them will | be assigned to the "api" middleware group. Make something great! | */
@@ -188,6 +189,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{id}', [NotificationController::class , 'destroy']);
         }
         );
+
+        Route::prefix('notification-settings')->group(function () {
+            Route::get('/', [NotificationSettingController::class, 'getSettings']);
+            Route::put('/', [NotificationSettingController::class, 'updateSettings']);
+        });
 
         // Payment routes
         Route::prefix('payment')->group(function () {
