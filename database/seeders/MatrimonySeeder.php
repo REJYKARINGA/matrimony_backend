@@ -117,6 +117,22 @@ class MatrimonySeeder extends Seeder
                 $userId = DB::table('users')->insertGetId($userData);
             }
 
+            // Resolve IDs
+            $religionId = DB::table('religions')->where('name', $female[2])->value('id') ?? 
+                         DB::table('religions')->insertGetId(['name' => $female[2], 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $casteId = DB::table('castes')->where('name', $female[3])->where('religion_id', $religionId)->value('id') ?? 
+                      DB::table('castes')->insertGetId(['name' => $female[3], 'religion_id' => $religionId, 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $subCasteId = DB::table('sub_castes')->where('name', $female[4])->where('caste_id', $casteId)->value('id') ?? 
+                         DB::table('sub_castes')->insertGetId(['name' => $female[4], 'caste_id' => $casteId, 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $educationId = DB::table('education')->where('name', $female[7])->value('id') ?? 
+                          DB::table('education')->insertGetId(['name' => $female[7], 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $occupationId = DB::table('occupations')->where('name', $female[6])->value('id') ?? 
+                           DB::table('occupations')->insertGetId(['name' => $female[6], 'is_active' => true, 'created_at' => Carbon::now()]);
+
             DB::table('user_profiles')->updateOrInsert(
                 ['user_id' => $userId],
                 [
@@ -127,14 +143,14 @@ class MatrimonySeeder extends Seeder
                     'height' => rand(155, 168),
                     'weight' => rand(48, 62),
                     'marital_status' => 'never_married',
-                    'religion' => $female[2],
-                    'caste' => $female[3],
-                    'sub_caste' => $female[4],
+                    'religion_id' => $religionId,
+                    'caste_id' => $casteId,
+                    'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $female[5],
                     'profile_picture' => 'https://example.com/profiles/' . strtolower($female[0]) . '.jpg',
                     'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
-                    'education' => $female[7],
-                    'occupation' => $female[6],
+                    'education_id' => $educationId,
+                    'occupation_id' => $occupationId,
                     'annual_income' => $female[8],
                     'city' => $female[9],
                     'state' => $female[10],
@@ -166,10 +182,10 @@ class MatrimonySeeder extends Seeder
                     'min_height' => 170,
                     'max_height' => 188,
                     'marital_status' => 'never_married',
-                    'religion' => $female[2],
-                    'caste' => $female[3],
-                    'education' => 'Graduate',
-                    'occupation' => 'Any',
+                    'religion_id' => $religionId,
+                    'caste_ids' => json_encode([$casteId]),
+                    'education_ids' => json_encode([$educationId]),
+                    'occupation_ids' => json_encode([$occupationId]),
                     'min_income' => 500000.00,
                     'max_income' => 1500000.00,
                     'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
@@ -206,6 +222,22 @@ class MatrimonySeeder extends Seeder
                 $userId = DB::table('users')->insertGetId($userData);
             }
 
+            // Resolve IDs
+            $religionId = DB::table('religions')->where('name', $male[2])->value('id') ?? 
+                         DB::table('religions')->insertGetId(['name' => $male[2], 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $casteId = DB::table('castes')->where('name', $male[3])->where('religion_id', $religionId)->value('id') ?? 
+                      DB::table('castes')->insertGetId(['name' => $male[3], 'religion_id' => $religionId, 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $subCasteId = DB::table('sub_castes')->where('name', $male[4])->where('caste_id', $casteId)->value('id') ?? 
+                         DB::table('sub_castes')->insertGetId(['name' => $male[4], 'caste_id' => $casteId, 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $educationId = DB::table('education')->where('name', $male[7])->value('id') ?? 
+                          DB::table('education')->insertGetId(['name' => $male[7], 'is_active' => true, 'created_at' => Carbon::now()]);
+            
+            $occupationId = DB::table('occupations')->where('name', $male[6])->value('id') ?? 
+                           DB::table('occupations')->insertGetId(['name' => $male[6], 'is_active' => true, 'created_at' => Carbon::now()]);
+
             DB::table('user_profiles')->updateOrInsert(
                 ['user_id' => $userId],
                 [
@@ -216,14 +248,14 @@ class MatrimonySeeder extends Seeder
                     'height' => rand(170, 185),
                     'weight' => rand(65, 80),
                     'marital_status' => 'never_married',
-                    'religion' => $male[2],
-                    'caste' => $male[3],
-                    'sub_caste' => $male[4],
+                    'religion_id' => $religionId,
+                    'caste_id' => $casteId,
+                    'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $male[5],
                     'profile_picture' => 'https://example.com/profiles/' . strtolower($male[0]) . '.jpg',
                     'bio' => $male[0] . ' is a ' . $male[6] . ' with a passion for his work.',
-                    'education' => $male[7],
-                    'occupation' => $male[6],
+                    'education_id' => $educationId,
+                    'occupation_id' => $occupationId,
                     'annual_income' => $male[8],
                     'city' => $male[9],
                     'state' => $male[10],
@@ -256,10 +288,10 @@ class MatrimonySeeder extends Seeder
                     'min_height' => 155,
                     'max_height' => 170,
                     'marital_status' => 'never_married',
-                    'religion' => $male[2],
-                    'caste' => $male[3],
-                    'education' => 'Graduate',
-                    'occupation' => 'Any',
+                    'religion_id' => $religionId,
+                    'caste_ids' => json_encode([$casteId]),
+                    'education_ids' => json_encode([$educationId]),
+                    'occupation_ids' => json_encode([$occupationId]),
                     'min_income' => 400000.00,
                     'max_income' => 1200000.00,
                     'preferred_locations' => json_encode([$male[9], $this->getRandomCity(), $this->getRandomCity()]),
