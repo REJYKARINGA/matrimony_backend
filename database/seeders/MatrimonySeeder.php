@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class MatrimonySeeder extends Seeder
@@ -18,6 +19,7 @@ class MatrimonySeeder extends Seeder
     public function run()
     {
         // Clear existing data
+        Schema::disableForeignKeyConstraints();
         DB::table('profile_photos')->delete();
         DB::table('interests_sent')->delete();
         DB::table('matches')->delete();
@@ -33,6 +35,7 @@ class MatrimonySeeder extends Seeder
         DB::table('family_details')->delete();
         DB::table('user_profiles')->delete();
         DB::table('users')->delete();
+        Schema::enableForeignKeyConstraints();
 
         // Define 30 female users (Muslim Kerala)
         $females = [
