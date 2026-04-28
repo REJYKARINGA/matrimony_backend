@@ -101,7 +101,7 @@ class MatrimonySeeder extends Seeder
             $userData = [
                 'email' => $email,
                 'phone' => '+9198765432' . str_pad($index + 10, 2, '0', STR_PAD_LEFT),
-                'password_hash' => Hash::make('password'),
+                'password' => Hash::make('password'),
                 'role' => 'user',
                 'status' => 'active',
                 'email_verified' => true,
@@ -190,7 +190,7 @@ class MatrimonySeeder extends Seeder
             $userData = [
                 'email' => $email,
                 'phone' => '+9198765432' . str_pad($index + 30, 2, '0', STR_PAD_LEFT),
-                'password_hash' => Hash::make('password'),
+                'password' => Hash::make('password'),
                 'role' => 'user',
                 'status' => 'active',
                 'email_verified' => true,
