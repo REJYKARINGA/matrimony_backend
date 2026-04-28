@@ -17,15 +17,15 @@ class MatrimonySeeder extends Seeder
      */
     public function run()
     {
-        // Clear existing data in correct order (child tables first)
+        // Clear existing data
         DB::table('profile_photos')->delete();
         DB::table('interests_sent')->delete();
         DB::table('matches')->delete();
         DB::table('messages')->delete();
         DB::table('profile_views')->delete();
         DB::table('shortlisted_profiles')->delete();
-        DB::table('payments')->delete();
         DB::table('user_subscriptions')->delete();
+        DB::table('payments')->delete();
         DB::table('activity_logs')->delete();
         DB::table('reports')->delete();
         DB::table('notifications')->delete();
@@ -34,277 +34,241 @@ class MatrimonySeeder extends Seeder
         DB::table('user_profiles')->delete();
         DB::table('users')->delete();
 
-        // Define 30 female users
+        // Define 30 female users (Muslim Kerala)
         $females = [
-            ['Priya', 'Sharma', 'Hindu', 'Brahmin', 'Saraswat', 'Hindi', 'Fashion Designer', 'B.Des Fashion', 650000.00, 'Mumbai', 'Maharashtra'],
-            ['Sneha', 'Verma', 'Hindu', 'Kshatriya', 'Rajput', 'Hindi', 'Dance Choreographer', 'BA Dance', 550000.00, 'Delhi', 'Delhi'],
-            ['Pooja', 'Singh', 'Hindu', 'Vaishya', 'Aggarwal', 'Hindi', 'Yoga Instructor', 'M.Sc Yoga', 500000.00, 'Bangalore', 'Karnataka'],
-            ['Kavya', 'Patel', 'Hindu', 'Gujjar', 'Patel', 'Gujarati', 'Nutritionist', 'B.Sc Nutrition', 450000.00, 'Ahmedabad', 'Gujarat'],
-            ['Ananya', 'Jain', 'Jain', 'Jain', 'Digamber', 'Hindi', 'Psychologist', 'MA Psychology', 600000.00, 'Jaipur', 'Rajasthan'],
-            ['Divya', 'Reddy', 'Hindu', 'Reddy', 'Kamma', 'Telugu', 'Content Writer', 'BA Journalism', 480000.00, 'Hyderabad', 'Telangana'],
-            ['Simran', 'Malhotra', 'Hindu', 'Khatri', 'Ludhiana', 'Punjabi', 'Singer', 'BMus Vocal', 520000.00, 'Chandigarh', 'Punjab'],
-            ['Neha', 'Nair', 'Hindu', 'Nair', 'Nair', 'Malayalam', 'Marine Biologist', 'M.Sc Marine Biology', 580000.00, 'Thiruvananthapuram', 'Kerala'],
-            ['Ritu', 'Kumar', 'Hindu', 'Kayastha', 'Chattopadhyay', 'Bengali', 'Writer', 'MA Literature', 420000.00, 'Kolkata', 'West Bengal'],
-            ['Shalini', 'Mehta', 'Hindu', 'Parsi', 'Parsi', 'Gujarati', 'Interior Designer', 'B.Des Interior', 620000.00, 'Mumbai', 'Maharashtra'],
-            ['Komal', 'Chopra', 'Hindu', 'Bania', 'Aggarwal', 'Hindi', 'Nutrition Consultant', 'M.Sc Nutrition', 550000.00, 'Chennai', 'Tamil Nadu'],
-            ['Preeti', 'Gupta', 'Hindu', 'Gupta', 'Gupta', 'Hindi', 'Digital Marketing Manager', 'MBA Marketing', 700000.00, 'Noida', 'Uttar Pradesh'],
-            ['Swati', 'Shukla', 'Hindu', 'Kayastha', 'Shukla', 'Hindi', 'Environmental Scientist', 'PhD Environmental Studies', 650000.00, 'Lucknow', 'Uttar Pradesh'],
-            ['Rashmi', 'Rao', 'Hindu', 'Brahmin', 'Iyengar', 'Tamil', 'Dance Teacher', 'BA Classical Dance', 480000.00, 'Coimbatore', 'Tamil Nadu'],
-            ['Monika', 'Shetty', 'Hindu', 'Shetty', 'Billava', 'Kannada', 'Chef', 'Diploma Culinary Arts', 520000.00, 'Mangalore', 'Karnataka'],
-            ['Anita', 'Kapoor', 'Hindu', 'Jat', 'Kapoor', 'Hindi', 'Fitness Trainer', 'M.Sc Sports Science', 500000.00, 'Gurgaon', 'Haryana'],
-            ['Sheetal', 'Menon', 'Christian', 'Nair', 'Syrian Christian', 'Malayalam', 'School Teacher', 'MA Education', 450000.00, 'Kochi', 'Kerala'],
-            ['Geeta', 'Iyer', 'Hindu', 'Brahmin', 'Iyer', 'Tamil', 'Advocate', 'LLB', 750000.00, 'Madurai', 'Tamil Nadu'],
-            ['Rani', 'Bhatia', 'Hindu', 'Bhatia', 'Bhatia', 'Hindi', 'Art Therapist', 'BFA Fine Arts', 480000.00, 'Amritsar', 'Punjab'],
-            ['Seema', 'Chauhan', 'Hindu', 'Thakur', 'Chauhan', 'Hindi', 'Conservationist', 'M.Sc Wildlife Biology', 550000.00, 'Dehradun', 'Uttarakhand'],
-            ['Meera', 'Sharma', 'Hindu', 'Brahmin', 'Saraswat', 'Hindi', 'Data Analyst', 'M.Tech Data Science', 680000.00, 'Mumbai', 'Maharashtra'],
-            ['Sunita', 'Verma', 'Hindu', 'Kshatriya', 'Rajput', 'Hindi', 'HR Manager', 'MBA HR', 620000.00, 'Delhi', 'Delhi'],
-            ['Kavita', 'Singh', 'Hindu', 'Vaishya', 'Aggarwal', 'Hindi', 'Event Planner', 'BA Event Management', 580000.00, 'Bangalore', 'Karnataka'],
-            ['Rajni', 'Patel', 'Hindu', 'Gujjar', 'Patel', 'Gujarati', 'Social Worker', 'MA Social Work', 420000.00, 'Ahmedabad', 'Gujarat'],
-            ['Poonam', 'Jain', 'Jain', 'Jain', 'Shwetamber', 'Hindi', 'Astrologer', 'MA Astrology', 450000.00, 'Jaipur', 'Rajasthan'],
-            ['Sarita', 'Reddy', 'Hindu', 'Reddy', 'Kamma', 'Telugu', 'Web Developer', 'B.Tech Computer Science', 720000.00, 'Hyderabad', 'Telangana'],
-            ['Anjali', 'Malhotra', 'Hindu', 'Khatri', 'Ludhiana', 'Punjabi', 'Brand Manager', 'MBA Marketing', 780000.00, 'Chandigarh', 'Punjab'],
-            ['Neeta', 'Nair', 'Hindu', 'Nair', 'Nair', 'Malayalam', 'Ayurvedic Doctor', 'BAMS', 600000.00, 'Thiruvananthapuram', 'Kerala'],
-            ['Lata', 'Kumar', 'Hindu', 'Kayastha', 'Chattopadhyay', 'Bengali', 'Translator', 'MA Linguistics', 520000.00, 'Kolkata', 'West Bengal'],
-            ['Uma', 'Mehta', 'Hindu', 'Parsi', 'Parsi', 'Gujarati', 'CEO', 'MBA Business', 1200000.00, 'Mumbai', 'Maharashtra'],
+            ['Fatimah', 'Zahra', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Software Engineer', 'B.Tech CS', 850000.00, 'Kozhikode', 'Kerala'],
+            ['Aisha', 'Hana', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Doctor', 'MBBS', 1200000.00, 'Malappuram', 'Kerala'],
+            ['Maryam', 'Nadiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Professor', 'PhD Literature', 750000.00, 'Kochi', 'Kerala'],
+            ['Khadija', 'Safiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Nurse', 'B.Sc Nursing', 550000.00, 'Thalassery', 'Kerala'],
+            ['Zainab', 'Rehana', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Architect', 'B.Arch', 900000.00, 'Thiruvananthapuram', 'Kerala'],
+            ['Hana', 'Sumaiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Chartered Accountant', 'CA', 1100000.00, 'Thrissur', 'Kerala'],
+            ['Amina', 'Naseema', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'School Teacher', 'B.Ed', 450000.00, 'Palakkad', 'Kerala'],
+            ['Shamna', 'Shadiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Graphic Designer', 'BFA', 600000.00, 'Kannur', 'Kerala'],
+            ['Fida', 'Liya', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Psychologist', 'M.Sc Psychology', 650000.00, 'Alappuzha', 'Kerala'],
+            ['Sana', 'Meher', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Civil Engineer', 'M.Tech Civil', 800000.00, 'Kasaragod', 'Kerala'],
+            ['Arshida', 'Jasna', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Pharmacist', 'B.Pharm', 500000.00, 'Manjeri', 'Kerala'],
+            ['Riswana', 'Shabana', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Data Scientist', 'M.Sc Data Science', 950000.00, 'Kochi', 'Kerala'],
+            ['Sajna', 'Thasni', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'HR Manager', 'MBA HR', 720000.00, 'Perintalmanna', 'Kerala'],
+            ['Asna', 'Bushra', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Physiotherapist', 'BPT', 580000.00, 'Kollam', 'Kerala'],
+            ['Fahima', 'Irfana', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Content Writer', 'MA English', 420000.00, 'Wayanad', 'Kerala'],
+            ['Shahana', 'Zahra', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Interior Designer', 'B.Des', 680000.00, 'Kozhikode', 'Kerala'],
+            ['Nadiya', 'Fathima', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Advocate', 'LLB', 700000.00, 'Kottayam', 'Kerala'],
+            ['Rubeena', 'Parveen', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Dentist', 'BDS', 880000.00, 'Vatagara', 'Kerala'],
+            ['Suhara', 'Banu', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Journalist', 'MCJ', 520000.00, 'Thiruvananthapuram', 'Kerala'],
+            ['Maimuna', 'Koya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Homemaker', 'BA', 0.00, 'Kozhikode', 'Kerala'],
+            ['Aysha', 'Siddeeqa', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Dietician', 'M.Sc Nutrition', 480000.00, 'Malappuram', 'Kerala'],
+            ['Jamshiya', 'K.P.', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Civil Servant', 'IAS', 1500000.00, 'Tirur', 'Kerala'],
+            ['Nishana', 'V.P.', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Bank Manager', 'MBA Finance', 920000.00, 'Kochi', 'Kerala'],
+            ['Shameema', 'M.T.', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Yoga Trainer', 'Certification', 350000.00, 'Ponnani', 'Kerala'],
+            ['Lulu', 'Marjan', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Researcher', 'PhD Biotech', 820000.00, 'Thalassery', 'Kerala'],
+            ['Hiba', 'Fathima', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Fashion Designer', 'Diploma', 400000.00, 'Kannur', 'Kerala'],
+            ['Minha', 'Sherin', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Web Developer', 'BCA', 620000.00, 'Kozhikode', 'Kerala'],
+            ['Roshna', 'Naseer', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Marketing Executive', 'MBA', 550000.00, 'Kochi', 'Kerala'],
+            ['Sumayya', 'Sherin', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Teacher', 'TTC', 300000.00, 'Malappuram', 'Kerala'],
+            ['Farzana', 'Iqbal', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Entrepreneur', 'B.Com', 1200000.00, 'Kozhikode', 'Kerala'],
         ];
 
-        // Define 20 male users
+        // Define 20 male users (Muslim Kerala)
         $males = [
-            ['Rahul', 'Sharma', 'Hindu', 'Brahmin', 'Saraswat', 'Hindi', 'Software Developer', 'M.Tech Computer Science', 800000.00, 'Mumbai', 'Maharashtra'],
-            ['Amit', 'Verma', 'Hindu', 'Kshatriya', 'Rajput', 'Hindi', 'Business Analyst', 'B.Com', 750000.00, 'Delhi', 'Delhi'],
-            ['Vikram', 'Singh', 'Hindu', 'Vaishya', 'Aggarwal', 'Hindi', 'Financial Consultant', 'MBA Finance', 900000.00, 'Bangalore', 'Karnataka'],
-            ['Arjun', 'Patel', 'Hindu', 'Gujjar', 'Patel', 'Gujarati', 'Mechanical Engineer', 'B.Tech Mechanical', 650000.00, 'Ahmedabad', 'Gujarat'],
-            ['Rohit', 'Jain', 'Jain', 'Jain', 'Shwetamber', 'Hindi', 'Chartered Accountant', 'CA', 1000000.00, 'Jaipur', 'Rajasthan'],
-            ['Suresh', 'Reddy', 'Hindu', 'Reddy', 'Kamma', 'Telugu', 'Network Administrator', 'B.Tech ECE', 600000.00, 'Hyderabad', 'Telangana'],
-            ['Karan', 'Malhotra', 'Hindu', 'Khatri', 'Ludhiana', 'Punjabi', 'Marketing Manager', 'MBA Marketing', 850000.00, 'Chandigarh', 'Punjab'],
-            ['Ajay', 'Nair', 'Hindu', 'Nair', 'Nair', 'Malayalam', 'Architect', 'B.Arch', 700000.00, 'Thiruvananthapuram', 'Kerala'],
-            ['Manoj', 'Kumar', 'Hindu', 'Kayastha', 'Chattopadhyay', 'Bengali', 'Economist', 'MA Economics', 720000.00, 'Kolkata', 'West Bengal'],
-            ['Rajesh', 'Mehta', 'Hindu', 'Parsi', 'Parsi', 'Gujarati', 'Business Owner', 'MBA Operations', 950000.00, 'Mumbai', 'Maharashtra'],
-            ['Deepak', 'Chopra', 'Hindu', 'Bania', 'Aggarwal', 'Hindi', 'Doctor', 'MD', 1200000.00, 'Chennai', 'Tamil Nadu'],
-            ['Sanjay', 'Gupta', 'Hindu', 'Gupta', 'Gupta', 'Hindi', 'IT Specialist', 'B.Tech IT', 680000.00, 'Noida', 'Uttar Pradesh'],
-            ['Vivek', 'Shukla', 'Hindu', 'Kayastha', 'Shukla', 'Hindi', 'Research Scientist', 'PhD Environmental Science', 780000.00, 'Lucknow', 'Uttar Pradesh'],
-            ['Prakash', 'Rao', 'Hindu', 'Brahmin', 'Iyengar', 'Tamil', 'Music Teacher', 'MA Music', 550000.00, 'Coimbatore', 'Tamil Nadu'],
-            ['Ravi', 'Shetty', 'Hindu', 'Shetty', 'Billava', 'Kannada', 'Civil Engineer', 'B.Tech Civil', 620000.00, 'Mangalore', 'Karnataka'],
-            ['Anil', 'Kapoor', 'Hindu', 'Jat', 'Kapoor', 'Hindi', 'Physics Tutor', 'B.Sc Physics', 500000.00, 'Gurgaon', 'Haryana'],
-            ['Sunil', 'Menon', 'Christian', 'Nair', 'Syrian Christian', 'Malayalam', 'Chemical Engineer', 'M.Tech Chemical', 750000.00, 'Kochi', 'Kerala'],
-            ['Ramesh', 'Iyer', 'Hindu', 'Brahmin', 'Iyer', 'Tamil', 'Electronics Engineer', 'BE Electronics', 650000.00, 'Madurai', 'Tamil Nadu'],
-            ['Naresh', 'Bhatia', 'Hindu', 'Bhatia', 'Bhatia', 'Hindi', 'Historian', 'MA History', 580000.00, 'Amritsar', 'Punjab'],
-            ['Pankaj', 'Chauhan', 'Hindu', 'Thakur', 'Chauhan', 'Hindi', 'Wildlife Photographer', 'M.Sc Zoology', 600000.00, 'Dehradun', 'Uttarakhand'],
+            ['Muhammed', 'Ali', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Software Architect', 'M.Tech', 1800000.00, 'Kozhikode', 'Kerala'],
+            ['Ahmed', 'Faisal', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Business Owner', 'MBA', 2500000.00, 'Malappuram', 'Kerala'],
+            ['Hassan', 'Rashid', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Civil Engineer', 'B.Tech', 950000.00, 'Kochi', 'Kerala'],
+            ['Hussain', 'Sameer', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Medical Doctor', 'MD', 2200000.00, 'Thiruvananthapuram', 'Kerala'],
+            ['Umar', 'Shafi', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Accountant', 'CA', 1200000.00, 'Thrissur', 'Kerala'],
+            ['Usman', 'Mansoor', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Government Employee', 'Degree', 700000.00, 'Kannur', 'Kerala'],
+            ['Khalid', 'Saleem', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Chef', 'Hotel Management', 650000.00, 'Palakkad', 'Kerala'],
+            ['Bilal', 'Anwar', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Marketing Manager', 'MBA', 1100000.00, 'Kozhikode', 'Kerala'],
+            ['Faisal', 'Ashraf', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Police Officer', 'SI', 850000.00, 'Malappuram', 'Kerala'],
+            ['Rashid', 'Noufal', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Network Engineer', 'MCSE', 780000.00, 'Kochi', 'Kerala'],
+            ['Sameer', 'Jaseel', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Expatriate', 'Work Visa', 1500000.00, 'Tirur', 'Kerala'],
+            ['Mansoor', 'Irshad', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Graphic Artist', 'Multimedia', 550000.00, 'Vatagara', 'Kerala'],
+            ['Saleem', 'Shihab', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Pharmacist', 'B.Pharm', 620000.00, 'Perintalmanna', 'Kerala'],
+            ['Anwar', 'Zakir', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Real Estate', 'Business', 2000000.00, 'Kozhikode', 'Kerala'],
+            ['Ashraf', 'Yaseen', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Professor', 'PhD', 1300000.00, 'Kochi', 'Kerala'],
+            ['Noufal', 'Nizam', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Web Designer', 'Degree', 580000.00, 'Kannur', 'Kerala'],
+            ['Jaseel', 'Rafeeq', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Electrician', 'ITI', 450000.00, 'Kasaragod', 'Kerala'],
+            ['Irshad', 'Shareef', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Advocate', 'LLB', 900000.00, 'Manjeri', 'Kerala'],
+            ['Shihab', 'Majeed', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Sales Manager', 'Degree', 720000.00, 'Alappuzha', 'Kerala'],
+            ['Zakir', 'Haris', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Artist', 'BFA', 400000.00, 'Kochi', 'Kerala'],
         ];
 
-        // Fetch reference data for faster lookups
-        $religionsList = DB::table('religions')->pluck('id', 'name')->toArray();
-        $castesList = DB::table('castes')->get()->groupBy('religion_id')->map(function ($items) {
-            return $items->pluck('id', 'name')->toArray();
-        })->toArray();
-        $subCastesList = DB::table('sub_castes')->get()->groupBy('caste_id')->map(function ($items) {
-            return $items->pluck('id', 'name')->toArray();
-        })->toArray();
-        $educationsList = DB::table('education')->pluck('id', 'name')->toArray();
-        $occupationsList = DB::table('occupations')->pluck('id', 'name')->toArray();
-
-        // Create female users
+        // Create/Update female users
         foreach ($females as $index => $female) {
             $email = 'rejy' . ($index + 1) . '@yopmail.com';
 
-            $userId = DB::table('users')->insertGetId([
+            $user = DB::table('users')->where('email', $email)->first();
+            
+            $userData = [
                 'email' => $email,
-                'phone' => '+9198765432' . str_pad($index + 100, 2, '0', STR_PAD_LEFT),
-                'password' => Hash::make('password'),
+                'phone' => '+9198765432' . str_pad($index + 10, 2, '0', STR_PAD_LEFT),
+                'password_hash' => Hash::make('password'),
                 'role' => 'user',
                 'status' => 'active',
                 'email_verified' => true,
                 'phone_verified' => true,
-                'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ]);
+            ];
 
-            $religionId = $religionsList[$female[2]] ?? null;
-            $casteId = ($religionId && isset($castesList[$religionId])) ? ($castesList[$religionId][$female[3]] ?? null) : null;
-            $subCasteId = ($casteId && isset($subCastesList[$casteId])) ? ($subCastesList[$casteId][$female[4]] ?? null) : null;
+            if ($user) {
+                $userId = $user->id;
+                DB::table('users')->where('id', $userId)->update($userData);
+            } else {
+                $userData['created_at'] = Carbon::now();
+                $userId = DB::table('users')->insertGetId($userData);
+            }
 
-            // Education/Occupation lookup
-            $eduName = $female[7];
-            // Simple normalization for seeder data
-            if ($eduName == 'M.Tech Computer Science')
-                $eduName = 'M.Tech';
-            if ($eduName == 'M.Sc Nutrition')
-                $eduName = 'M.Sc';
-            if ($eduName == 'M.Sc Yoga')
-                $eduName = 'M.Sc';
-            if ($eduName == 'M.Sc Marine Biology')
-                $eduName = 'M.Sc';
-            if ($eduName == 'M.Sc Sports Science')
-                $eduName = 'M.Sc';
-            if ($eduName == 'M.Sc Wildlife Biology')
-                $eduName = 'M.Sc';
-            if ($eduName == 'M.Tech Data Science')
-                $eduName = 'M.Tech';
+            DB::table('user_profiles')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'first_name' => $female[0],
+                    'last_name' => $female[1],
+                    'date_of_birth' => Carbon::now()->subYears(rand(25, 35))->toDateString(),
+                    'gender' => 'female',
+                    'height' => rand(155, 168),
+                    'weight' => rand(48, 62),
+                    'marital_status' => 'never_married',
+                    'religion' => $female[2],
+                    'caste' => $female[3],
+                    'sub_caste' => $female[4],
+                    'mother_tongue' => $female[5],
+                    'profile_picture' => 'https://example.com/profiles/' . strtolower($female[0]) . '.jpg',
+                    'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
+                    'education' => $female[7],
+                    'occupation' => $female[6],
+                    'annual_income' => $female[8],
+                    'city' => $female[9],
+                    'state' => $female[10],
+                    'country' => 'India',
+                    'updated_at' => Carbon::now(),
+                ]
+            );
 
-            $educationId = $educationsList[$eduName] ?? ($educationsList['Graduate'] ?? null);
-            $occupationId = $occupationsList[$female[6]] ?? ($occupationsList['Other'] ?? null);
+            DB::table('family_details')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'father_name' => $this->generateFatherName($female[1]),
+                    'father_occupation' => $this->getRandomOccupation(),
+                    'mother_name' => $this->generateMotherName($female[1]),
+                    'mother_occupation' => $this->getRandomFemaleOccupation(),
+                    'siblings' => rand(0, 3),
+                    'family_type' => rand(0, 1) ? 'nuclear' : 'joint',
+                    'family_status' => $this->getRandomFamilyStatus(),
+                    'family_location' => $female[9],
+                    'updated_at' => Carbon::now(),
+                ]
+            );
 
-            DB::table('user_profiles')->insert([
-                'user_id' => $userId,
-                'first_name' => $female[0],
-                'last_name' => $female[1],
-                'date_of_birth' => Carbon::now()->subYears(rand(25, 35))->toDateString(),
-                'gender' => 'female',
-                'height' => rand(155, 168),
-                'weight' => rand(48, 62),
-                'marital_status' => 'never_married',
-                'religion_id' => $religionId,
-                'caste_id' => $casteId,
-                'sub_caste_id' => $subCasteId,
-                'mother_tongue' => $female[5],
-                'profile_picture' => 'https://example.com/profiles/' . strtolower($female[0]) . '.jpg',
-                'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
-                'education_id' => $educationId,
-                'occupation_id' => $occupationId,
-                'annual_income' => $female[8],
-                'city' => $female[9],
-                'state' => $female[10],
-                'country' => 'India',
-                'drug_addiction' => false,
-                'smoke' => 'never',
-                'alcohol' => 'never',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
-            DB::table('family_details')->insert([
-                'user_id' => $userId,
-                'father_name' => $this->generateFatherName($female[1]),
-                'father_occupation' => $this->getRandomOccupation(),
-                'mother_name' => $this->generateMotherName($female[1]),
-                'mother_occupation' => $this->getRandomFemaleOccupation(),
-                'siblings' => rand(0, 3),
-                'family_type' => rand(0, 1) ? 'nuclear' : 'joint',
-                'family_status' => $this->getRandomFamilyStatus(),
-                'family_location' => $female[9],
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
-            DB::table('preferences')->insert([
-                'user_id' => $userId,
-                'min_age' => 25,
-                'max_age' => 35,
-                'min_height' => 170,
-                'max_height' => 188,
-                'marital_status' => 'never_married',
-                'religion_id' => $religionId,
-                'caste_ids' => json_encode($casteId ? [$casteId] : []),
-                'sub_caste_ids' => json_encode($subCasteId ? [$subCasteId] : []),
-                'education_ids' => json_encode($educationId ? [$educationId] : []),
-                'occupation_ids' => json_encode($occupationId ? [$occupationId] : []),
-                'min_income' => 500000.00,
-                'max_income' => 1500000.00,
-                'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
-                'drug_addiction' => 'any',
-                'smoke' => json_encode(['never']),
-                'alcohol' => json_encode(['never']),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
+            DB::table('preferences')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'min_age' => 25,
+                    'max_age' => 35,
+                    'min_height' => 170,
+                    'max_height' => 188,
+                    'marital_status' => 'never_married',
+                    'religion' => $female[2],
+                    'caste' => $female[3],
+                    'education' => 'Graduate',
+                    'occupation' => 'Any',
+                    'min_income' => 500000.00,
+                    'max_income' => 1500000.00,
+                    'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
+                    'drug_addiction' => 'any',
+                    'smoke' => json_encode(['never']),
+                    'alcohol' => json_encode(['never']),
+                    'updated_at' => Carbon::now(),
+                ]
+            );
         }
 
-        // Create male users
+        // Create/Update male users
         foreach ($males as $index => $male) {
             $email = 'rejy' . ($index + 31) . '@yopmail.com'; // Males start from rejy31
 
-            $userId = DB::table('users')->insertGetId([
+            $user = DB::table('users')->where('email', $email)->first();
+            
+            $userData = [
                 'email' => $email,
-                'phone' => '+9198765432' . str_pad($index + 130, 2, '0', STR_PAD_LEFT),
-                'password' => Hash::make('password'),
+                'phone' => '+9198765432' . str_pad($index + 30, 2, '0', STR_PAD_LEFT),
+                'password_hash' => Hash::make('password'),
                 'role' => 'user',
                 'status' => 'active',
                 'email_verified' => true,
                 'phone_verified' => true,
-                'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ]);
+            ];
 
-            $religionId = $religionsList[$male[2]] ?? null;
-            $casteId = ($religionId && isset($castesList[$religionId])) ? ($castesList[$religionId][$male[3]] ?? null) : null;
-            $subCasteId = ($casteId && isset($subCastesList[$casteId])) ? ($subCastesList[$casteId][$male[4]] ?? null) : null;
+            if ($user) {
+                $userId = $user->id;
+                DB::table('users')->where('id', $userId)->update($userData);
+            } else {
+                $userData['created_at'] = Carbon::now();
+                $userId = DB::table('users')->insertGetId($userData);
+            }
 
-            // Education/Occupation lookup
-            $eduName = $male[7];
-            // Simple normalization for seeder data
-            if ($eduName == 'M.Tech Computer Science')
-                $eduName = 'M.Tech';
-            if ($eduName == 'BE Electronics')
-                $eduName = 'B.Tech/B.E';
-            if ($eduName == 'M.Tech Chemical')
-                $eduName = 'M.Tech';
+            DB::table('user_profiles')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'first_name' => $male[0],
+                    'last_name' => $male[1],
+                    'date_of_birth' => Carbon::now()->subYears(rand(25, 35))->toDateString(),
+                    'gender' => 'male',
+                    'height' => rand(170, 185),
+                    'weight' => rand(65, 80),
+                    'marital_status' => 'never_married',
+                    'religion' => $male[2],
+                    'caste' => $male[3],
+                    'sub_caste' => $male[4],
+                    'mother_tongue' => $male[5],
+                    'profile_picture' => 'https://example.com/profiles/' . strtolower($male[0]) . '.jpg',
+                    'bio' => $male[0] . ' is a ' . $male[6] . ' with a passion for his work.',
+                    'education' => $male[7],
+                    'occupation' => $male[6],
+                    'annual_income' => $male[8],
+                    'city' => $male[9],
+                    'state' => $male[10],
+                    'country' => 'India',
+                    'is_active_verified' => 1,
+                    'updated_at' => Carbon::now(),
+                ]
+            );
 
-            $educationId = $educationsList[$eduName] ?? ($educationsList['Graduate'] ?? null);
-            $occupationId = $occupationsList[$male[6]] ?? ($occupationsList['Other'] ?? null);
+            DB::table('family_details')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'father_name' => $this->generateFatherName($male[1]),
+                    'father_occupation' => $this->getRandomMaleOccupation(),
+                    'mother_name' => $this->generateMotherName($male[1]),
+                    'mother_occupation' => $this->getRandomFemaleOccupation(),
+                    'siblings' => rand(0, 3),
+                    'family_type' => rand(0, 1) ? 'nuclear' : 'joint',
+                    'family_status' => $this->getRandomFamilyStatus(),
+                    'family_location' => $male[9],
+                    'updated_at' => Carbon::now(),
+                ]
+            );
 
-            DB::table('user_profiles')->insert([
-                'user_id' => $userId,
-                'first_name' => $male[0],
-                'last_name' => $male[1],
-                'date_of_birth' => Carbon::now()->subYears(rand(25, 35))->toDateString(),
-                'gender' => 'male',
-                'height' => rand(170, 185),
-                'weight' => rand(65, 80),
-                'marital_status' => 'never_married',
-                'religion_id' => $religionId,
-                'caste_id' => $casteId,
-                'sub_caste_id' => $subCasteId,
-                'mother_tongue' => $male[5],
-                'profile_picture' => 'https://example.com/profiles/' . strtolower($male[0]) . '.jpg',
-                'bio' => $male[0] . ' is a ' . $male[6] . ' with a passion for his work.',
-                'education_id' => $educationId,
-                'occupation_id' => $occupationId,
-                'annual_income' => $male[8],
-                'city' => $male[9],
-                'state' => $male[10],
-                'country' => 'India',
-                'drug_addiction' => false,
-                'smoke' => 'never',
-                'alcohol' => 'never',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
-            DB::table('family_details')->insert([
-                'user_id' => $userId,
-                'father_name' => $this->generateFatherName($male[1]),
-                'father_occupation' => $this->getRandomMaleOccupation(),
-                'mother_name' => $this->generateMotherName($male[1]),
-                'mother_occupation' => $this->getRandomFemaleOccupation(),
-                'siblings' => rand(0, 3),
-                'family_type' => rand(0, 1) ? 'nuclear' : 'joint',
-                'family_status' => $this->getRandomFamilyStatus(),
-                'family_location' => $male[9],
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
-            DB::table('preferences')->insert([
-                'user_id' => $userId,
-                'min_age' => 22,
-                'max_age' => 32,
-                'min_height' => 155,
-                'max_height' => 170,
-                'marital_status' => 'never_married',
-                'religion_id' => $religionId,
-                'caste_ids' => json_encode($casteId ? [$casteId] : []),
-                'sub_caste_ids' => json_encode($subCasteId ? [$subCasteId] : []),
-                'education_ids' => json_encode($educationId ? [$educationId] : []),
-                'occupation_ids' => json_encode($occupationId ? [$occupationId] : []),
-                'min_income' => 400000.00,
-                'max_income' => 1200000.00,
-                'preferred_locations' => json_encode([$male[9], $this->getRandomCity(), $this->getRandomCity()]),
-                'drug_addiction' => 'any',
-                'smoke' => json_encode(['never']),
-                'alcohol' => json_encode(['never']),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
+            DB::table('preferences')->updateOrInsert(
+                ['user_id' => $userId],
+                [
+                    'min_age' => 22,
+                    'max_age' => 32,
+                    'min_height' => 155,
+                    'max_height' => 170,
+                    'marital_status' => 'never_married',
+                    'religion' => $male[2],
+                    'caste' => $male[3],
+                    'education' => 'Graduate',
+                    'occupation' => 'Any',
+                    'min_income' => 400000.00,
+                    'max_income' => 1200000.00,
+                    'preferred_locations' => json_encode([$male[9], $this->getRandomCity(), $this->getRandomCity()]),
+                    'drug_addiction' => 'any',
+                    'smoke' => json_encode(['never']),
+                    'alcohol' => json_encode(['never']),
+                    'updated_at' => Carbon::now(),
+                ]
+            );
         }
 
         // Add some profile photos
@@ -430,38 +394,38 @@ class MatrimonySeeder extends Seeder
         // Add subscription plans
         DB::table('subscription_plans')->insert([
             [
-                'name' => 'Silver Plan',
-                'duration_days' => 0, // 0 = Lifetime/No Expiry
-                'price' => 199.00,
-                'max_messages' => 50,
-                'max_contacts' => 20,
-                'can_view_contact' => true,
+                'name' => 'Basic Plan',
+                'duration_days' => 30,
+                'price' => 499.00,
+                'max_messages' => 10,
+                'max_contacts' => 5,
+                'can_view_contact' => false,
                 'priority_listing' => false,
-                'features' => json_encode(['View Unlimited Profiles', '50 Express Interests', 'View 20 Contacts', '24/7 Support']),
+                'features' => json_encode(['Basic Profile Access', 'Limited Messages']),
                 'is_active' => true,
                 'created_at' => Carbon::now(),
             ],
             [
-                'name' => 'Gold Plan',
-                'duration_days' => 0,
-                'price' => 499.00,
-                'max_messages' => 150,
-                'max_contacts' => 60,
+                'name' => 'Premium Plan',
+                'duration_days' => 90,
+                'price' => 999.00,
+                'max_messages' => 50,
+                'max_contacts' => 25,
                 'can_view_contact' => true,
                 'priority_listing' => true,
-                'features' => json_encode(['Everything in Silver', '150 Express Interests', 'View 60 Contacts', 'Priority Listing', 'Match Filtering']),
+                'features' => json_encode(['Unlimited Profile Access', 'Priority Listing', 'Contact Info Access']),
                 'is_active' => true,
                 'created_at' => Carbon::now(),
             ],
             [
-                'name' => 'Platinum Plan',
-                'duration_days' => 0,
-                'price' => 999.00,
+                'name' => 'Elite Plan',
+                'duration_days' => 365,
+                'price' => 2499.00,
                 'max_messages' => null,
                 'max_contacts' => null,
                 'can_view_contact' => true,
                 'priority_listing' => true,
-                'features' => json_encode(['Everything in Gold', 'Unlimited Interests', 'Unlimited Contacts', 'Featured Profile Tag', 'Dedicated Relationship Manager', 'Direct Call Support']),
+                'features' => json_encode(['Everything in Premium', 'VIP Support', 'Featured Profile']),
                 'is_active' => true,
                 'created_at' => Carbon::now(),
             ]
@@ -486,13 +450,13 @@ class MatrimonySeeder extends Seeder
 
         // Add some payments
         $subscriptions = DB::table('user_subscriptions')->get();
-        foreach ($subscriptions as $index => $subscription) {
+        foreach ($subscriptions as $subscription) {
             DB::table('payments')->insert([
                 'user_id' => $subscription->user_id,
                 'subscription_id' => $subscription->id,
                 'amount' => $subscription->amount_paid,
                 'payment_method' => $this->getRandomPaymentMethod(),
-                'transaction_id' => 'TXN' . str_pad($index + 1000, 4, '0', STR_PAD_LEFT),
+                'transaction_id' => 'TXN' . rand(100, 999),
                 'status' => 'completed',
                 'payment_date' => Carbon::now(),
                 'created_at' => Carbon::now(),
@@ -515,13 +479,13 @@ class MatrimonySeeder extends Seeder
 
     private function generateFatherName($lastName)
     {
-        $prefixes = ['Raj', 'Ramesh', 'Rajesh', 'Vijay', 'Rakesh', 'Ashok', 'Venkat', 'Raj', 'Suresh', 'Gopal', 'Thomas', 'Ravi', 'Raghav', 'Anil', 'Sunil', 'Ramesh'];
+        $prefixes = ['Muhammed', 'Ahmed', 'Ali', 'Hassan', 'Hussain', 'Umar', 'Usman', 'Abubakr', 'Zayd', 'Khalid', 'Bilal', 'Faisal', 'Rashid', 'Sameer', 'Shafi', 'Mansoor', 'Saleem', 'Anwar', 'Ashraf', 'Noufal'];
         return $prefixes[array_rand($prefixes)] . ' ' . $lastName;
     }
 
     private function generateMotherName($lastName)
     {
-        $prefixes = ['Sunita', 'Sushma', 'Poonam', 'Kavita', 'Meena', 'Lakshmi', 'Sarita', 'Latha', 'Sushila', 'Pushpa', 'Alice', 'Lakshmi', 'Sunita', 'Shobha', 'Kamala', 'Alice'];
+        $prefixes = ['Fatimah', 'Aisha', 'Zainab', 'Maryam', 'Khadija', 'Hana', 'Nadiya', 'Safiya', 'Rehana', 'Sumaiya', 'Amina', 'Naseema', 'Shamna', 'Shadiya', 'Fida', 'Liya', 'Sana', 'Meher', 'Arshida', 'Jasna'];
         return $prefixes[array_rand($prefixes)] . ' ' . $lastName;
     }
 
@@ -551,7 +515,7 @@ class MatrimonySeeder extends Seeder
 
     private function getRandomCity()
     {
-        $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai', 'Kolkata', 'Surat', 'Pune', 'Jaipur', 'Nagpur', 'Patna', 'Ghaziabad', 'Bhopal', 'Indore', 'Vadodara', 'Coimbatore', 'Chandigarh', 'Gurgaon', 'Thiruvananthapuram', 'Kochi', 'Mangalore', 'Dehradun', 'Amritsar', 'Noida', 'Lucknow', 'Kanpur', 'Mysore', 'Vijayawada', 'Warangal', 'Madurai', 'Ludhiana', 'Gujranwala'];
+        $cities = ['Kozhikode', 'Malappuram', 'Kochi', 'Thiruvananthapuram', 'Thrissur', 'Palakkad', 'Kannur', 'Alappuzha', 'Kottayam', 'Kasaragod', 'Idukki', 'Wayanad', 'Pathanamthitta', 'Kollam', 'Thalassery', 'Manjeri', 'Tirur', 'Ponnani', 'Vatagara', 'Perintalmanna'];
         return $cities[array_rand($cities)];
     }
 
