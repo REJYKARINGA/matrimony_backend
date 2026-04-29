@@ -20,6 +20,34 @@ class MatrimonySeeder extends Seeder
     {
         // Clear existing data
         Schema::disableForeignKeyConstraints();
+        DB::table('users')->truncate();
+        DB::table('user_profiles')->truncate();
+        DB::table('family_details')->truncate();
+        DB::table('preferences')->truncate();
+        DB::table('user_preferred_cities')->truncate();
+        Schema::enableForeignKeyConstraints();
+
+        $cityCoords = [
+            'Kozhikode' => [11.2588, 75.7804],
+            'Malappuram' => [11.0510, 76.0711],
+            'Kochi' => [9.9312, 76.2673],
+            'Thiruvananthapuram' => [8.5241, 76.9366],
+            'Kannur' => [11.8745, 75.3704],
+            'Thrissur' => [10.5276, 76.2144],
+            'Palakkad' => [10.7867, 76.6547],
+            'Alappuzha' => [9.4981, 76.3388],
+            'Kasaragod' => [12.5103, 74.9852],
+            'Kollam' => [8.8932, 76.6141],
+            'Kottayam' => [9.5916, 76.5221],
+            'Wayanad' => [11.6050, 76.0820],
+            'Manjeri' => [11.1197, 76.1209],
+            'Perintalmanna' => [10.9754, 76.2238],
+            'Tirur' => [10.9025, 75.9224],
+            'Ponnani' => [10.7671, 75.9253],
+            'Thalassery' => [11.7495, 75.4891],
+            'Vatagara' => [11.6041, 75.5908],
+        ];
+        Schema::disableForeignKeyConstraints();
         DB::table('profile_photos')->delete();
         DB::table('interests_sent')->delete();
         DB::table('matches')->delete();
@@ -158,9 +186,21 @@ class MatrimonySeeder extends Seeder
                     'city' => $female[9],
                     'state' => $female[10],
                     'country' => 'India',
+                    'latitude' => $cityCoords[$female[9]][0] ?? 11.0510,
+                    'longitude' => $cityCoords[$female[9]][1] ?? 76.0711,
                     'updated_at' => Carbon::now(),
                 ]
             );
+
+            // Add preferred cities
+            DB::table('user_preferred_cities')->insert([
+                'user_id' => $userId,
+                'name' => $female[9],
+                'latitude' => $cityCoords[$female[9]][0] ?? 11.0510,
+                'longitude' => $cityCoords[$female[9]][1] ?? 76.0711,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
 
             DB::table('family_details')->updateOrInsert(
                 ['user_id' => $userId],
@@ -263,10 +303,22 @@ class MatrimonySeeder extends Seeder
                     'city' => $male[9],
                     'state' => $male[10],
                     'country' => 'India',
+                    'latitude' => $cityCoords[$male[9]][0] ?? 11.0510,
+                    'longitude' => $cityCoords[$male[9]][1] ?? 76.0711,
                     'is_active_verified' => 1,
                     'updated_at' => Carbon::now(),
                 ]
             );
+
+            // Add preferred cities
+            DB::table('user_preferred_cities')->insert([
+                'user_id' => $userId,
+                'name' => $male[9],
+                'latitude' => $cityCoords[$male[9]][0] ?? 11.0510,
+                'longitude' => $cityCoords[$male[9]][1] ?? 76.0711,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
 
             DB::table('family_details')->updateOrInsert(
                 ['user_id' => $userId],
