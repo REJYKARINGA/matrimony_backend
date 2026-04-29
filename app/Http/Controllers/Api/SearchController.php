@@ -198,7 +198,7 @@ class SearchController extends Controller
         if ($cities->isNotEmpty()) {
             $radius = $preferences->max_distance ?? 50;
             
-            $query = User::active()->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+            $query = User::active()->select('users.*')->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
                     $q->where('is_active_verified', true);
@@ -683,7 +683,8 @@ class SearchController extends Controller
                 $radius = $user->preferences->max_distance ?? 50;
                 
                 if ($cities->isNotEmpty()) {
-                    $query->join('user_profiles as up_dist', 'users.id', '=', 'up_dist.user_id')
+                    $query->select('users.*')
+                        ->join('user_profiles as up_dist', 'users.id', '=', 'up_dist.user_id')
                         ->where(function($q) use ($cities, $radius) {
                             foreach ($cities as $city) {
                                 $lat = $city->latitude;
