@@ -43,7 +43,8 @@ class ProfileController extends Controller
             'profilePhotos',
             'verification',
             'personalities',
-            'interests'
+            'interests',
+            'preferredCities'
         ]);
 
         return response()->json([
@@ -278,6 +279,9 @@ class ProfileController extends Controller
         if (isset($data['preferred_locations']) && is_string($data['preferred_locations'])) {
             $data['preferred_locations'] = json_decode($data['preferred_locations'], true);
         }
+        if (isset($data['preferred_cities']) && is_string($data['preferred_cities'])) {
+            $data['preferred_cities'] = json_decode($data['preferred_cities'], true);
+        }
         if (isset($data['caste_ids']) && is_string($data['caste_ids'])) {
             $data['caste_ids'] = json_decode($data['caste_ids'], true);
         }
@@ -313,6 +317,10 @@ class ProfileController extends Controller
             'max_distance' => 'sometimes|integer|min:1|max:500',
             'preferred_locations' => 'sometimes|array',
             'preferred_locations.*' => 'string|max:255',
+            'preferred_cities' => 'sometimes|array',
+            'preferred_cities.*.name' => 'required|string|max:255',
+            'preferred_cities.*.lat' => 'required|numeric',
+            'preferred_cities.*.lon' => 'required|numeric',
             'drug_addiction' => 'sometimes|string|in:any,yes,no',
             'smoke' => 'sometimes|array',
             'smoke.*' => 'string|in:never,occasionally,regularly',
@@ -363,6 +371,18 @@ class ProfileController extends Controller
                 'sort_by'
             ]))
         );
+
+        // Sync preferred cities
+        if (isset($data['preferred_cities'])) {
+            $user->preferredCities()->delete();
+            foreach ($data['preferred_cities'] as $city) {
+                $user->preferredCities()->create([
+                    'name' => $city['name'],
+                    'latitude' => $city['lat'],
+                    'longitude' => $city['lon'],
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Preferences updated successfully',

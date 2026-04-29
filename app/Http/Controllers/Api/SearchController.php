@@ -193,6 +193,63 @@ class SearchController extends Controller
             }
         }
 
+        // City Match (Distance based from preferred cities)
+        $cities = $user->preferredCities;
+        if ($cities->isNotEmpty()) {
+            $radius = $preferences->max_distance ?? 50;
+            
+            $query = User::active()->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
+                ->where('users.id', '!=', $user->id)
+                ->whereHas('userProfile', function ($q) use ($user, $userAge) {
+                    $q->where('is_active_verified', true);
+                    if ($user->userProfile && $user->userProfile->religion_id) {
+                        $q->where('religion_id', $user->userProfile->religion_id);
+                    }
+                    if ($userAge) {
+                        $q->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) <= ?', [$userAge]);
+                    }
+                });
+
+            // Filter by gender
+            if ($user->userProfile && $user->userProfile->gender) {
+                $oppositeGender = $user->userProfile->gender === 'male' ? 'female' : ($user->userProfile->gender === 'female' ? 'male' : null);
+                if ($oppositeGender) {
+                    $query->where('user_profiles.gender', $oppositeGender);
+                }
+            }
+
+            // Distance from ANY preferred city
+            $query->where(function($q) use ($cities, $radius) {
+                foreach ($cities as $city) {
+                    $lat = $city->latitude;
+                    $lon = $city->longitude;
+                    $q->orWhereRaw("(6371 * acos(cos(radians(?)) * cos(radians(user_profiles.latitude)) * cos(radians(user_profiles.longitude) - radians(?)) + sin(radians(?)) * sin(radians(user_profiles.latitude)))) <= ?", [$lat, $lon, $lat, $radius]);
+                }
+            });
+
+            $count = $query->whereDoesntHave('blockedBy', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {
+                    $q->where('requester_id', $user->id)->where('status', 'rejected');
+                })
+                ->whereDoesntHave('interestsReceived', function($q) use ($user) {
+                    $q->where('sender_id', $user->id)->where('status', 'rejected');
+                })
+                ->count();
+
+            if ($count > 0) {
+                $cityNames = $cities->pluck('name')->toArray();
+                $categories[] = [
+                    'field' => 'city_match',
+                    'title' => 'City Match',
+                    'value' => implode(', ', array_slice($cityNames, 0, 2)) . (count($cityNames) > 2 ? '...' : ''),
+                    'count' => $count,
+                    'icon' => 'location_city'
+                ];
+            }
+        }
+
         // Additional: Same District Match (Even if not in preferences)
         $myDistrict = $user->userProfile->district ?? null;
         if ($myDistrict && (!is_array($preferences->preferred_locations) || !in_array($myDistrict, $preferences->preferred_locations))) {
@@ -619,20 +676,38 @@ class SearchController extends Controller
 
         if ($request->filled('location')) {
             $location = $request->location;
-            $query->whereHas('userProfile', function ($q) use ($location, $user) {
-                // If it's the "District Match" card (which might have "Location1, Location2..." truncated)
-                // we should check against the user's actual preferred locations
-                if (str_contains($location, '...') || str_contains($location, ',')) {
-                    $prefDistricts = $user->preferences->preferred_locations ?? [];
-                    if (!empty($prefDistricts)) {
-                        $q->whereIn('district', $prefDistricts);
+            $field = $request->field;
+
+            if ($field === 'city_match') {
+                $cities = $user->preferredCities;
+                $radius = $user->preferences->max_distance ?? 50;
+                
+                if ($cities->isNotEmpty()) {
+                    $query->join('user_profiles as up_dist', 'users.id', '=', 'up_dist.user_id')
+                        ->where(function($q) use ($cities, $radius) {
+                            foreach ($cities as $city) {
+                                $lat = $city->latitude;
+                                $lon = $city->longitude;
+                                $q->orWhereRaw("(6371 * acos(cos(radians(?)) * cos(radians(up_dist.latitude)) * cos(radians(up_dist.longitude) - radians(?)) + sin(radians(?)) * sin(radians(up_dist.latitude)))) <= ?", [$lat, $lon, $lat, $radius]);
+                            }
+                        });
+                }
+            } else {
+                $query->whereHas('userProfile', function ($q) use ($location, $user) {
+                    // If it's the "District Match" card (which might have "Location1, Location2..." truncated)
+                    // we should check against the user's actual preferred locations
+                    if (str_contains($location, '...') || str_contains($location, ',')) {
+                        $prefDistricts = $user->preferences->preferred_locations ?? [];
+                        if (!empty($prefDistricts)) {
+                            $q->whereIn('district', $prefDistricts);
+                        } else {
+                            $q->where('district', 'LIKE', "%{$location}%");
+                        }
                     } else {
                         $q->where('district', 'LIKE', "%{$location}%");
                     }
-                } else {
-                    $q->where('district', 'LIKE', "%{$location}%");
-                }
-            });
+                });
+            }
         }
 
         if ($request->filled('field') && $request->field == 'matching_me') {

@@ -32,6 +32,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Models\InterestHobby;
 use App\Models\Personality;
 use App\Models\NotificationSetting;
+use App\Models\UserPreferredCity;
 
 class User extends Authenticatable
 {
@@ -425,5 +426,10 @@ class User extends Authenticatable
     public function receivedUserReports(): HasMany
     {
         return $this->hasMany(UserReport::class, 'reported_id');
+    }
+
+    public function preferredCities(): HasMany
+    {
+        return $this->hasMany(UserPreferredCity::class);
     }
 }
