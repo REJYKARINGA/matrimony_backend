@@ -47,6 +47,16 @@ Route::prefix('auth')->middleware('throttle:6,2')->group(function () {
 // Public: validate a reference code before registration (no auth needed)
 Route::get('references/validate/{code}', [ReferenceController::class , 'validateCode']);
 
+// App version check (no auth needed - checked at splash screen)
+Route::get('app-version', function () {
+    return response()->json([
+        'minimum_version' => '1.0.0',
+        'latest_version' => '1.0.0',
+        'force_update' => false,
+        'store_url' => null,
+    ]);
+});
+
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
     $path = $request->query('path');
