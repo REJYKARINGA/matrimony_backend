@@ -770,8 +770,53 @@ class SearchController extends Controller
             $query->where('last_active_at', '>=', now()->subMinutes(15));
         }
 
-        $profiles = $query->orderBy('last_active_at', 'DESC')
-            ->paginate(20);
+        // --- NEW FILTERS ---
+        if ($request->filled('min_income')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('annual_income', '>=', $request->min_income);
+            });
+        }
+        if ($request->filled('max_income')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('annual_income', '<=', $request->max_income);
+            });
+        }
+        if ($request->filled('drug_addiction')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->where('drug_addiction', $request->drug_addiction);
+            });
+        }
+        if ($request->filled('smoke')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->whereIn('smoke', explode(',', $request->smoke));
+            });
+        }
+        if ($request->filled('alcohol')) {
+            $query->whereHas('userProfile', function ($q) use ($request) {
+                $q->whereIn('alcohol', explode(',', $request->alcohol));
+            });
+        }
+        if ($request->filled('hide_viewed') && $request->hide_viewed == '1') {
+            $query->whereNotIn('users.id', function($q) use ($user) {
+                $q->select('viewed_profile_id')->from('profile_views')->where('viewer_id', $user->id);
+            });
+        }
+        if ($request->filled('hide_interested') && $request->hide_interested == '1') {
+            $query->whereNotIn('users.id', function($q) use ($user) {
+                $q->select('receiver_id')->from('interests_sent')->where('sender_id', $user->id);
+            });
+        }
+        
+        $sortBy = $request->input('sort_by');
+        if ($sortBy == 'recent_login') {
+            $query->orderBy('last_active_at', 'DESC');
+        } elseif ($sortBy == 'recent_registration') {
+            $query->orderBy('created_at', 'DESC');
+        } else {
+            $query->orderBy('last_active_at', 'DESC'); // default
+        }
+
+        $profiles = $query->paginate(20);
 
         // Add distance calculation
         if ($user->userProfile && $user->userProfile->latitude && $user->userProfile->longitude) {
