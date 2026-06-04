@@ -428,7 +428,7 @@ class SearchController extends Controller
                 $categories[] = [
                     'field' => 'income',
                     'title' => 'Income Match',
-                    'value' => 'Above ₹' . number_format($preferences->min_income / 100000, 1) . ' Lakh',
+                    'value' => 'Above ₹' . number_format($preferences->min_income, 1) . ' Lakh',
                     'count' => $count,
                     'icon' => 'payments'
                 ];
