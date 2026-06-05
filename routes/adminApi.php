@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AdminSettingController;
 use App\Http\Controllers\Api\AdminPromotionSettingController;
 use App\Http\Controllers\Api\AdminMediatorPromotionController;
 use App\Http\Controllers\Api\Admin\InterestHobbyController;
@@ -90,6 +91,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Wallet Transactions
     Route::get('/wallet/stats', [AdminController::class, 'getWalletStats']);
     Route::get('/wallet/transactions', [AdminController::class, 'getWalletTransactions']);
+
+    // Admin Settings
+    Route::get('/admin-settings', [AdminSettingController::class, 'index']);
+    Route::put('/admin-settings', [AdminSettingController::class, 'update']);
 
     // Promotion Settings
     Route::get('/promotion-settings', [AdminPromotionSettingController::class, 'index']);
