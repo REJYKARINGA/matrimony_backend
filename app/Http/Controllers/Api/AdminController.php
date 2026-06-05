@@ -1666,6 +1666,77 @@ class AdminController extends Controller
     }
 
     // ==========================================
+    // Contact Unlock Requests Management
+    // ==========================================
+
+    public function getContactUnlockRequests(Request $request)
+    {
+        try {
+            $query = \App\Models\ContactUnlockRequest::with([
+                'requester.userProfile',
+                'targetUser.userProfile'
+            ]);
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('requester', function ($qu) use ($search) {
+                        $qu->where('email', 'like', "%{$search}%")
+                            ->orWhere('matrimony_id', 'like', "%{$search}%")
+                            ->orWhereHas('userProfile', function ($qp) use ($search) {
+                                $qp->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('targetUser', function ($qu) use ($search) {
+                        $qu->where('email', 'like', "%{$search}%")
+                            ->orWhere('matrimony_id', 'like', "%{$search}%")
+                            ->orWhereHas('userProfile', function ($qp) use ($search) {
+                                $qp->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%");
+                            });
+                    });
+                });
+            }
+
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch contact unlock requests', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function respondToUnlockRequest(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:approved,rejected',
+            ]);
+
+            $unlockRequest = \App\Models\ContactUnlockRequest::findOrFail($id);
+
+            if ($unlockRequest->status !== 'pending') {
+                return response()->json(['error' => 'Request has already been responded to'], 422);
+            }
+
+            $unlockRequest->update([
+                'status' => $request->status,
+                'responded_at' => now(),
+            ]);
+
+            return response()->json([
+                'message' => 'Request ' . $request->status . ' successfully',
+                'request' => $unlockRequest->load(['requester.userProfile', 'targetUser.userProfile']),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to respond to request', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ==========================================
     // Engagement Posters Management
     // ==========================================
 
