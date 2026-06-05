@@ -26,6 +26,16 @@ class UserResource extends JsonResource
                 ->exists();
         }
 
+        $permissionRequestStatus = 'none';
+        if ($currentUser && $currentUser->id !== $this->id) {
+            $permRequest = \App\Models\ContactUnlockRequest::where('requester_id', $currentUser->id)
+                ->where('target_user_id', $this->id)
+                ->first();
+            if ($permRequest) {
+                $permissionRequestStatus = $permRequest->status;
+            }
+        }
+
         $canViewPhotos = true;
         $photoRequestStatus = null;
         
@@ -93,6 +103,7 @@ class UserResource extends JsonResource
 
             'contact_info' => [
                 'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
+                'permission_request_status' => $permissionRequestStatus,
             ],
             'reports_count' => (function() {
                 try {

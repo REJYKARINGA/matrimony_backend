@@ -217,6 +217,15 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/search-user', [App\Http\Controllers\Api\PaymentController::class , 'searchUser']);
             Route::post('/request-transfer-otp', [App\Http\Controllers\Api\PaymentController::class , 'requestTransferOtp']);
             Route::post('/transfer-wallet', [App\Http\Controllers\Api\PaymentController::class , 'transferWallet']);
+
+            // Permission-based contact unlock routes
+            Route::post('/request-permission', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'send']);
+            Route::get('/permission-requests/incoming', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'incoming']);
+            Route::get('/permission-requests/sent', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'sent']);
+            Route::get('/check-permission-request/{userId}', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'check']);
+            Route::post('/permission-requests/{id}/approve', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'approve']);
+            Route::post('/permission-requests/{id}/reject', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'reject']);
+            Route::get('/permission-requests/pending-count', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'pendingCount']);
         }
         );
 

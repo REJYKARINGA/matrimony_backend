@@ -25,6 +25,16 @@ class UserCardResource extends JsonResource
                 ->exists();
         }
 
+        $permissionRequestStatus = 'none';
+        if ($currentUser && $currentUser->id !== $this->id) {
+            $permRequest = \App\Models\ContactUnlockRequest::where('requester_id', $currentUser->id)
+                ->where('target_user_id', $this->id)
+                ->first();
+            if ($permRequest) {
+                $permissionRequestStatus = $permRequest->status;
+            }
+        }
+
         $canViewPhotos = true;
         $hasPhotoRequestPending = false;
         $hasPhotoRequestRejected = false;
@@ -83,6 +93,7 @@ class UserCardResource extends JsonResource
                 return round($this->distance, 1);
             }),
             'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
+            'permission_request_status' => $permissionRequestStatus,
             'is_active_verified' => $profile ? (bool) $profile->is_active_verified : false,
             'reports_count' => (function() {
                 try {
