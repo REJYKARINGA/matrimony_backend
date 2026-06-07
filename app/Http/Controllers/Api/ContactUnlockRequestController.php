@@ -28,7 +28,7 @@ class ContactUnlockRequestController extends Controller
         $user = $request->user();
 
         $setting = AdminSetting::first();
-        $featureEnabled = $setting && $setting->user_contact_permission_unlock;
+        $featureEnabled = $setting && ($setting->user_contact_permission_unlock || $setting->mandatory_permission_for_unlock);
 
         if (!$featureEnabled) {
             return response()->json([
