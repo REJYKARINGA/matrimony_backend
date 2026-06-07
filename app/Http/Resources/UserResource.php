@@ -108,6 +108,10 @@ class UserResource extends JsonResource
                     $setting = \App\Models\AdminSetting::first();
                     return $setting ? (bool) $setting->mandatory_permission_for_unlock : false;
                 })(),
+                'free_unlock_enabled' => (function() {
+                    $setting = \App\Models\AdminSetting::first();
+                    return $setting ? $setting->isFreeUnlockActive() : false;
+                })(),
             ],
             'reports_count' => (function() {
                 try {

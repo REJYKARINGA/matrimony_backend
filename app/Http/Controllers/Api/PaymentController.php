@@ -65,6 +65,13 @@ class PaymentController extends Controller
                     ], 403);
                 }
             }
+
+            if ($setting && $setting->isFreeUnlockActive()) {
+                return response()->json([
+                    'free_unlock' => true,
+                    'message' => 'Free unlock is active. Use the free unlock option instead.',
+                ]);
+            }
         }
 
         $amount = $request->amount * 100; // Convert to paise
@@ -210,6 +217,8 @@ class PaymentController extends Controller
             }
         }
 
+        $isFreeUnlock = $setting && $setting->isFreeUnlockActive();
+
         // Check daily unlock limit (configurable, default 20 per day)
         $dailyLimit = config('services.daily_unlock_limit', 20);
         $todayUnlocks = ContactUnlock::where('user_id', $user->id)
@@ -225,12 +234,92 @@ class PaymentController extends Controller
             ], 403);
         }
 
-        $wallet = Wallet::where('user_id', $user->id)->first();
+        $alreadyUnlocked = ContactUnlock::where('user_id', $user->id)
+            ->where('unlocked_user_id', $request->unlocked_user_id)
+            ->exists();
 
-        if (!$wallet || $wallet->balance < 49) {
+        if ($alreadyUnlocked) {
             return response()->json([
-                'error' => 'Insufficient wallet balance'
+                'error' => 'Contact already unlocked'
             ], 400);
+        }
+
+        if ($isFreeUnlock) {
+            $amountPaid = 0;
+        } else {
+            $amountPaid = 49;
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            if (!$wallet || $wallet->balance < 49) {
+                return response()->json([
+                    'error' => 'Insufficient wallet balance'
+                ], 400);
+            }
+            $wallet->decrement('balance', 49);
+        }
+
+        ContactUnlock::create([
+            'user_id' => $user->id,
+            'unlocked_user_id' => $request->unlocked_user_id,
+            'amount_paid' => $amountPaid,
+            'payment_method' => 'wallet'
+        ]);
+
+        Transaction::create([
+            'user_id' => $user->id,
+            'type' => 'contact_unlock',
+            'amount' => $amountPaid,
+            'status' => 'success',
+            'description' => 'Contact unlock for user #' . $request->unlocked_user_id . ($isFreeUnlock ? ' (Free)' : ' (Wallet)')
+        ]);
+
+        // Increment purchased_count for the mediator who brought in the profile being unlocked
+        $reference = Reference::where('referenced_user_id', $request->unlocked_user_id)->first();
+        if ($reference) {
+            $reference->increment('purchased_count');
+        }
+
+        $response = [
+            'success' => true,
+            'message' => 'Contact unlocked successfully',
+            'today_unlocks' => $todayUnlocks + 1,
+            'daily_limit' => $dailyLimit,
+            'is_free_unlock' => $isFreeUnlock,
+        ];
+
+        if (!$isFreeUnlock) {
+            $response['remaining_balance'] = $wallet->balance;
+        }
+
+        return response()->json($response);
+    }
+
+    public function unlockContactFree(Request $request)
+    {
+        $request->validate([
+            'unlocked_user_id' => 'required|exists:users,id'
+        ]);
+
+        $user = $request->user();
+        $setting = AdminSetting::first();
+
+        if (!$setting || !$setting->isFreeUnlockActive()) {
+            return response()->json([
+                'error' => 'free_unlock_unavailable',
+                'message' => 'Free unlock offer is not currently active.'
+            ], 403);
+        }
+
+        if ($setting && $setting->mandatory_permission_for_unlock) {
+            $approvedRequest = ContactUnlockRequest::where('requester_id', $user->id)
+                ->where('target_user_id', $request->unlocked_user_id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$approvedRequest) {
+                return response()->json([
+                    'error' => 'permission_required',
+                    'message' => 'You need an approved permission request from this user before you can unlock their contact.'
+                ], 403);
+            }
         }
 
         $alreadyUnlocked = ContactUnlock::where('user_id', $user->id)
@@ -243,24 +332,21 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $wallet->decrement('balance', 49);
-
         ContactUnlock::create([
             'user_id' => $user->id,
             'unlocked_user_id' => $request->unlocked_user_id,
-            'amount_paid' => 49,
-            'payment_method' => 'wallet'
+            'amount_paid' => 0,
+            'payment_method' => 'free'
         ]);
 
         Transaction::create([
             'user_id' => $user->id,
             'type' => 'contact_unlock',
-            'amount' => 49,
+            'amount' => 0,
             'status' => 'success',
-            'description' => 'Contact unlock for user #' . $request->unlocked_user_id . ' (Wallet)'
+            'description' => 'Contact unlock for user #' . $request->unlocked_user_id . ' (Free Offer)'
         ]);
 
-        // Increment purchased_count for the mediator who brought in the profile being unlocked
         $reference = Reference::where('referenced_user_id', $request->unlocked_user_id)->first();
         if ($reference) {
             $reference->increment('purchased_count');
@@ -268,10 +354,8 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Contact unlocked successfully',
-            'remaining_balance' => $wallet->balance,
-            'today_unlocks' => $todayUnlocks + 1,
-            'daily_limit' => $dailyLimit
+            'message' => 'Contact unlocked successfully (Free)',
+            'is_free_unlock' => true,
         ]);
     }
 

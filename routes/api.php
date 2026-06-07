@@ -211,6 +211,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/create-order', [App\Http\Controllers\Api\PaymentController::class , 'createOrder']);
             Route::post('/verify', [App\Http\Controllers\Api\PaymentController::class , 'verifyPayment']);
             Route::post('/unlock-contact-wallet', [App\Http\Controllers\Api\PaymentController::class , 'unlockContactWithWallet']);
+            Route::post('/unlock-contact-free', [App\Http\Controllers\Api\PaymentController::class , 'unlockContactFree']);
             Route::get('/check-unlock/{userId}', [App\Http\Controllers\Api\PaymentController::class , 'checkContactUnlock']);
             Route::get('/transactions', [App\Http\Controllers\Api\PaymentController::class , 'getTransactionHistory']);
             Route::get('/today-unlock-count', [App\Http\Controllers\Api\PaymentController::class , 'getTodayUnlockCount']);

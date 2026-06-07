@@ -17,6 +17,8 @@ class AdminSettingController extends Controller
                 'daily_contact_unlock_limit' => 10,
                 'user_contact_permission_unlock' => false,
                 'mandatory_permission_for_unlock' => false,
+                'free_unlock_enabled' => false,
+                'free_unlock_expires_at' => null,
             ]);
         }
         return response()->json(['setting' => $setting]);
@@ -28,6 +30,8 @@ class AdminSettingController extends Controller
             'daily_contact_unlock_limit' => 'sometimes|integer|min:0',
             'user_contact_permission_unlock' => 'sometimes|boolean',
             'mandatory_permission_for_unlock' => 'sometimes|boolean',
+            'free_unlock_enabled' => 'sometimes|boolean',
+            'free_unlock_expires_at' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -40,12 +44,16 @@ class AdminSettingController extends Controller
                 'daily_contact_unlock_limit',
                 'user_contact_permission_unlock',
                 'mandatory_permission_for_unlock',
+                'free_unlock_enabled',
+                'free_unlock_expires_at',
             ]));
         } else {
             $setting->update($request->only([
                 'daily_contact_unlock_limit',
                 'user_contact_permission_unlock',
                 'mandatory_permission_for_unlock',
+                'free_unlock_enabled',
+                'free_unlock_expires_at',
             ]));
         }
 
