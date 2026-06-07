@@ -104,6 +104,10 @@ class UserResource extends JsonResource
             'contact_info' => [
                 'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
                 'permission_request_status' => $permissionRequestStatus,
+                'mandatory_permission_for_unlock' => (function() {
+                    $setting = \App\Models\AdminSetting::first();
+                    return $setting ? (bool) $setting->mandatory_permission_for_unlock : false;
+                })(),
             ],
             'reports_count' => (function() {
                 try {

@@ -11,6 +11,8 @@ use App\Models\Reference;
 use App\Models\User;
 use App\Models\WalletTransferOtp;
 use App\Models\Notification;
+use App\Models\AdminSetting;
+use App\Models\ContactUnlockRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
@@ -48,6 +50,23 @@ class PaymentController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($request->type === 'contact_unlock') {
+            $setting = AdminSetting::first();
+            if ($setting && $setting->mandatory_permission_for_unlock) {
+                $approvedRequest = ContactUnlockRequest::where('requester_id', $user->id)
+                    ->where('target_user_id', $request->unlocked_user_id)
+                    ->where('status', 'approved')
+                    ->exists();
+                if (!$approvedRequest) {
+                    return response()->json([
+                        'error' => 'permission_required',
+                        'message' => 'You need an approved permission request from this user before you can unlock their contact.'
+                    ], 403);
+                }
+            }
+        }
+
         $amount = $request->amount * 100; // Convert to paise
 
         try {
@@ -99,6 +118,23 @@ class PaymentController extends Controller
 
         $user = $request->user();
         $transaction = Transaction::find($request->transaction_id);
+
+        if ($transaction && $transaction->type === 'contact_unlock' && $request->unlocked_user_id) {
+            $setting = AdminSetting::first();
+            if ($setting && $setting->mandatory_permission_for_unlock) {
+                $approvedRequest = ContactUnlockRequest::where('requester_id', $user->id)
+                    ->where('target_user_id', $request->unlocked_user_id)
+                    ->where('status', 'approved')
+                    ->exists();
+                if (!$approvedRequest) {
+                    $transaction->update(['status' => 'failed']);
+                    return response()->json([
+                        'error' => 'permission_required',
+                        'message' => 'You need an approved permission request from this user before you can unlock their contact.'
+                    ], 403);
+                }
+            }
+        }
 
         try {
             $api = new Api($this->razorpayKey, $this->razorpaySecret);
@@ -158,6 +194,21 @@ class PaymentController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Check mandatory permission requirement
+        $setting = AdminSetting::first();
+        if ($setting && $setting->mandatory_permission_for_unlock) {
+            $approvedRequest = ContactUnlockRequest::where('requester_id', $user->id)
+                ->where('target_user_id', $request->unlocked_user_id)
+                ->where('status', 'approved')
+                ->exists();
+            if (!$approvedRequest) {
+                return response()->json([
+                    'error' => 'permission_required',
+                    'message' => 'You need an approved permission request from this user before you can unlock their contact.'
+                ], 403);
+            }
+        }
 
         // Check daily unlock limit (configurable, default 20 per day)
         $dailyLimit = config('services.daily_unlock_limit', 20);

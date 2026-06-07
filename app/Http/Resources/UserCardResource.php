@@ -92,6 +92,10 @@ class UserCardResource extends JsonResource
             'distance' => $this->when(isset($this->distance), function () {
                 return round($this->distance, 1);
             }),
+            'mandatory_permission_for_unlock' => (function() {
+                $setting = \App\Models\AdminSetting::first();
+                return $setting ? (bool) $setting->mandatory_permission_for_unlock : false;
+            })(),
             'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
             'permission_request_status' => $permissionRequestStatus,
             'is_active_verified' => $profile ? (bool) $profile->is_active_verified : false,
