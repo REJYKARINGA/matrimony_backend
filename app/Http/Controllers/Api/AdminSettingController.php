@@ -15,6 +15,7 @@ class AdminSettingController extends Controller
         if (!$setting) {
             $setting = AdminSetting::create([
                 'daily_contact_unlock_limit' => 10,
+                'contact_unlock_price' => 49.00,
                 'user_contact_permission_unlock' => false,
                 'mandatory_permission_for_unlock' => false,
                 'free_unlock_enabled' => false,
@@ -28,6 +29,7 @@ class AdminSettingController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'daily_contact_unlock_limit' => 'sometimes|integer|min:0',
+            'contact_unlock_price' => 'sometimes|numeric|min:0',
             'user_contact_permission_unlock' => 'sometimes|boolean',
             'mandatory_permission_for_unlock' => 'sometimes|boolean',
             'free_unlock_enabled' => 'sometimes|boolean',
@@ -42,6 +44,7 @@ class AdminSettingController extends Controller
         if (!$setting) {
             $setting = AdminSetting::create($request->only([
                 'daily_contact_unlock_limit',
+                'contact_unlock_price',
                 'user_contact_permission_unlock',
                 'mandatory_permission_for_unlock',
                 'free_unlock_enabled',
@@ -50,6 +53,7 @@ class AdminSettingController extends Controller
         } else {
             $setting->update($request->only([
                 'daily_contact_unlock_limit',
+                'contact_unlock_price',
                 'user_contact_permission_unlock',
                 'mandatory_permission_for_unlock',
                 'free_unlock_enabled',

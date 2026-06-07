@@ -98,12 +98,25 @@ class PaymentController extends Controller
                     : 'Contact unlock for user #' . $request->unlocked_user_id
             ]);
 
-            return response()->json([
+            $response = [
                 'order_id' => $razorpayOrder['id'],
                 'amount' => $request->amount,
                 'key' => $this->razorpayKey,
-                'transaction_id' => $transaction->id
-            ]);
+                'transaction_id' => $transaction->id,
+            ];
+
+            if ($request->type === 'contact_unlock') {
+                $setting = AdminSetting::first();
+                $origPrice = $setting ? $setting->getUnlockPrice() : 49;
+                $discountedPrice = $setting ? $setting->getDiscountedPrice() : $origPrice;
+                if ($discountedPrice < $origPrice) {
+                    $response['discount_applied'] = true;
+                    $response['original_price'] = $origPrice;
+                    $response['discounted_price'] = $discountedPrice;
+                }
+            }
+
+            return response()->json($response);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -247,14 +260,14 @@ class PaymentController extends Controller
         if ($isFreeUnlock) {
             $amountPaid = 0;
         } else {
-            $amountPaid = 49;
+            $amountPaid = $setting ? $setting->getDiscountedPrice() : 49;
             $wallet = Wallet::where('user_id', $user->id)->first();
-            if (!$wallet || $wallet->balance < 49) {
+            if (!$wallet || $wallet->balance < $amountPaid) {
                 return response()->json([
                     'error' => 'Insufficient wallet balance'
                 ], 400);
             }
-            $wallet->decrement('balance', 49);
+            $wallet->decrement('balance', $amountPaid);
         }
 
         ContactUnlock::create([

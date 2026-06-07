@@ -116,6 +116,31 @@ class UserResource extends JsonResource
                     $setting = \App\Models\AdminSetting::first();
                     return $setting && $setting->free_unlock_expires_at ? $setting->free_unlock_expires_at->toIso8601String() : null;
                 })(),
+                'active_festivals' => (function() {
+                    return \App\Models\Festival::active()->get()->filter(function ($f) {
+                        return $f->isCurrentlyActive();
+                    })->values()->map(function ($f) {
+                        $setting = \App\Models\AdminSetting::first();
+                        $base = $setting ? $setting->getUnlockPrice() : 49;
+                        $occurrence = $f->occurrences()->where('year', now()->year)->first();
+                        return [
+                            'id' => $f->id,
+                            'celebration_name' => $f->celebration_name,
+                            'offer_discount' => (float) $f->offer_discount,
+                            'offer_discount_type' => $f->offer_discount_type,
+                            'discount_value' => $f->getDiscountValue($base),
+                            'ends_at' => $occurrence ? $occurrence->end_at->toIso8601String() : null,
+                        ];
+                    });
+                })(),
+                'unlock_price' => (function() {
+                    $setting = \App\Models\AdminSetting::first();
+                    return $setting ? $setting->getUnlockPrice() : 49;
+                })(),
+                'discounted_price' => (function() {
+                    $setting = \App\Models\AdminSetting::first();
+                    return $setting ? $setting->getDiscountedPrice() : 49;
+                })(),
             ],
             'reports_count' => (function() {
                 try {

@@ -215,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/check-unlock/{userId}', [App\Http\Controllers\Api\PaymentController::class , 'checkContactUnlock']);
             Route::get('/transactions', [App\Http\Controllers\Api\PaymentController::class , 'getTransactionHistory']);
             Route::get('/today-unlock-count', [App\Http\Controllers\Api\PaymentController::class , 'getTodayUnlockCount']);
+            Route::get('/active-festivals', [App\Http\Controllers\Api\FestivalController::class , 'activeFestivals']);
             Route::get('/search-user', [App\Http\Controllers\Api\PaymentController::class , 'searchUser']);
             Route::post('/request-transfer-otp', [App\Http\Controllers\Api\PaymentController::class , 'requestTransferOtp']);
             Route::post('/transfer-wallet', [App\Http\Controllers\Api\PaymentController::class , 'transferWallet']);

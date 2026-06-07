@@ -11,6 +11,7 @@ class AdminSetting extends Model
 
     protected $fillable = [
         'daily_contact_unlock_limit',
+        'contact_unlock_price',
         'user_contact_permission_unlock',
         'mandatory_permission_for_unlock',
         'free_unlock_enabled',
@@ -19,6 +20,7 @@ class AdminSetting extends Model
 
     protected $casts = [
         'daily_contact_unlock_limit' => 'integer',
+        'contact_unlock_price' => 'decimal:2',
         'user_contact_permission_unlock' => 'boolean',
         'mandatory_permission_for_unlock' => 'boolean',
         'free_unlock_enabled' => 'boolean',
@@ -34,5 +36,17 @@ class AdminSetting extends Model
             return false;
         }
         return true;
+    }
+
+    public function getUnlockPrice(): float
+    {
+        return (float) ($this->contact_unlock_price ?? 49.00);
+    }
+
+    public function getDiscountedPrice(): float
+    {
+        $basePrice = $this->getUnlockPrice();
+        $result = Festival::getBestActiveDiscount($basePrice);
+        return $result['discounted_price'];
     }
 }
