@@ -100,6 +100,10 @@ class UserCardResource extends JsonResource
                 $setting = \App\Models\AdminSetting::first();
                 return $setting ? $setting->isFreeUnlockActive() : false;
             })(),
+            'free_unlock_expires_at' => (function() {
+                $setting = \App\Models\AdminSetting::first();
+                return $setting && $setting->free_unlock_expires_at ? $setting->free_unlock_expires_at->toIso8601String() : null;
+            })(),
             'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
             'permission_request_status' => $permissionRequestStatus,
             'is_active_verified' => $profile ? (bool) $profile->is_active_verified : false,

@@ -112,6 +112,10 @@ class UserResource extends JsonResource
                     $setting = \App\Models\AdminSetting::first();
                     return $setting ? $setting->isFreeUnlockActive() : false;
                 })(),
+                'free_unlock_expires_at' => (function() {
+                    $setting = \App\Models\AdminSetting::first();
+                    return $setting && $setting->free_unlock_expires_at ? $setting->free_unlock_expires_at->toIso8601String() : null;
+                })(),
             ],
             'reports_count' => (function() {
                 try {
