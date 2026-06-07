@@ -99,12 +99,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Festivals (Offers)
     Route::get('/festivals', [\App\Http\Controllers\Api\FestivalController::class, 'index']);
     Route::post('/festivals', [\App\Http\Controllers\Api\FestivalController::class, 'store']);
+    Route::get('/festivals/lookup-date', [\App\Http\Controllers\Api\FestivalController::class, 'lookupDate']);
     Route::get('/festivals/{festival}', [\App\Http\Controllers\Api\FestivalController::class, 'show']);
     Route::put('/festivals/{festival}', [\App\Http\Controllers\Api\FestivalController::class, 'update']);
     Route::delete('/festivals/{festival}', [\App\Http\Controllers\Api\FestivalController::class, 'destroy']);
     Route::post('/festivals/{festival}/resolve', [\App\Http\Controllers\Api\FestivalController::class, 'resolveYear']);
     Route::post('/festivals/resolve-all', [\App\Http\Controllers\Api\FestivalController::class, 'resolveAll']);
-    Route::get('/festivals/lookup-date', [\App\Http\Controllers\Api\FestivalController::class, 'lookupDate']);
 
     // Promotion Settings
     Route::get('/promotion-settings', [AdminPromotionSettingController::class, 'index']);
