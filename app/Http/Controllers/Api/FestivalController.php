@@ -147,6 +147,31 @@ class FestivalController extends Controller
         ];
     }
 
+    protected function getEnglishEventMap(): array
+    {
+        return [
+            ['month' => 1,  'day' => 1,   'name' => 'New Year\'s Day'],
+            ['month' => 1,  'day' => 26,  'name' => 'Republic Day (India)'],
+            ['month' => 2,  'day' => 14,  'name' => 'Valentine\'s Day'],
+            ['month' => 3,  'day' => 8,   'name' => 'International Women\'s Day'],
+            ['month' => 3,  'day' => 22,  'name' => 'World Water Day'],
+            ['month' => 4,  'day' => 14,  'name' => 'Vishu / Baisakhi / Tamil New Year'],
+            ['month' => 4,  'day' => 22,  'name' => 'Earth Day'],
+            ['month' => 5,  'day' => 1,   'name' => 'Labour Day'],
+            ['month' => 6,  'day' => 5,   'name' => 'World Environment Day'],
+            ['month' => 6,  'day' => 21,  'name' => 'International Yoga Day'],
+            ['month' => 7,  'day' => 4,   'name' => 'Independence Day (USA)'],
+            ['month' => 8,  'day' => 15,  'name' => 'Independence Day (India)'],
+            ['month' => 9,  'day' => 5,   'name' => 'Teachers\' Day (India)'],
+            ['month' => 10, 'day' => 2,   'name' => 'Gandhi Jayanti'],
+            ['month' => 10, 'day' => 31,  'name' => 'Halloween'],
+            ['month' => 11, 'day' => 1,   'name' => 'Kerala Piravi (Kerala Formation Day)'],
+            ['month' => 11, 'day' => 14,  'name' => 'Children\'s Day (India)'],
+            ['month' => 12, 'day' => 25,  'name' => 'Christmas'],
+            ['month' => 12, 'day' => 31,  'name' => 'New Year\'s Eve'],
+        ];
+    }
+
     public function lookupMonth(Request $request)
     {
         $request->validate([
@@ -156,52 +181,49 @@ class FestivalController extends Controller
 
         $year = (int) $request->input('year');
         $month = (int) $request->input('month');
-        $daysInMonth = \Carbon\Carbon::create($year, $month, 1)->daysInMonth;
 
-        $celebrations = []; // dateStr => event names
+        $celebrations = []; // dateStr => ['events' => [...], 'calendar' => '...']
 
-        // Fetch the entire Gregorian month's Hijri dates from AlAdhan (single API call)
+        // 1) English Calendar events (fixed dates, no API needed)
+        foreach ($this->getEnglishEventMap() as $ev) {
+            if ($ev['month'] === $month) {
+                $day = $ev['day'];
+                $dateKey = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                if (!isset($celebrations[$dateKey])) {
+                    $celebrations[$dateKey] = ['events' => [], 'calendar' => 'english'];
+                }
+                $celebrations[$dateKey]['events'][] = $ev['name'];
+            }
+        }
+
+        // 2) Hijri events via AlAdhan calendar API (single call for full month)
         try {
             $resp = Http::timeout(15)->get("https://api.aladhan.com/v1/gToHCalendar/{$month}/{$year}");
             if ($resp->successful()) {
                 $data = $resp->json();
-                $hijriMap = [];
+                $hijriEventMap = $this->getHijriEventMap();
                 foreach (($data['data'] ?? []) as $entry) {
-                    $gregDate = $entry['gregorian']['date'] ?? null; // DD-MM-YYYY
+                    $gregDate = $entry['gregorian']['date'] ?? null;
                     $hijriDate = $entry['hijri']['date'] ?? null;
-                    if ($gregDate && $hijriDate) {
-                        $parts = explode('-', $gregDate);
-                        if (count($parts) === 3) {
-                            $dateKey = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; // YYYY-MM-DD
-                            $hParts = explode('-', $hijriDate);
-                            if (count($hParts) === 3) {
-                                $hMonth = (int) $hParts[1];
-                                $hDay = (int) $hParts[0];
-                                $hYear = (int) $hParts[2];
-                                $hijriMap[$dateKey] = [
-                                    'month' => $hMonth,
-                                    'day'   => $hDay,
-                                    'year'  => $hYear,
-                                    'display' => "{$hParts[0]} {$entry['hijri']['month']['en']} {$hParts[2]} AH",
-                                ];
-                            }
-                        }
-                    }
-                }
+                    if (!$gregDate || !$hijriDate) continue;
+                    $parts = explode('-', $gregDate);
+                    if (count($parts) !== 3) continue;
+                    $dateKey = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+                    $hParts = explode('-', $hijriDate);
+                    if (count($hParts) !== 3) continue;
+                    $hMonth = (int) $hParts[1];
+                    $hDay = (int) $hParts[0];
+                    $hDisplay = "{$hParts[0]} {$entry['hijri']['month']['en']} {$hParts[2]} AH";
 
-                $eventMap = $this->getHijriEventMap();
-                foreach ($hijriMap as $dateKey => $hInfo) {
-                    $matchedEvents = [];
-                    foreach ($eventMap as $ev) {
-                        if ($ev['month'] === $hInfo['month'] && $ev['day'] === $hInfo['day']) {
-                            $matchedEvents[] = $ev['name'];
+                    // Check for known Hijri events
+                    foreach ($hijriEventMap as $ev) {
+                        if ($ev['month'] === $hMonth && $ev['day'] === $hDay) {
+                            if (!isset($celebrations[$dateKey])) {
+                                $celebrations[$dateKey] = ['events' => [], 'calendar' => 'hijri'];
+                            }
+                            $celebrations[$dateKey]['events'][] = $ev['name'];
+                            $celebrations[$dateKey]['hijri'] = $hDisplay;
                         }
-                    }
-                    if (!empty($matchedEvents)) {
-                        $celebrations[$dateKey] = [
-                            'events' => $matchedEvents,
-                            'hijri'  => $hInfo['display'],
-                        ];
                     }
                 }
             }
@@ -209,30 +231,36 @@ class FestivalController extends Controller
             \Log::warning("Hijri month lookup failed: {$e->getMessage()}");
         }
 
-        // Also try Malayalam API for the month
-        try {
-            $mlResp = Http::timeout(10)->get("https://ml-panchangam.api.divineapi.com/api/tools/upcoming-events", [
-                'count' => 100,
-            ]);
-            if ($mlResp->successful()) {
-                $mlEvents = $mlResp->json();
-                if (is_array($mlEvents)) {
-                    foreach ($mlEvents as $me) {
-                        if (isset($me['date']) && isset($me['event'])) {
-                            $meDate = \Carbon\Carbon::parse($me['date']);
-                            if ($meDate->year === $year && $meDate->month === $month) {
-                                $dateKey = $meDate->format('Y-m-d');
-                                if (!isset($celebrations[$dateKey])) {
-                                    $celebrations[$dateKey] = ['events' => [], 'hijri' => null];
+        // 3) Malayalam events via ml-panchangam API
+        $mlEndpoints = [
+            ['url' => "https://ml-panchangam.api.divineapi.com/api/tools/upcoming-events", 'params' => ['count' => 200]],
+            ['url' => "https://panchangam.api.divineapi.com/api/tools/upcoming-events", 'params' => ['count' => 200]],
+        ];
+        foreach ($mlEndpoints as $ep) {
+            try {
+                $mlResp = Http::timeout(10)->get($ep['url'], $ep['params']);
+                if ($mlResp->successful()) {
+                    $mlEvents = $mlResp->json();
+                    if (is_array($mlEvents)) {
+                        foreach ($mlEvents as $me) {
+                            if (isset($me['date']) && isset($me['event'])) {
+                                $meDate = \Carbon\Carbon::parse($me['date']);
+                                if ($meDate->year === $year && $meDate->month === $month) {
+                                    $dateKey = $meDate->format('Y-m-d');
+                                    if (!isset($celebrations[$dateKey])) {
+                                        $celebrations[$dateKey] = ['events' => [], 'calendar' => 'malayalam'];
+                                    }
+                                    $celebrations[$dateKey]['events'][] = $me['event'];
+                                    $celebrations[$dateKey]['calendar'] = 'malayalam';
                                 }
-                                $celebrations[$dateKey]['events'][] = $me['event'];
                             }
                         }
                     }
+                    break;
                 }
+            } catch (\Exception $e) {
+                \Log::warning("Malayalam month lookup failed for {$ep['url']}: {$e->getMessage()}");
             }
-        } catch (\Exception $e) {
-            \Log::warning("Malayalam month lookup failed: {$e->getMessage()}");
         }
 
         return response()->json([
@@ -317,7 +345,19 @@ class FestivalController extends Controller
             \Log::warning("Hijri date lookup failed: {$e->getMessage()}");
         }
 
-        // 2) ml-panchangam: daily panchangam
+        // 2) English Calendar events (fixed dates)
+        foreach ($this->getEnglishEventMap() as $ev) {
+            if ($ev['month'] === $carbon->month && $ev['day'] === $carbon->day) {
+                $events[] = [
+                    'name'        => $ev['name'],
+                    'calendar'    => 'english',
+                    'description' => $carbon->format('F j'),
+                    'source'      => 'english_fixed',
+                ];
+            }
+        }
+
+        // 3) ml-panchangam: daily panchangam
         $mlEndpoints = [
             'https://ml-panchangam.api.divineapi.com/api/panchangam',
             'https://panchangam.api.divineapi.com/api/panchangam',
