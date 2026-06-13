@@ -628,6 +628,22 @@ class MatchingController extends Controller
             ], 400);
         }
 
+        // Check if a reminder was already sent within the last 24 hours
+        $lastReminder = Notification::where('user_id', $interest->receiver_id)
+            ->where('sender_id', $currentUser->id)
+            ->where('type', 'interest_reminder')
+            ->where('reference_id', $interest->id)
+            ->latest('created_at')
+            ->first();
+
+        if ($lastReminder && $lastReminder->created_at && now()->diffInHours($lastReminder->created_at) < 24) {
+            $nextRemindAfter = $lastReminder->created_at->copy()->addHours(24)->toIso8601String();
+            return response()->json([
+                'error' => 'Reminder already sent. You can send another reminder after 24 hours.',
+                'next_remind_after' => $nextRemindAfter,
+            ], 429);
+        }
+
         Notification::create([
             'user_id' => $interest->receiver_id,
             'sender_id' => $currentUser->id,
