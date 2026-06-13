@@ -24,6 +24,12 @@ class TrackDailyUsage
         if (!$user || $user->role === 'admin')
             return $next($request);
 
+        // Check if free unlock period is active — bypass all usage fee checks
+        $adminSetting = \App\Models\AdminSetting::first();
+        if ($adminSetting && $adminSetting->free_unlock_enabled && $adminSetting->free_unlock_expires_at && now()->lessThan($adminSetting->free_unlock_expires_at)) {
+            return $next($request);
+        }
+
         // Define routes that bypass the usage fee check (e.g., viewing public profiles)
         $excludedRoutes = [
             'api/profiles/*',
