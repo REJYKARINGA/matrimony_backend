@@ -600,6 +600,49 @@ class MatchingController extends Controller
     }
 
     /**
+     * Send a reminder about a pending interest (only after 24 hours)
+     */
+    public function sendReminder($interestId, Request $request)
+    {
+        $currentUser = $request->user();
+
+        $interest = InterestSent::find($interestId);
+        if (!$interest) {
+            return response()->json(['error' => 'Interest not found'], 404);
+        }
+
+        if ($interest->sender_id !== $currentUser->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($interest->status !== 'pending') {
+            return response()->json(['error' => 'Interest is already responded to'], 400);
+        }
+
+        $sentAt = $interest->sent_at ?? $interest->created_at;
+        if (!$sentAt || now()->diffInHours($sentAt) < 24) {
+            $canRemindAfter = $sentAt ? $sentAt->copy()->addHours(24)->toIso8601String() : null;
+            return response()->json([
+                'error' => 'Reminder can only be sent after 24 hours since interest was sent',
+                'can_remind_after' => $canRemindAfter,
+            ], 400);
+        }
+
+        Notification::create([
+            'user_id' => $interest->receiver_id,
+            'sender_id' => $currentUser->id,
+            'type' => 'interest_reminder',
+            'title' => 'Interest Reminder',
+            'message' => "{$currentUser->userProfile->first_name} {$currentUser->userProfile->last_name} sent you a reminder about their interest",
+            'reference_id' => $interest->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Reminder sent successfully',
+        ]);
+    }
+
+    /**
      * Calculate distance between two points using Haversine formula
      */
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)

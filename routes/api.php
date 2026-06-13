@@ -135,6 +135,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/interests/received', [MatchingController::class , 'getReceivedInterests']);
             Route::post('/interest/{interestId}/accept', [MatchingController::class , 'acceptInterest']);
             Route::post('/interest/{interestId}/reject', [MatchingController::class , 'rejectInterest']);
+            Route::post('/interest/{interestId}/remind', [MatchingController::class , 'sendReminder']);
         }
         );
 
