@@ -57,7 +57,7 @@ class Festival extends Model
         }
 
         return [
-            'start_at'      => $dates['event_date']->copy()->addDays($this->start_offset_days)->startOfDay(),
+            'start_at'      => $dates['event_date']->copy()->subDays($this->start_offset_days)->startOfDay(),
             'end_at'        => $dates['event_date']->copy()->addDays($this->end_offset_days)->endOfDay(),
             'resolved_from' => $dates['source'] ?? $this->calendar_type,
         ];
