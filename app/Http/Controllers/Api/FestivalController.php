@@ -73,6 +73,9 @@ class FestivalController extends Controller
 
         $festival->update($validator->validated());
 
+        // Re-resolve occurrence for current year so cached dates reflect new offsets
+        $festival->ensureOccurrenceForYear(now()->year);
+
         return response()->json([
             'message' => 'Festival updated successfully',
             'festival' => $festival->fresh()->load('occurrences'),

@@ -194,14 +194,23 @@ class Festival extends Model
 
     public function ensureOccurrenceForYear(int $year): ?FestivalOccurrence
     {
-        $existing = $this->occurrences()->where('year', $year)->first();
-        if ($existing) {
-            return $existing;
-        }
-
         $resolved = $this->resolveDatesForYear($year);
         if (!$resolved['start_at'] || !$resolved['end_at']) {
+            $existing = $this->occurrences()->where('year', $year)->first();
+            if ($existing) {
+                $existing->delete();
+            }
             return null;
+        }
+
+        $existing = $this->occurrences()->where('year', $year)->first();
+        if ($existing) {
+            $existing->update([
+                'start_at'      => $resolved['start_at'],
+                'end_at'        => $resolved['end_at'],
+                'resolved_from' => $resolved['resolved_from'],
+            ]);
+            return $existing->fresh();
         }
 
         return $this->occurrences()->create([
