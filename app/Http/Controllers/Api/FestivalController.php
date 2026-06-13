@@ -18,6 +18,11 @@ class FestivalController extends Controller
 
     public function store(Request $request)
     {
+        // Convert empty string to null for nullable fields
+        if ($request->has('target_gender') && $request->input('target_gender') === '') {
+            $request->merge(['target_gender' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'celebration_name' => 'required|string|max:255',
             'offer_discount' => 'nullable|numeric|min:0',
@@ -31,6 +36,7 @@ class FestivalController extends Controller
             'end_offset_days' => 'nullable|integer',
             'reminder_days_before' => 'nullable|integer|min:0',
             'is_active' => 'sometimes|boolean',
+            'target_gender' => 'nullable|string|in:male,female',
         ]);
 
         if ($validator->fails()) {
@@ -52,6 +58,11 @@ class FestivalController extends Controller
 
     public function update(Request $request, Festival $festival)
     {
+        // Convert empty string to null for nullable fields
+        if ($request->has('target_gender') && $request->input('target_gender') === '') {
+            $request->merge(['target_gender' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'celebration_name' => 'sometimes|string|max:255',
             'offer_discount' => 'nullable|numeric|min:0',
@@ -65,6 +76,7 @@ class FestivalController extends Controller
             'end_offset_days' => 'nullable|integer',
             'reminder_days_before' => 'nullable|integer|min:0',
             'is_active' => 'sometimes|boolean',
+            'target_gender' => 'nullable|string|in:male,female',
         ]);
 
         if ($validator->fails()) {
@@ -417,10 +429,15 @@ class FestivalController extends Controller
         ]);
     }
 
-    public function activeFestivals()
+    public function activeFestivals(Request $request)
     {
-        $festivals = Festival::active()->get()->filter(function ($festival) {
-            return $festival->isCurrentlyActive();
+        $gender = $request->input('gender');
+
+        $festivals = Festival::active()->get()->filter(function ($festival) use ($gender) {
+            if (!$festival->isCurrentlyActive()) {
+                return false;
+            }
+            return $festival->matchesGender($gender);
         })->values();
 
         $result = [];

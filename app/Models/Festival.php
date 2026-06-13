@@ -20,6 +20,7 @@ class Festival extends Model
         'end_offset_days',
         'reminder_days_before',
         'is_active',
+        'target_gender',
     ];
 
     protected $casts = [
@@ -253,7 +254,18 @@ class Festival extends Model
         return $this->offer_discount;
     }
 
-    public static function getBestActiveDiscount(float $basePrice): array
+    public function matchesGender(?string $gender): bool
+    {
+        if ($this->target_gender === null || $this->target_gender === '') {
+            return true;
+        }
+        if ($gender === null) {
+            return false;
+        }
+        return strtolower($this->target_gender) === strtolower($gender);
+    }
+
+    public static function getBestActiveDiscount(float $basePrice, ?string $gender = null): array
     {
         $festivals = static::active()->get();
         $bestDiscount = 0;
@@ -261,6 +273,9 @@ class Festival extends Model
 
         foreach ($festivals as $festival) {
             if (!$festival->isCurrentlyActive()) {
+                continue;
+            }
+            if (!$festival->matchesGender($gender)) {
                 continue;
             }
             $discount = $festival->getDiscountValue($basePrice);

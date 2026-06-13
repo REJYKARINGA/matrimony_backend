@@ -38,6 +38,7 @@ class UserCardResource extends JsonResource
         $canViewPhotos = true;
         $hasPhotoRequestPending = false;
         $hasPhotoRequestRejected = false;
+        $viewerGender = $currentUser?->userProfile?->gender;
         
         if ($currentUser && $currentUser->id !== $this->id) {
             $photoRequestStatus = \App\Models\PhotoRequest::where('requester_id', $currentUser->id)
@@ -104,9 +105,10 @@ class UserCardResource extends JsonResource
                 $setting = \App\Models\AdminSetting::first();
                 return $setting && $setting->free_unlock_expires_at ? $setting->free_unlock_expires_at->toIso8601String() : null;
             })(),
-            'active_festivals' => (function() {
-                return \App\Models\Festival::active()->get()->filter(function ($f) {
-                    return $f->isCurrentlyActive();
+            'active_festivals' => (function() use ($viewerGender) {
+                return \App\Models\Festival::active()->get()->filter(function ($f) use ($viewerGender) {
+                    if (!$f->isCurrentlyActive()) return false;
+                    return $f->matchesGender($viewerGender);
                 })->values()->map(function ($f) {
                     $setting = \App\Models\AdminSetting::first();
                     $base = $setting ? $setting->getUnlockPrice() : 49;
@@ -125,9 +127,9 @@ class UserCardResource extends JsonResource
                 $setting = \App\Models\AdminSetting::first();
                 return $setting ? $setting->getUnlockPrice() : 49;
             })(),
-            'discounted_price' => (function() {
+            'discounted_price' => (function() use ($viewerGender) {
                 $setting = \App\Models\AdminSetting::first();
-                return $setting ? $setting->getDiscountedPrice() : 49;
+                return $setting ? $setting->getDiscountedPrice($viewerGender) : 49;
             })(),
             'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
             'permission_request_status' => $permissionRequestStatus,

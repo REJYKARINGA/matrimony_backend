@@ -43,10 +43,10 @@ class AdminSetting extends Model
         return (float) ($this->contact_unlock_price ?? 49.00);
     }
 
-    public function getDiscountedPrice(): float
+    public function getDiscountedPrice(?string $gender = null): float
     {
         $basePrice = $this->getUnlockPrice();
-        $result = Festival::getBestActiveDiscount($basePrice);
+        $result = Festival::getBestActiveDiscount($basePrice, $gender);
         return $result['discounted_price'];
     }
 }
