@@ -75,6 +75,8 @@ class UserCardResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'first_name' => $profile ? $profile->first_name : null,
+            'last_name' => $profile ? $profile->last_name : null,
             'matrimony_id' => $this->matrimony_id,
             'age' => $profile && $profile->date_of_birth ? Carbon::parse($profile->date_of_birth)->age : null,
             'height' => $profile ? $profile->height : null,
