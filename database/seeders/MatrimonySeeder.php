@@ -67,8 +67,7 @@ class MatrimonySeeder extends Seeder
 
         // Define 30 female users (Muslim Kerala)
         $females = [
-            ['Fatimah', 'Zahra', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Software Engineer', 'B.Tech CS', 850000.00, 'Kozhikode', 'Kerala'],
-            ['Aisha', 'Hana', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Doctor', 'MBBS', 1200000.00, 'Malappuram', 'Kerala'],
+            ['Rejy', 'Karinga', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Software Engineer', 'B.Tech', 800000.00, 'Malappuram', 'Kerala'],
             ['Maryam', 'Nadiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Professor', 'PhD Literature', 750000.00, 'Kochi', 'Kerala'],
             ['Khadija', 'Safiya', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Nurse', 'B.Sc Nursing', 550000.00, 'Thalassery', 'Kerala'],
             ['Zainab', 'Rehana', 'Muslim', 'Mapila', 'Mujahid', 'Malayalam', 'Architect', 'B.Arch', 900000.00, 'Thiruvananthapuram', 'Kerala'],
@@ -178,24 +177,34 @@ class MatrimonySeeder extends Seeder
             $occupationId = DB::table('occupations')->where('name', $female[6])->value('id') ?? 
                            DB::table('occupations')->insertGetId(['name' => $female[6], 'is_active' => true, 'created_at' => Carbon::now()]);
 
+            $gender = $index === 0 ? 'male' : 'female';
+            $dob = $index === 0 ? '2000-06-14' : Carbon::now()->subYears(rand(25, 35))->toDateString();
+            $height = $index === 0 ? 175 : rand(155, 168);
+            $weight = $index === 0 ? 70 : rand(48, 62);
+
+            $bio = $index === 0 
+                ? $female[0] . ' is a ' . $female[6] . ' with a passion for his work.'
+                : $female[0] . ' is a ' . $female[6] . ' with a passion for her work.';
+            $profilePic = $index === 0 ? $malePhotos[array_rand($malePhotos)] : $femalePhotos[array_rand($femalePhotos)];
+
             DB::table('user_profiles')->updateOrInsert(
                 ['user_id' => $userId],
                 [
                     'first_name' => $female[0],
                     'last_name' => $female[1],
-                    'date_of_birth' => Carbon::now()->subYears(rand(25, 35))->toDateString(),
-                    'gender' => 'female',
-                    'height' => rand(155, 168),
-                    'weight' => rand(48, 62),
+                    'date_of_birth' => $dob,
+                    'gender' => $gender,
+                    'height' => $height,
+                    'weight' => $weight,
                     'marital_status' => 'never_married',
                     'religion_id' => $religionId,
                     'caste_id' => $casteId,
                     'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $female[5],
-                    'profile_picture' => $femalePhotos[array_rand($femalePhotos)],
+                    'profile_picture' => $profilePic,
                     'is_identity_verified' => rand(0, 1),
                     'is_profile_active' => true,
-                    'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
+                    'bio' => $bio,
                     'education_id' => $educationId,
                     'occupation_id' => $occupationId,
                     'annual_income' => $female[8],
@@ -233,20 +242,27 @@ class MatrimonySeeder extends Seeder
                 ]
             );
 
+            $minAge = $index === 0 ? 22 : 25;
+            $maxAge = $index === 0 ? 32 : 35;
+            $minHeight = $index === 0 ? 155 : 170;
+            $maxHeight = $index === 0 ? 170 : 188;
+            $minIncome = $index === 0 ? 400000.00 : 500000.00;
+            $maxIncome = $index === 0 ? 1200000.00 : 1500000.00;
+
             DB::table('preferences')->updateOrInsert(
                 ['user_id' => $userId],
                 [
-                    'min_age' => 25,
-                    'max_age' => 35,
-                    'min_height' => 170,
-                    'max_height' => 188,
+                    'min_age' => $minAge,
+                    'max_age' => $maxAge,
+                    'min_height' => $minHeight,
+                    'max_height' => $maxHeight,
                     'marital_status' => 'never_married',
                     'religion_id' => $religionId,
                     'caste_ids' => json_encode([$casteId]),
                     'education_ids' => json_encode([$educationId]),
                     'occupation_ids' => json_encode([$occupationId]),
-                    'min_income' => 500000.00,
-                    'max_income' => 1500000.00,
+                    'min_income' => $minIncome,
+                    'max_income' => $maxIncome,
                     'preferred_locations' => json_encode([$female[9], $this->getRandomCity(), $this->getRandomCity()]),
                     'drug_addiction' => 'any',
                     'smoke' => json_encode(['never']),
