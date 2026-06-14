@@ -702,21 +702,20 @@ class ProfileController extends Controller
                     $q->where('religion_id', $viewedProfile->religion_id);
                 }
 
-                // Gender/Age Logic
-                // If viewed profile is Female (Seeking Male)
-                if ($viewedProfile->gender === 'female') {
-                    $q->where('gender', 'male');
-                    // "show greater or equal of their age male profiles"
-                    if ($viewedProfile->date_of_birth) {
+                // Gender Logic - based on authenticated user, not viewed profile
+                if ($currentUser && $currentUser->userProfile) {
+                    $oppositeGender = $currentUser->userProfile->gender === 'male' ? 'female' : 'male';
+                    $q->where('user_profiles.gender', $oppositeGender);
+                }
+
+                // Age Logic - based on viewed profile
+                if ($viewedProfile->date_of_birth) {
+                    if ($viewedProfile->gender === 'female') {
+                        // "show greater or equal of their age male profiles"
                         // In DB, older = smaller date
                         $q->where('date_of_birth', '<=', $viewedProfile->date_of_birth);
-                    }
-                } 
-                // If viewed profile is Male (Seeking Female)
-                else if ($viewedProfile->gender === 'male') {
-                    $q->where('gender', 'female');
-                    // "show equal or under their age profiles"
-                    if ($viewedProfile->date_of_birth) {
+                    } else if ($viewedProfile->gender === 'male') {
+                        // "show equal or under their age profiles"
                         // In DB, younger = larger date
                         $q->where('date_of_birth', '>=', $viewedProfile->date_of_birth);
                     }
