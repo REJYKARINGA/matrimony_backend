@@ -643,6 +643,57 @@ class MatrimonySeeder extends Seeder
                 'created_at' => Carbon::now(),
             ]);
         }
+
+        // Generate Matrimony IDs and Reference Codes for all users
+        $this->generateMatrimonyIdsAndReferenceCodes();
+    }
+
+    /**
+     * Generate Matrimony IDs and Reference Codes for all users
+     */
+    private function generateMatrimonyIdsAndReferenceCodes()
+    {
+        $users = DB::table('users')->get();
+        $prefix = 'VE';
+
+        foreach ($users as $user) {
+            $unique = false;
+            $newId = '';
+
+            // Try to generate a unique matrimony ID
+            while (!$unique) {
+                // Generate 7 random digits
+                // rand(1000000, 9999999) ensures exactly 7 digits
+                $number = rand(1000000, 9999999);
+                $newId = $prefix . $number;
+
+                // Check if this ID already exists in the database
+                // distinct from the current user in case of collision with another user's existing ID
+                if (!DB::table('users')->where('matrimony_id', $newId)->where('id', '!=', $user->id)->exists()) {
+                    $unique = true;
+                }
+            }
+
+            DB::table('users')->where('id', $user->id)->update(['matrimony_id' => $newId]);
+            
+            // Generate reference code if not already set
+            if (empty($user->reference_code)) {
+                $referenceCode = $this->generateReferenceCode();
+                DB::table('users')->where('id', $user->id)->update(['reference_code' => $referenceCode]);
+            }
+        }
+    }
+
+    /**
+     * Generate a unique 6-letter uppercase reference code (e.g. ABCXYZ)
+     */
+    private function generateReferenceCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6));
+        } while (DB::table('users')->where('reference_code', $code)->exists());
+
+        return $code;
     }
 
     private function generateFatherName($lastName)
