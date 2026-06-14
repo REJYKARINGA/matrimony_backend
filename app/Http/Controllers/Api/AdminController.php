@@ -91,7 +91,10 @@ class AdminController extends Controller
             // Ensure UserProfile exists
             $userProfile = UserProfile::where('user_id', $verification->user_id)->first();
             if ($userProfile) {
-                $userProfile->update(['is_active_verified' => true]);
+                $userProfile->update([
+                    'is_identity_verified' => true,
+                    'is_profile_active' => true,
+                ]);
             }
         });
 
@@ -142,7 +145,7 @@ class AdminController extends Controller
         // Also ensure profile is NOT verified
         $userProfile = UserProfile::where('user_id', $verification->user_id)->first();
         if ($userProfile) {
-            $userProfile->update(['is_active_verified' => false]);
+            $userProfile->update(['is_identity_verified' => false]);
         }
 
         return response()->json([
@@ -478,9 +481,14 @@ class AdminController extends Controller
             $query->where('user_profiles.occupation_id', $request->occupation_id);
         }
 
-        // Profile active status filter
-        if ($request->has('is_active_verified') && $request->is_active_verified !== 'all' && $request->is_active_verified !== '') {
-            $query->where('user_profiles.is_active_verified', (bool) $request->is_active_verified);
+        // Profile active status filter (visibility in searches)
+        if ($request->has('is_profile_active') && $request->is_profile_active !== 'all' && $request->is_profile_active !== '') {
+            $query->where('user_profiles.is_profile_active', (bool) $request->is_profile_active);
+        }
+
+        // ID verification status filter
+        if ($request->has('is_identity_verified') && $request->is_identity_verified !== 'all' && $request->is_identity_verified !== '') {
+            $query->where('user_profiles.is_identity_verified', (bool) $request->is_identity_verified);
         }
 
         // Verification status filter (from user.verification)
@@ -557,7 +565,8 @@ class AdminController extends Controller
             'postal_code'        => 'nullable|string|max:20',
             'bio'                => 'nullable|string',
             'hide_photos'        => 'nullable|boolean',
-            'is_active_verified' => 'nullable|boolean',
+            'is_identity_verified' => 'nullable|boolean',
+            'is_profile_active'  => 'nullable|boolean',
             'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -620,7 +629,8 @@ class AdminController extends Controller
                 'postal_code'        => 'nullable|string|max:20',
                 'bio'                => 'nullable|string',
                 'hide_photos'        => 'nullable|boolean',
-                'is_active_verified' => 'nullable|boolean',
+                'is_identity_verified' => 'nullable|boolean',
+                'is_profile_active'  => 'nullable|boolean',
                 'profile_picture'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -1015,7 +1025,8 @@ class AdminController extends Controller
 
             // Profile Statistics  
             $totalProfiles = UserProfile::count();
-            $verifiedProfiles = UserProfile::where('is_active_verified', true)->count();
+            $verifiedProfiles = UserProfile::where('is_identity_verified', true)->count();
+            $activeProfiles = UserProfile::where('is_profile_active', true)->count();
             $maleProfiles = UserProfile::where('gender', 'male')->count();
             $femaleProfiles = UserProfile::where('gender', 'female')->count();
 
@@ -1226,6 +1237,7 @@ class AdminController extends Controller
                 'profiles' => [
                     'total' => $totalProfiles,
                     'verified' => $verifiedProfiles,
+                    'active' => $activeProfiles,
                     'male' => $maleProfiles,
                     'female' => $femaleProfiles,
                     'genderDistribution' => $genderDistribution,
@@ -2109,10 +2121,7 @@ class AdminController extends Controller
     public function getProfileVerifications(Request $request)
     {
         $query = UserProfile::with('user')
-            ->where(function($q) {
-                $q->where('is_active_verified', false)
-                  ->orWhereNotNull('changed_fields');
-            });
+            ->whereNotNull('changed_fields');
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -2149,7 +2158,7 @@ class AdminController extends Controller
         $profile = UserProfile::findOrFail($id);
         
         $profile->update([
-            'is_active_verified' => true,
+            'is_profile_active' => true,
             'changed_fields' => null
         ]);
 

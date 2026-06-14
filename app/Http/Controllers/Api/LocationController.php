@@ -93,7 +93,7 @@ class LocationController extends Controller
             ->where('users.id', '!=', $user->id)
             ->where('users.status', 'active')
             ->whereHas('userProfile', function ($q) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
             })
             ->whereNotNull('user_profiles.latitude')
             ->whereNotNull('user_profiles.longitude');

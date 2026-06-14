@@ -168,7 +168,7 @@ class ProfileController extends Controller
             $changes = array_keys($userProfile->getDirty());
 
             // If the profile is already unverified and has stored changes, merge them
-            if ($userProfile->exists && !$userProfile->is_active_verified && !empty($userProfile->changed_fields)) {
+            if ($userProfile->exists && !$userProfile->is_identity_verified && !empty($userProfile->changed_fields)) {
                 $existingChanges = $userProfile->changed_fields;
                 // Ensure existingChanges is an array (handled by cast, but safe check)
                 if (is_array($existingChanges)) {
@@ -176,12 +176,13 @@ class ProfileController extends Controller
                 }
             }
 
-            // Update the changed_fields but DO NOT set is_active_verified to false
+            // Update the changed_fields but DO NOT set is_identity_verified to false
             $userProfile->changed_fields = array_values($changes);
         } elseif (!$userProfile->exists) {
             // New profile creation
-            $userProfile->is_active_verified = false;
-            $userProfile->changed_fields = null; // Or all fields? Keeping null for new profiles.
+            $userProfile->is_identity_verified = false;
+            $userProfile->is_profile_active = false;
+            $userProfile->changed_fields = null;
         }
 
         $userProfile->save();
@@ -627,10 +628,9 @@ class ProfileController extends Controller
 
         if (!$isOwnProfile) {
             $isActive = $user->status === 'active';
-            // Check if user has a profile and it is verified
-            $isVerified = $user->userProfile && $user->userProfile->is_active_verified;
+            $isProfileActive = $user->userProfile && $user->userProfile->is_profile_active;
 
-            if (!$isActive || !$isVerified) {
+            if (!$isActive || !$isProfileActive) {
                 return response()->json([
                     'error' => 'User not found or profile is not active'
                 ], 404);
@@ -695,7 +695,7 @@ class ProfileController extends Controller
             ->where('users.id', '!=', $id) // Exclude viewed user
             ->where('users.status', 'active')
             ->whereHas('userProfile', function ($q) use ($viewedProfile) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
 
                 // Same religion
                 if ($viewedProfile->religion_id) {
@@ -793,7 +793,7 @@ class ProfileController extends Controller
             ->where('status', 'active') // Only active users
             ->whereNull('deleted_at') // Exclude soft deleted users
             ->whereHas('userProfile', function ($q) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
             });
 
 

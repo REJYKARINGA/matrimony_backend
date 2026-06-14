@@ -48,7 +48,7 @@ class SearchController extends Controller
             $value = $preferences->$field ?? $user->userProfile->$field ?? null;
             if ($value) {
                 $count = User::active()->whereHas('userProfile', function ($q) use ($field, $value, $user, $userAge) {
-                    $q->where('is_active_verified', true);
+                    $q->where('is_profile_active', true);
                     if ($user->userProfile && $user->userProfile->religion_id) {
                         $q->where('religion_id', $user->userProfile->religion_id);
                     }
@@ -104,7 +104,7 @@ class SearchController extends Controller
         // Age Match
         if ($preferences->min_age || $preferences->max_age) {
             $count = User::active()->whereHas('userProfile', function ($q) use ($preferences, $user) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -151,7 +151,7 @@ class SearchController extends Controller
         if (is_array($preferences->preferred_locations) && count($preferences->preferred_locations) > 0) {
             $locations = $preferences->preferred_locations;
             $count = User::active()->whereHas('userProfile', function ($q) use ($locations, $user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -201,7 +201,7 @@ class SearchController extends Controller
             $query = User::active()->select('users.*')->join('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->where('users.id', '!=', $user->id)
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
-                    $q->where('is_active_verified', true);
+                    $q->where('is_profile_active', true);
                     if ($user->userProfile && $user->userProfile->religion_id) {
                         $q->where('religion_id', $user->userProfile->religion_id);
                     }
@@ -254,7 +254,7 @@ class SearchController extends Controller
         $myDistrict = $user->userProfile->district ?? null;
         if ($myDistrict && (!is_array($preferences->preferred_locations) || !in_array($myDistrict, $preferences->preferred_locations))) {
             $count = User::active()->whereHas('userProfile', function ($q) use ($myDistrict, $user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -314,7 +314,7 @@ class SearchController extends Controller
                     $q->where('sender_id', $user->id)->where('status', 'rejected');
                 })
                 ->whereHas('userProfile', function ($q) use ($user, $userAge) {
-                    $q->where('is_active_verified', true);
+                    $q->where('is_profile_active', true);
                     if ($user->userProfile && $user->userProfile->religion_id) {
                         $q->where('religion_id', $user->userProfile->religion_id);
                     }
@@ -351,7 +351,7 @@ class SearchController extends Controller
         // Height Match
         if ($preferences->min_height || $preferences->max_height) {
             $count = User::active()->whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -396,7 +396,7 @@ class SearchController extends Controller
         // Income Match
         if ($preferences->min_income) {
             $count = User::active()->whereHas('userProfile', function ($q) use ($preferences, $user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -439,7 +439,7 @@ class SearchController extends Controller
         $myTongue = $user->userProfile->mother_tongue ?? null;
         if ($myTongue) {
             $count = User::active()->whereHas('userProfile', function ($q) use ($myTongue, $user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -481,7 +481,7 @@ class SearchController extends Controller
         // New Members (Joined in last 7 days)
         $count = User::active()->where('created_at', '>=', now()->subDays(7))
             ->whereHas('userProfile', function ($q) use ($user, $userAge) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 if ($user->userProfile && $user->userProfile->religion_id) {
                     $q->where('religion_id', $user->userProfile->religion_id);
                 }
@@ -586,7 +586,7 @@ class SearchController extends Controller
                 $q->where('sender_id', $user->id)->where('status', 'rejected');
             })
             ->whereHas('userProfile', function ($q) use ($userAge, $request, $isIdSearch, $userProfile) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
 
                 // UNLESS this is a specific age search or ID search, don't show older than me
                 if (!$isIdSearch && $userAge && $request->field != 'age' && !$request->filled('min_age') && !$request->filled('max_age')) {

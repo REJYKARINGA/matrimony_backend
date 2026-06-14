@@ -65,7 +65,7 @@ class TestUsersSeeder extends Seeder
                     'drug_addiction' => false,
                     'smoke' => 'never',
                     'alcohol' => 'never',
-                    'is_active_verified' => true,
+                    'is_identity_verified' => true,
                 ]);
 
                 // Create family details

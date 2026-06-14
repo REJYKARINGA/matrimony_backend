@@ -31,7 +31,7 @@ class MatchingController extends Controller
             ->select('users.id', 'users.matrimony_id', 'users.created_at', 'users.last_login')
             ->where('users.id', '!=', $user->id)
             ->whereHas('userProfile', function ($q) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
             })
             ->whereDoesntHave('blockedBy', function($q) use ($user) {
                 $q->where('user_id', $user->id);
@@ -211,7 +211,7 @@ class MatchingController extends Controller
         $query = User::active()->where('users.id', '!=', $user->id)
             
             ->whereHas('userProfile', function ($q) use ($user) {
-                $q->where('is_active_verified', true);
+                $q->where('is_profile_active', true);
                 
                 // Opposite gender logic
                 if ($user->userProfile && $user->userProfile->gender) {

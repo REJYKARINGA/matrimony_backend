@@ -14,7 +14,7 @@ class VerifyAllUsersSeeder extends Seeder
      */
     public function run()
     {
-        UserProfile::query()->update(['is_active_verified' => true]);
-        $this->command->info('All user profiles have been verified (is_active_verified = true)!');
+        UserProfile::query()->update(['is_identity_verified' => true]);
+        $this->command->info('All user profiles have been verified (is_identity_verified = true)!');
     }
 }

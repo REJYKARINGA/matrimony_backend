@@ -305,7 +305,7 @@ class MatrimonySeeder extends Seeder
                     'country' => 'India',
                     'latitude' => $cityCoords[$male[9]][0] ?? 11.0510,
                     'longitude' => $cityCoords[$male[9]][1] ?? 76.0711,
-                    'is_active_verified' => 1,
+                    'is_identity_verified' => 1,
                     'updated_at' => Carbon::now(),
                 ]
             );

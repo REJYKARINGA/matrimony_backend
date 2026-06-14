@@ -133,7 +133,8 @@ class UserCardResource extends JsonResource
             })(),
             'is_contact_unlocked' => $currentUser && ($currentUser->id === $this->id || $hasUnlockedContact),
             'permission_request_status' => $permissionRequestStatus,
-            'is_active_verified' => $profile ? (bool) $profile->is_active_verified : false,
+            'is_identity_verified' => $profile ? (bool) $profile->is_identity_verified : false,
+            'is_profile_active' => $profile ? (bool) $profile->is_profile_active : false,
             'reports_count' => (function() {
                 try {
                     return \App\Models\UserReport::where('reported_id', $this->id)->count();

@@ -30,9 +30,9 @@ class MessageController extends Controller
         $conversations = Message::whereIn('id', $latestMessageIds)
             ->with([
                 'sender:id,email,matrimony_id',
-                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified',
+                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_identity_verified',
                 'receiver:id,email,matrimony_id',
-                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified'
+                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_identity_verified'
             ])
             ->orderBy('sent_at', 'desc')
             ->paginate(20)
@@ -161,9 +161,9 @@ class MessageController extends Controller
         })
             ->with([
                 'sender:id,email,matrimony_id',
-                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified',
+                'sender.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_identity_verified',
                 'receiver:id,email,matrimony_id',
-                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_active_verified'
+                'receiver.userProfile:user_id,first_name,last_name,profile_picture,hide_photos,is_identity_verified'
             ])
             ->orderBy('sent_at', 'asc')
             ->get();
