@@ -123,6 +123,20 @@ class MatrimonySeeder extends Seeder
             ['Zakir', 'Haris', 'Muslim', 'Mapila', 'Sunni', 'Malayalam', 'Artist', 'BFA', 400000.00, 'Kochi', 'Kerala'],
         ];
 
+        $malePhotos = [
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1780461887/matrimony/profiles/2/profile_2_1780461885.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1780590301/matrimony/profiles/2/profile_2_1780590299.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1780590276/matrimony/profiles/2/profile_2_1780590275.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1780520074/matrimony/profiles/2/profile_2_1780520073.jpg',
+        ];
+
+        $femalePhotos = [
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1775197366/matrimony/profiles/15/profile_15_1775197365.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1772360567/samples/upscale-face-1.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1772360563/samples/outdoor-woman.jpg',
+            'https://res.cloudinary.com/dj3b00pig/image/upload/v1772360552/samples/bike.jpg',
+        ];
+
         // Create/Update female users
         foreach ($females as $index => $female) {
             $email = 'rejy' . ($index + 1) . '@yopmail.com';
@@ -178,7 +192,8 @@ class MatrimonySeeder extends Seeder
                     'caste_id' => $casteId,
                     'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $female[5],
-                    'profile_picture' => 'https://example.com/profiles/' . strtolower($female[0]) . '.jpg',
+                    'profile_picture' => $femalePhotos[array_rand($femalePhotos)],
+                    'is_identity_verified' => 1,
                     'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
                     'education_id' => $educationId,
                     'occupation_id' => $occupationId,
@@ -295,7 +310,7 @@ class MatrimonySeeder extends Seeder
                     'caste_id' => $casteId,
                     'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $male[5],
-                    'profile_picture' => 'https://example.com/profiles/' . strtolower($male[0]) . '.jpg',
+                    'profile_picture' => $malePhotos[array_rand($malePhotos)],
                     'bio' => $male[0] . ' is a ' . $male[6] . ' with a passion for his work.',
                     'education_id' => $educationId,
                     'occupation_id' => $occupationId,
@@ -358,30 +373,28 @@ class MatrimonySeeder extends Seeder
             );
         }
 
-        // Add some profile photos
+        // Add profile photos from Cloudinary
         $allUsers = DB::table('users')->get();
-        foreach ($allUsers as $index => $user) {
-            if ($index % 3 === 0) { // Add photos for every third user
+        foreach ($allUsers as $user) {
+            $profile = DB::table('user_profiles')->where('user_id', $user->id)->first();
+            if (!$profile) continue;
+
+            $photos = $profile->gender === 'male' ? $malePhotos : $femalePhotos;
+            $photoCount = rand(1, count($photos));
+            $selectedKeys = array_rand($photos, $photoCount);
+            if (!is_array($selectedKeys)) $selectedKeys = [$selectedKeys];
+
+            $primaryIndex = rand(0, $photoCount - 1);
+
+            foreach ($selectedKeys as $i => $key) {
                 DB::table('profile_photos')->insert([
                     'user_id' => $user->id,
-                    'photo_url' => 'https://example.com/photos/' . strtolower(explode('@', $user->email)[0]) . '1.jpg',
-                    'is_primary' => true,
+                    'photo_url' => $photos[$key],
+                    'is_primary' => $i === $primaryIndex,
                     'is_verified' => true,
                     'upload_date' => Carbon::now(),
                     'verification_date' => Carbon::now(),
                 ]);
-
-                // Add a secondary photo for some users
-                if ($index % 6 === 0) {
-                    DB::table('profile_photos')->insert([
-                        'user_id' => $user->id,
-                        'photo_url' => 'https://example.com/photos/' . strtolower(explode('@', $user->email)[0]) . '2.jpg',
-                        'is_primary' => false,
-                        'is_verified' => true,
-                        'upload_date' => Carbon::now(),
-                        'verification_date' => Carbon::now(),
-                    ]);
-                }
             }
         }
 
