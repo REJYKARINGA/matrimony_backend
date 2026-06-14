@@ -418,6 +418,7 @@ class MatrimonySeeder extends Seeder
 
         // Add some sample interests sent
         $users = DB::table('users')->get();
+        $insertedPairs = [];
         for ($i = 0; $i < 10; $i++) {
             $senderIndex = rand(0, count($users) - 1);
             $receiverIndex = rand(0, count($users) - 1);
@@ -427,6 +428,13 @@ class MatrimonySeeder extends Seeder
                 $receiverIndex = rand(0, count($users) - 1);
             }
 
+            $pairKey = $users[$senderIndex]->id . '-' . $users[$receiverIndex]->id;
+            
+            // Skip if this pair already exists
+            if (in_array($pairKey, $insertedPairs)) {
+                continue;
+            }
+
             DB::table('interests_sent')->insert([
                 'sender_id' => $users[$senderIndex]->id,
                 'receiver_id' => $users[$receiverIndex]->id,
@@ -434,9 +442,12 @@ class MatrimonySeeder extends Seeder
                 'message' => $this->getRandomMessage(),
                 'sent_at' => Carbon::now(),
             ]);
+            
+            $insertedPairs[] = $pairKey;
         }
 
         // Add some sample matches
+        $insertedMatchPairs = [];
         for ($i = 0; $i < 5; $i++) {
             $user1Index = rand(0, count($users) - 1);
             $user2Index = rand(0, count($users) - 1);
@@ -444,6 +455,13 @@ class MatrimonySeeder extends Seeder
             // Ensure user1 and user2 are different
             while ($user1Index === $user2Index) {
                 $user2Index = rand(0, count($users) - 1);
+            }
+
+            $matchPairKey = $users[$user1Index]->id . '-' . $users[$user2Index]->id;
+            
+            // Skip if this pair already exists
+            if (in_array($matchPairKey, $insertedMatchPairs)) {
+                continue;
             }
 
             DB::table('matches')->insert([
@@ -454,9 +472,12 @@ class MatrimonySeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
+            
+            $insertedMatchPairs[] = $matchPairKey;
         }
 
         // Add some sample messages
+        $insertedMessagePairs = [];
         for ($i = 0; $i < 5; $i++) {
             $senderIndex = rand(0, count($users) - 1);
             $receiverIndex = rand(0, count($users) - 1);
@@ -466,15 +487,25 @@ class MatrimonySeeder extends Seeder
                 $receiverIndex = rand(0, count($users) - 1);
             }
 
+            $messagePairKey = $users[$senderIndex]->id . '-' . $users[$receiverIndex]->id;
+            
+            // Skip if this pair already exists
+            if (in_array($messagePairKey, $insertedMessagePairs)) {
+                continue;
+            }
+
             DB::table('messages')->insert([
                 'sender_id' => $users[$senderIndex]->id,
                 'receiver_id' => $users[$receiverIndex]->id,
                 'message' => $this->getRandomMessage(),
                 'sent_at' => Carbon::now(),
             ]);
+            
+            $insertedMessagePairs[] = $messagePairKey;
         }
 
         // Add some sample profile views
+        $insertedViewPairs = [];
         for ($i = 0; $i < 10; $i++) {
             $viewerIndex = rand(0, count($users) - 1);
             $viewedIndex = rand(0, count($users) - 1);
@@ -484,14 +515,24 @@ class MatrimonySeeder extends Seeder
                 $viewedIndex = rand(0, count($users) - 1);
             }
 
+            $viewPairKey = $users[$viewerIndex]->id . '-' . $users[$viewedIndex]->id;
+            
+            // Skip if this pair already exists
+            if (in_array($viewPairKey, $insertedViewPairs)) {
+                continue;
+            }
+
             DB::table('profile_views')->insert([
                 'viewer_id' => $users[$viewerIndex]->id,
                 'viewed_profile_id' => $users[$viewedIndex]->id,
                 'viewed_at' => Carbon::now(),
             ]);
+            
+            $insertedViewPairs[] = $viewPairKey;
         }
 
         // Add some sample shortlisted profiles
+        $insertedShortlistPairs = [];
         for ($i = 0; $i < 8; $i++) {
             $userIndex = rand(0, count($users) - 1);
             $shortlistedIndex = rand(0, count($users) - 1);
@@ -501,12 +542,21 @@ class MatrimonySeeder extends Seeder
                 $shortlistedIndex = rand(0, count($users) - 1);
             }
 
+            $shortlistPairKey = $users[$userIndex]->id . '-' . $users[$shortlistedIndex]->id;
+            
+            // Skip if this pair already exists
+            if (in_array($shortlistPairKey, $insertedShortlistPairs)) {
+                continue;
+            }
+
             DB::table('shortlisted_profiles')->insert([
                 'user_id' => $users[$userIndex]->id,
                 'shortlisted_user_id' => $users[$shortlistedIndex]->id,
                 'notes' => 'Interesting profile with good compatibility',
                 'created_at' => Carbon::now(),
             ]);
+            
+            $insertedShortlistPairs[] = $shortlistPairKey;
         }
 
         // Add subscription plans
