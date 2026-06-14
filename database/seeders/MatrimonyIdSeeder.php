@@ -17,13 +17,13 @@ class MatrimonyIdSeeder extends Seeder
         $users = User::all();
         $prefix = 'VE';
 
-        $this->command->info('Updating Matrimony IDs for ' . $users->count() . ' users...');
+        $this->command->info('Updating Matrimony IDs and Reference Codes for ' . $users->count() . ' users...');
 
         foreach ($users as $user) {
             $unique = false;
             $newId = '';
 
-            // Try to generate a unique ID
+            // Try to generate a unique matrimony ID
             while (!$unique) {
                 // Generate 7 random digits
                 // rand(1000000, 9999999) ensures exactly 7 digits
@@ -39,9 +39,27 @@ class MatrimonyIdSeeder extends Seeder
             }
 
             $user->matrimony_id = $newId;
+            
+            // Generate reference code if not already set
+            if (!$user->reference_code) {
+                $user->reference_code = $this->generateReferenceCode();
+            }
+            
             $user->save();
         }
 
-        $this->command->info('Successfully updated Matrimony IDs to VE format (VE + 7 digits).');
+        $this->command->info('Successfully updated Matrimony IDs to VE format (VE + 7 digits) and Reference Codes.');
+    }
+
+    /**
+     * Generate a unique 6-letter uppercase reference code (e.g. ABCXYZ)
+     */
+    private function generateReferenceCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6));
+        } while (User::where('reference_code', $code)->exists());
+
+        return $code;
     }
 }
