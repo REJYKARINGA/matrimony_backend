@@ -193,7 +193,8 @@ class MatrimonySeeder extends Seeder
                     'sub_caste_id' => $subCasteId,
                     'mother_tongue' => $female[5],
                     'profile_picture' => $femalePhotos[array_rand($femalePhotos)],
-                    'is_identity_verified' => 1,
+                    'is_identity_verified' => rand(0, 1),
+                    'is_profile_active' => true,
                     'bio' => $female[0] . ' is a ' . $female[6] . ' with a passion for her work.',
                     'education_id' => $educationId,
                     'occupation_id' => $occupationId,
@@ -320,7 +321,8 @@ class MatrimonySeeder extends Seeder
                     'country' => 'India',
                     'latitude' => $cityCoords[$male[9]][0] ?? 11.0510,
                     'longitude' => $cityCoords[$male[9]][1] ?? 76.0711,
-                    'is_identity_verified' => 1,
+                    'is_identity_verified' => rand(0, 1),
+                    'is_profile_active' => true,
                     'updated_at' => Carbon::now(),
                 ]
             );
