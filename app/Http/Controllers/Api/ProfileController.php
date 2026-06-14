@@ -558,6 +558,38 @@ class ProfileController extends Controller
     }
 
     /**
+     * Reorder profile photos
+     */
+    public function reorderPhotos(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:profile_photos,id',
+        ]);
+
+        $user = $request->user();
+        $photoIds = $request->order;
+
+        // Verify all photos belong to this user
+        $userPhotoIds = ProfilePhoto::where('user_id', $user->id)
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($photoIds as $id) {
+            if (!in_array($id, $userPhotoIds)) {
+                return response()->json(['error' => 'Invalid photo ID: ' . $id], 403);
+            }
+        }
+
+        // Update sort_order based on position in the array
+        foreach ($photoIds as $index => $id) {
+            ProfilePhoto::where('id', $id)->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json(['message' => 'Photos reordered successfully']);
+    }
+
+    /**
      * Display a specific user's profile
      */
     public function show($id)

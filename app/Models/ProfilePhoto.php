@@ -20,7 +20,18 @@ class ProfilePhoto extends Model
         'rejection_reason',
         'verified_by',
         'verification_date',
+        'sort_order',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($photo) {
+            if ($photo->sort_order === null || $photo->sort_order === 0) {
+                $maxOrder = static::where('user_id', $photo->user_id)->max('sort_order');
+                $photo->sort_order = ($maxOrder ?? 0) + 1;
+            }
+        });
+    }
 
     protected $casts = [
         'is_primary' => 'boolean',

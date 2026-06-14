@@ -23,6 +23,7 @@ class ProfilePhotoResource extends JsonResource
             'is_primary' => $this->is_primary,
             'is_verified' => $this->is_verified,
             'upload_date' => $this->upload_date,
+            'sort_order' => $this->sort_order,
         ];
     }
 }

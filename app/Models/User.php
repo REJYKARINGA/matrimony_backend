@@ -160,7 +160,7 @@ class User extends Authenticatable
      */
     public function profilePhotos(): HasMany
     {
-        return $this->hasMany(ProfilePhoto::class , 'user_id');
+        return $this->hasMany(ProfilePhoto::class , 'user_id')->orderBy('sort_order');
     }
 
     /**
@@ -170,7 +170,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(ProfilePhoto::class, 'user_id')
             ->where('is_verified', true)
-            ->where('is_rejected', false);
+            ->where('is_rejected', false)
+            ->orderBy('sort_order');
     }
 
     /**
