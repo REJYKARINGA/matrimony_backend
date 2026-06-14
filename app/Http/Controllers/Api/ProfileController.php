@@ -694,7 +694,7 @@ class ProfileController extends Controller
         ])
             ->where('users.id', '!=', $id) // Exclude viewed user
             ->where('users.status', 'active')
-            ->whereHas('userProfile', function ($q) use ($viewedProfile) {
+            ->whereHas('userProfile', function ($q) use ($viewedProfile, $currentUser) {
                 $q->where('is_profile_active', true);
 
                 // Same religion
