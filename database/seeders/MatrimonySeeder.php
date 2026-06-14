@@ -138,7 +138,7 @@ class MatrimonySeeder extends Seeder
 
         // Create/Update female users
         foreach ($females as $index => $female) {
-            $email = 'rejy' . ($index + 1) . '@yopmail.com';
+            $email = $index === 0 ? 'rejy@yopmail.com' : 'rejy' . ($index + 1) . '@yopmail.com';
 
             $user = DB::table('users')->where('email', $email)->first();
             
