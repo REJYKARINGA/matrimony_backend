@@ -1512,6 +1512,65 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * Get abandoned/failed payments for follow-up calls
+     */
+    public function getAbandonedPayments(Request $request)
+    {
+        try {
+            $status = $request->status; // 'pending', 'failed', or null for both
+            $search = $request->search;
+
+            $query = Transaction::with([
+                'user.userProfile.religionModel',
+                'user.userProfile.casteModel',
+                'user.userProfile.subCasteModel',
+                'user.userProfile.educationModel',
+                'user.userProfile.occupationModel'
+            ])
+                ->leftJoin('users', 'transactions.user_id', '=', 'users.id')
+                ->where(function($q) {
+                    $q->whereNull('users.role')
+                      ->orWhere('users.role', '!=', 'admin');
+                });
+
+            // Filter by status
+            if ($status && in_array($status, ['pending', 'failed'])) {
+                $query->where('transactions.status', $status);
+            } else {
+                $query->whereIn('transactions.status', ['pending', 'failed']);
+            }
+
+            // Search
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('transactions.type', 'like', "%{$search}%")
+                        ->orWhere('transactions.amount', 'like', "%{$search}%")
+                        ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('user', function ($subQuery) use ($search) {
+                            $subQuery->where('email', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%")
+                                ->orWhere('matrimony_id', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            $transactions = $query->select('transactions.*', 'users.phone as user_phone', 'users.email as user_email')
+                ->orderBy('transactions.created_at', 'desc')
+                ->paginate(20);
+
+            return response()->json($transactions);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch abandoned payments',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // ==========================================
     // Interest & Hobby Management
     // ==========================================

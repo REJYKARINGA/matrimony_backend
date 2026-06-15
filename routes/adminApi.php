@@ -91,6 +91,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Wallet Transactions
     Route::get('/wallet/stats', [AdminController::class, 'getWalletStats']);
     Route::get('/wallet/transactions', [AdminController::class, 'getWalletTransactions']);
+    Route::get('/wallet/abandoned', [AdminController::class, 'getAbandonedPayments']);
 
     // Admin Settings
     Route::get('/admin-settings', [AdminSettingController::class, 'index']);

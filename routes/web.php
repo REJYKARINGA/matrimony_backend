@@ -30,14 +30,26 @@ Route::get('/recharge', function (\Illuminate\Http\Request $request) {
     $razorpayKey = env('RAZORPAY_KEY');
     $apiBase = url('/api');
 
+    // Festival offer info (passed from app when discount applies)
+    $originalPrice = (float) $request->query('original_price', 0);
+    $festivalName = $request->query('festival_name', '');
+    $festivalDiscount = (float) $request->query('festival_discount', 0);
+
     if (!$orderId || !$amount || !$token || !$transactionId) {
         return response()->json(['error' => 'Missing required parameters'], 400);
     }
 
     return view('payment.recharge', compact(
         'orderId', 'amount', 'type', 'token', 'transactionId',
-        'unlockedUserId', 'razorpayKey', 'apiBase'
+        'unlockedUserId', 'razorpayKey', 'apiBase',
+        'originalPrice', 'festivalName', 'festivalDiscount'
     ));
+});
+
+// Payment success page (fallback when deep link fails)
+Route::get('/payment/success', function (\Illuminate\Http\Request $request) {
+    $type = $request->query('type', 'wallet_recharge');
+    return view('payment.success', compact('type'));
 });
 
 // Public profile view by matrimony ID

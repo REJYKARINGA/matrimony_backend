@@ -13,6 +13,7 @@ use App\Models\WalletTransferOtp;
 use App\Models\Notification;
 use App\Models\AdminSetting;
 use App\Models\ContactUnlockRequest;
+use App\Models\Festival;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
@@ -108,11 +109,17 @@ class PaymentController extends Controller
             if ($request->type === 'contact_unlock') {
                 $setting = AdminSetting::first();
                 $origPrice = $setting ? $setting->getUnlockPrice() : 49;
-                $discountedPrice = $setting ? $setting->getDiscountedPrice() : $origPrice;
+                $discountResult = $setting
+                    ? Festival::getBestActiveDiscount($origPrice, $user->userProfile?->gender)
+                    : null;
+                $discountedPrice = $discountResult ? $discountResult['discounted_price'] : $origPrice;
                 if ($discountedPrice < $origPrice) {
                     $response['discount_applied'] = true;
                     $response['original_price'] = $origPrice;
                     $response['discounted_price'] = $discountedPrice;
+                    $response['festival_name'] = $discountResult['festival']?->celebration_name;
+                    $response['festival_discount_amount'] = $discountResult['discount'];
+                    $response['festival_discount_type'] = $discountResult['festival']?->offer_discount_type;
                 }
             }
 

@@ -25,6 +25,20 @@
             width: 100%;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .offer-ribbon {
+            position: absolute;
+            top: 16px;
+            right: -32px;
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: #fff;
+            padding: 6px 40px;
+            font-size: 12px;
+            font-weight: 700;
+            transform: rotate(45deg);
+            box-shadow: 0 2px 8px rgba(245,158,11,0.3);
         }
         .logo {
             font-size: 24px;
@@ -41,13 +55,36 @@
             font-size: 48px;
             font-weight: 700;
             color: #111827;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+        }
+        .amount-display.has-discount {
+            color: #00C897;
+        }
+        .original-amount {
+            font-size: 20px;
+            color: #9CA3AF;
+            text-decoration: line-through;
+            margin-bottom: 4px;
         }
         .amount-label {
             color: #9CA3AF;
             font-size: 13px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
+        .offer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+            border: 1px solid #FDE68A;
+            border-radius: 100px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #92400E;
+            margin-bottom: 24px;
+        }
+        .offer-badge svg { width: 16px; height: 16px; flex-shrink: 0; }
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -93,11 +130,28 @@
 </head>
 <body>
     <div class="card">
+        @if($festivalName && $originalPrice > 0)
+            <div class="offer-ribbon">OFFER</div>
+        @endif
         <div class="logo">Vivah Matrimony</div>
         <div class="subtitle">Secure wallet recharge</div>
 
-        <div class="amount-display">₹{{ number_format($amount / 100, 0) }}</div>
+        @if($festivalName && $originalPrice > 0)
+            <div class="original-amount">₹{{ number_format($originalPrice, 0) }}</div>
+            <div class="amount-display has-discount">₹{{ number_format($amount / 100, 0) }}</div>
+        @else
+            <div class="amount-display">₹{{ number_format($amount / 100, 0) }}</div>
+        @endif
         <div class="amount-label">{{ $type === 'contact_unlock' ? 'Contact Unlock' : 'Wallet Recharge' }}</div>
+
+        @if($festivalName && $originalPrice > 0)
+            <div class="offer-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+                {{ $festivalName }} Offer — Save ₹{{ number_format($originalPrice - ($amount / 100), 0) }}
+            </div>
+        @endif
 
         <div class="info-row">
             <span class="info-label">Order ID</span>
@@ -183,7 +237,12 @@
                 if (data.success) {
                     setStatus('Payment successful! Redirecting...', 'success');
                     setTimeout(function() {
+                        // Try deep link to open the app
                         window.location.href = 'yourapp://wallet/success';
+                        // Fallback: redirect to web success page after 2s
+                        setTimeout(function() {
+                            window.location.href = API_BASE.replace('/api', '') + '/payment/success?type=' + TYPE;
+                        }, 2000);
                     }, 1500);
                 } else {
                     setStatus(data.message || 'Payment verification failed', 'error');
