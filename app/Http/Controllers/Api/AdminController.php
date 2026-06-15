@@ -1809,6 +1809,8 @@ class AdminController extends Controller
                     ->where('status', 'rejected')
                     ->where('created_at', '<', $v->created_at)
                     ->exists();
+                $wallet = Wallet::where('user_id', $v->user_id)->first();
+                $v->wallet_balance = $wallet ? (float) $wallet->balance : 0;
                 return $v;
             });
 
