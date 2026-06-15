@@ -15,6 +15,9 @@ class Transaction extends Model
         'amount',
         'status',
         'description',
+        'follow_up_status',
+        'follow_up_response',
+        'follow_up_contacted_at',
         'created_at',
         'updated_at'
     ];

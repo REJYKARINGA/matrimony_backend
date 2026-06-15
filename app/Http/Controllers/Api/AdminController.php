@@ -1600,6 +1600,37 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * Update follow-up status for a transaction
+     */
+    public function updateFollowUp(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'follow_up_status' => 'required|in:not_contacted,reached_out,payment_done,not_interested,follow_up_later,wrong_number,no_response',
+                'follow_up_response' => 'nullable|string|max:1000',
+            ]);
+
+            $transaction = Transaction::findOrFail($id);
+            $transaction->update([
+                'follow_up_status' => $request->follow_up_status,
+                'follow_up_response' => $request->follow_up_response,
+                'follow_up_contacted_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Follow-up updated',
+                'transaction' => $transaction->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to update follow-up',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     // ==========================================
     // Interest & Hobby Management
     // ==========================================
