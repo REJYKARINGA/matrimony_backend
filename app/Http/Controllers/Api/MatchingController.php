@@ -32,8 +32,20 @@ class MatchingController extends Controller
             ->where('users.id', '!=', $user->id)
             ->whereHas('userProfile', function ($q) {
                 $q->where('is_profile_active', true);
-            })
-            ->whereDoesntHave('blockedBy', function($q) use ($user) {
+            });
+
+        // Only show opposite gender profiles
+        $userProfile = $user->userProfile;
+        if ($userProfile && $userProfile->gender) {
+            $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+            if ($oppositeGender) {
+                $query->whereHas('userProfile', function ($q) use ($oppositeGender) {
+                    $q->where('gender', $oppositeGender);
+                });
+            }
+        }
+
+        $query->whereDoesntHave('blockedBy', function($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->whereDoesntHave('photoRequestsReceived', function($q) use ($user) {

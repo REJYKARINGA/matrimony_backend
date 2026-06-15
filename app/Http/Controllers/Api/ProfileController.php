@@ -795,6 +795,16 @@ class ProfileController extends Controller
                 $q->where('is_profile_active', true);
             });
 
+        // Only show opposite gender profiles
+        $userProfile = $user->userProfile;
+        if ($userProfile && $userProfile->gender) {
+            $oppositeGender = $userProfile->gender === 'male' ? 'female' : ($userProfile->gender === 'female' ? 'male' : null);
+            if ($oppositeGender) {
+                $query->whereHas('userProfile', function ($q) use ($oppositeGender) {
+                    $q->where('gender', $oppositeGender);
+                });
+            }
+        }
 
         // Apply preferences filter if available
         if ($preferences) {
