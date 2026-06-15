@@ -1625,7 +1625,7 @@ class AdminController extends Controller
         try {
             $request->validate([
                 'user_id' => 'required|exists:users,id',
-                'follow_up_status' => 'required|in:not_contacted,reached_out,payment_done,not_interested,follow_up_later,wrong_number,no_response',
+                'follow_up_status' => 'required|in:not_contacted,reached_out,payment_done,another_payment_done,not_interested,follow_up_later,wrong_number,no_response',
                 'follow_up_response' => 'nullable|string|max:1000',
             ]);
 
