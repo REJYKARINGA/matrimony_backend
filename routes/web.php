@@ -19,6 +19,27 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Web payment page for wallet recharge (opened from app via browser)
+Route::get('/recharge', function (\Illuminate\Http\Request $request) {
+    $orderId = $request->query('order_id');
+    $amount = $request->query('amount');
+    $type = $request->query('type', 'wallet_recharge');
+    $token = $request->query('token');
+    $transactionId = $request->query('transaction_id');
+    $unlockedUserId = $request->query('unlocked_user_id');
+    $razorpayKey = env('RAZORPAY_KEY');
+    $apiBase = url('/api');
+
+    if (!$orderId || !$amount || !$token || !$transactionId) {
+        return response()->json(['error' => 'Missing required parameters'], 400);
+    }
+
+    return view('payment.recharge', compact(
+        'orderId', 'amount', 'type', 'token', 'transactionId',
+        'unlockedUserId', 'razorpayKey', 'apiBase'
+    ));
+});
+
 // Public profile view by matrimony ID
 Route::get('/profile/{matrimonyId}', function ($matrimonyId) {
     $user = \App\Models\User::where('matrimony_id', $matrimonyId)->with('userProfile')->first();
