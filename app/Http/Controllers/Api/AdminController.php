@@ -1591,6 +1591,12 @@ class AdminController extends Controller
 
                     // Latest follow-up across transactions
                     $latestFollowUp = $txs->sortByDesc('follow_up_contacted_at')->first();
+                    $latestStatus = $latestFollowUp?->follow_up_status ?? 'not_contacted';
+
+                    // Skip user if already resolved (payment done)
+                    if (in_array($latestStatus, ['payment_done', 'another_payment_done'])) {
+                        return null;
+                    }
 
                     return [
                         'user' => $user,
@@ -1602,11 +1608,16 @@ class AdminController extends Controller
                         'total_failed_amount' => (float) $txs->where('status', 'failed')->sum('amount'),
                         'pending_count' => $txs->where('status', 'pending')->count(),
                         'failed_count' => $txs->where('status', 'failed')->count(),
-                        'follow_up_status' => $latestFollowUp?->follow_up_status ?? 'not_contacted',
+                        'follow_up_status' => $latestStatus,
                         'follow_up_response' => $latestFollowUp?->follow_up_response,
                         'transactions' => $txs,
                     ];
                 });
+
+            // Remove null entries (resolved users)
+            $users->setCollection(
+                $users->getCollection()->filter()->values()
+            );
 
             return response()->json($users);
         } catch (\Exception $e) {
