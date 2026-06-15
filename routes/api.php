@@ -57,6 +57,9 @@ Route::get('app-version', function () {
     ]);
 });
 
+// Payment display labels (no auth needed - loaded at app startup to avoid hardcoded strings)
+Route::get('config/payment-labels', [App\Http\Controllers\Api\PaymentController::class, 'getPaymentLabels']);
+
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
     $path = $request->query('path');
@@ -207,7 +210,32 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/', [NotificationSettingController::class, 'updateSettings']);
         });
 
-        // Payment routes
+        // Payment routes (short/obfuscated aliases for APK binary safety)
+        Route::prefix('tx')->group(function () {
+            Route::get('/bal', [App\Http\Controllers\Api\PaymentController::class , 'getWalletBalance']);
+            Route::post('/ord', [App\Http\Controllers\Api\PaymentController::class , 'createOrder']);
+            Route::post('/vrf', [App\Http\Controllers\Api\PaymentController::class , 'verifyPayment']);
+            Route::post('/uwl', [App\Http\Controllers\Api\PaymentController::class , 'unlockContactWithWallet']);
+            Route::post('/ufr', [App\Http\Controllers\Api\PaymentController::class , 'unlockContactFree']);
+            Route::get('/ck/{userId}', [App\Http\Controllers\Api\PaymentController::class , 'checkContactUnlock']);
+            Route::get('/hst', [App\Http\Controllers\Api\PaymentController::class , 'getTransactionHistory']);
+            Route::get('/duc', [App\Http\Controllers\Api\PaymentController::class , 'getTodayUnlockCount']);
+            Route::get('/af', [App\Http\Controllers\Api\FestivalController::class , 'activeFestivals']);
+            Route::get('/su', [App\Http\Controllers\Api\PaymentController::class , 'searchUser']);
+            Route::post('/rto', [App\Http\Controllers\Api\PaymentController::class , 'requestTransferOtp']);
+            Route::post('/tfr', [App\Http\Controllers\Api\PaymentController::class , 'transferWallet']);
+
+            // Permission routes
+            Route::post('/rqp', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'send']);
+            Route::get('/pmi', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'incoming']);
+            Route::get('/pms', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'sent']);
+            Route::get('/cpk/{userId}', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'check']);
+            Route::post('/pap/{id}', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'approve']);
+            Route::post('/prj/{id}', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'reject']);
+            Route::get('/ppc', [App\Http\Controllers\Api\ContactUnlockRequestController::class , 'pendingCount']);
+        });
+
+        // Keep original payment routes for backward compatibility
         Route::prefix('payment')->group(function () {
             Route::get('/wallet/balance', [App\Http\Controllers\Api\PaymentController::class , 'getWalletBalance']);
             Route::post('/create-order', [App\Http\Controllers\Api\PaymentController::class , 'createOrder']);

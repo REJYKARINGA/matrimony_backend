@@ -170,4 +170,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
 
     // Photo Requests Monitoring
     Route::get('/photo-requests', [AdminController::class, 'getAllPhotoRequests']);
+
+    // Recharge Tiers
+    Route::get('/recharge-tiers', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'index']);
+    Route::post('/recharge-tiers', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'store']);
+    Route::put('/recharge-tiers/{id}', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'update']);
+    Route::delete('/recharge-tiers/{id}', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'destroy']);
+    Route::post('/recharge-tiers/reorder', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'reorder']);
+    Route::put('/recharge-tiers/{id}/toggle-active', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'toggleActive']);
 });

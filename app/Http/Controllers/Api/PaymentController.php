@@ -612,4 +612,72 @@ class PaymentController extends Controller
             'new_balance' => $senderWallet->fresh()->balance
         ]);
     }
+
+    public function getPaymentLabels(Request $request)
+    {
+        $setting = \App\Models\AdminSetting::first();
+
+        // Get price tiers from admin settings or defaults
+        $tiers = $setting
+            ? $setting->getRechargeTiers()
+            : [['amount' => 199, 'contacts' => 4], ['amount' => 499, 'contacts' => 10], ['amount' => 999, 'contacts' => 20]];
+
+        return response()->json([
+            'currency' => '₹',
+            'currency_code' => 'INR',
+            'wallet' => [
+                'title' => 'Wallet & Transactions',
+                'balance_label' => 'Available Balance',
+                'quick_recharge' => 'Quick Recharge',
+                'transaction_history' => 'Transaction History',
+                'transfer' => 'Transfer',
+                'no_transactions' => 'No transactions in this category',
+                'recharge' => 'Recharge',
+                'recharge_now' => 'Recharge Now',
+                'recharge_required' => 'Recharge Required',
+                'later' => 'Later',
+            ],
+            'unlock' => [
+                'title' => 'Unlock Contact',
+                'pay_now' => 'Pay Now',
+                'unlock_with_wallet' => 'Wallet',
+                'unlock_free' => 'Unlock Free',
+                'confirm_unlock' => 'Confirm & Unlock',
+                'insufficient_balance' => 'Insufficient Balance',
+                'wallet_label' => 'Wallet',
+                'ask_permission' => 'Ask Permission',
+                'unlocked' => 'Unlocked',
+                'permission_granted' => 'Permission Granted — You can now unlock via Wallet',
+                'permission_declined' => 'Permission Declined',
+                'permission_requested' => 'Permission Requested — Awaiting Reply',
+                'sending_request' => 'Sending Request...',
+                'view_contact' => 'View Contact Details',
+                'contact_info' => 'Contact Information',
+                'free_unlock_offer' => 'Free Unlock Offer',
+                'unlock_free_desc' => 'Unlock contacts for free during this promotional period.',
+                'verification_required' => 'Verification Required',
+                'daily_limit_reached' => 'Daily Limit Reached',
+                'confirm_unlock_desc' => 'Are you sure you want to unlock this contact?',
+            ],
+            'settings' => [
+                'wallet_title' => 'Wallet & Transactions',
+                'wallet_subtitle' => 'Recharge and view history',
+            ],
+            'pricing' => [
+                'tiers' => $tiers,
+                'daily_limit' => config('services.daily_unlock_limit', 20),
+            ],
+            'filters' => [
+                'all' => 'All',
+                'recharges' => 'Recharges',
+                'unlocks' => 'Unlocks',
+                'usage_fees' => 'Usage Fees',
+                'transfers' => 'Transfers',
+            ],
+            'permission_request' => [
+                'send' => 'Ask Permission',
+                'sent' => 'Sending Request...',
+            ],
+        ]);
+    }
 }

@@ -49,4 +49,16 @@ class AdminSetting extends Model
         $result = Festival::getBestActiveDiscount($basePrice, $gender);
         return $result['discounted_price'];
     }
+
+    public function getRechargeTiers(): array
+    {
+        return RechargeTier::where('is_active', true)
+            ->orderBy('priority_order')
+            ->get()
+            ->map(fn($tier) => [
+                'amount' => (int) $tier->amount,
+                'contacts' => $tier->contacts,
+            ])
+            ->toArray();
+    }
 }
