@@ -96,6 +96,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
 
     // Payment Verifications
     Route::post('/payment-verifications', [AdminController::class, 'storePaymentVerification']);
+    Route::put('/payment-verifications/{id}', [AdminController::class, 'updatePaymentVerification']);
     Route::get('/payment-verifications', [AdminController::class, 'getPaymentVerifications']);
     Route::post('/payment-verifications/{id}/verify', [AdminController::class, 'verifyPaymentVerification']);
     Route::post('/payment-verifications/{id}/reject', [AdminController::class, 'rejectPaymentVerification']);

@@ -1694,20 +1694,25 @@ class AdminController extends Controller
             $request->validate([
                 'user_id' => 'required|exists:users,id',
                 'amount' => 'required|numeric|min:1',
-                'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
+                'proof_image' => 'required_without:existing_proof|image|mimes:jpeg,png,jpg,gif|max:10240',
+                'existing_proof' => 'required_without:proof_image|string',
                 'notes' => 'nullable|string|max:2000',
                 'transaction_id' => 'nullable|exists:transactions,id',
             ]);
 
-            $image = $request->file('proof_image');
-            if (env('CLOUDINARY_URL')) {
-                $uploadResult = cloudinary()->uploadApi()->upload($image->getRealPath(), [
-                    'folder' => 'matrimony/payment_verifications',
-                ]);
-                $proofUrl = $uploadResult['secure_url'];
+            if ($request->hasFile('proof_image')) {
+                $image = $request->file('proof_image');
+                if (env('CLOUDINARY_URL')) {
+                    $uploadResult = cloudinary()->uploadApi()->upload($image->getRealPath(), [
+                        'folder' => 'matrimony/payment_verifications',
+                    ]);
+                    $proofUrl = $uploadResult['secure_url'];
+                } else {
+                    $path = $image->store('payment_verifications', 'public');
+                    $proofUrl = '/storage/' . $path;
+                }
             } else {
-                $path = $image->store('payment_verifications', 'public');
-                $proofUrl = '/storage/' . $path;
+                $proofUrl = $request->existing_proof;
             }
 
             $verification = PaymentVerification::create([
@@ -1727,6 +1732,51 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to submit verification',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updatePaymentVerification(Request $request, $id)
+    {
+        try {
+            $verification = PaymentVerification::findOrFail($id);
+
+            $request->validate([
+                'amount' => 'required|numeric|min:1',
+                'proof_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
+                'notes' => 'nullable|string|max:2000',
+            ]);
+
+            $data = [
+                'amount' => $request->amount,
+                'notes' => $request->notes,
+                'status' => 'pending',
+            ];
+
+            if ($request->hasFile('proof_image')) {
+                $image = $request->file('proof_image');
+                if (env('CLOUDINARY_URL')) {
+                    $uploadResult = cloudinary()->uploadApi()->upload($image->getRealPath(), [
+                        'folder' => 'matrimony/payment_verifications',
+                    ]);
+                    $data['proof_image'] = $uploadResult['secure_url'];
+                } else {
+                    $path = $image->store('payment_verifications', 'public');
+                    $data['proof_image'] = '/storage/' . $path;
+                }
+            }
+
+            $verification->update($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verification updated',
+                'data' => $verification->fresh()->load('user.userProfile'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to update verification',
                 'message' => $e->getMessage(),
             ], 500);
         }
