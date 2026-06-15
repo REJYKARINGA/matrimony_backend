@@ -1518,80 +1518,97 @@ class AdminController extends Controller
     public function getAbandonedPayments(Request $request)
     {
         try {
-            $status = $request->status; // 'pending', 'failed', or null for both
+            $status = $request->status;
             $search = $request->search;
 
-            $query = Transaction::with([
-                'user.userProfile.religionModel',
-                'user.userProfile.casteModel',
-                'user.userProfile.subCasteModel',
-                'user.userProfile.educationModel',
-                'user.userProfile.occupationModel'
-            ])
-                ->leftJoin('users', 'transactions.user_id', '=', 'users.id')
+            $txQuery = Transaction::leftJoin('users', 'transactions.user_id', '=', 'users.id')
                 ->where(function($q) {
                     $q->whereNull('users.role')
                       ->orWhere('users.role', '!=', 'admin');
                 });
 
-            // Filter by status
             if ($status && in_array($status, ['pending', 'failed'])) {
-                $query->where('transactions.status', $status);
+                $txQuery->where('transactions.status', $status);
             } else {
-                $query->whereIn('transactions.status', ['pending', 'failed']);
+                $txQuery->whereIn('transactions.status', ['pending', 'failed']);
             }
 
-            // Search
+            // Get distinct user IDs matching the criteria
+            $userIdsQuery = (clone $txQuery)
+                ->select('transactions.user_id')
+                ->distinct()
+                ->pluck('user_id');
+
+            $userQuery = User::with([
+                'userProfile.religionModel',
+                'userProfile.casteModel',
+                'userProfile.subCasteModel',
+                'userProfile.educationModel',
+                'userProfile.occupationModel'
+            ])->whereIn('id', $userIdsQuery);
+
             if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('transactions.type', 'like', "%{$search}%")
-                        ->orWhere('transactions.amount', 'like', "%{$search}%")
-                        ->orWhereHas('user.userProfile', function ($subQuery) use ($search) {
-                            $subQuery->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas('user', function ($subQuery) use ($search) {
-                            $subQuery->where('email', 'like', "%{$search}%")
-                                ->orWhere('phone', 'like', "%{$search}%")
-                                ->orWhere('matrimony_id', 'like', "%{$search}%");
-                        });
+                $userQuery->where(function ($q) use ($search) {
+                    $q->whereHas('userProfile', function ($sq) use ($search) {
+                        $sq->where('first_name', 'like', "%{$search}%")
+                           ->orWhere('last_name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('matrimony_id', 'like', "%{$search}%");
                 });
             }
 
-            $transactions = $query->select('transactions.*', 'users.phone as user_phone', 'users.email as user_email')
-                ->orderBy('transactions.created_at', 'desc')
-                ->paginate(20);
+            $users = $userQuery->orderBy('last_active_at', 'desc')
+                ->paginate(15)
+                ->through(function ($user) use ($status) {
+                    // All abandoned transactions for this user
+                    $txs = Transaction::where('user_id', $user->id)
+                        ->whereIn('status', $status && in_array($status, ['pending', 'failed']) ? [$status] : ['pending', 'failed'])
+                        ->orderBy('created_at', 'desc')
+                        ->get()
+                        ->map(function ($tx) {
+                            if ($tx->type === 'contact_unlock' && preg_match('/#(\d+)$/', $tx->description, $m)) {
+                                $targetUser = User::with('userProfile')->find((int) $m[1]);
+                                if ($targetUser) {
+                                    $tx->target_user = [
+                                        'id' => $targetUser->id,
+                                        'matrimony_id' => $targetUser->matrimony_id,
+                                        'name' => $targetUser->userProfile
+                                            ? trim(($targetUser->userProfile->first_name ?? '') . ' ' . ($targetUser->userProfile->last_name ?? ''))
+                                            : $targetUser->name,
+                                    ];
+                                }
+                            }
+                            return $tx;
+                        });
 
-            // Enrich with wallet balance, last successful payment, and target user info
-            $transactions->getCollection()->transform(function ($tx) {
-                // Wallet balance
-                $wallet = Wallet::where('user_id', $tx->user_id)->first();
-                $tx->wallet_balance = $wallet ? (float) $wallet->balance : 0;
+                    $wallet = Wallet::where('user_id', $user->id)->first();
+                    $lastSuccess = Transaction::where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->orderBy('created_at', 'desc')
+                        ->first();
 
-                // Last successful payment
-                $lastSuccess = Transaction::where('user_id', $tx->user_id)
-                    ->where('status', 'success')
-                    ->orderBy('created_at', 'desc')
-                    ->first();
-                $tx->last_success_payment_at = $lastSuccess ? $lastSuccess->created_at : null;
+                    // Latest follow-up across transactions
+                    $latestFollowUp = $txs->sortByDesc('follow_up_contacted_at')->first();
 
-                // Target user info for contact_unlock
-                if ($tx->type === 'contact_unlock' && preg_match('/#(\d+)$/', $tx->description, $m)) {
-                    $targetUser = User::with('userProfile')->find((int) $m[1]);
-                    if ($targetUser) {
-                        $tx->target_user = [
-                            'id' => $targetUser->id,
-                            'matrimony_id' => $targetUser->matrimony_id,
-                            'name' => $targetUser->userProfile
-                                ? trim(($targetUser->userProfile->first_name ?? '') . ' ' . ($targetUser->userProfile->last_name ?? ''))
-                                : $targetUser->name,
-                        ];
-                    }
-                }
-                return $tx;
-            });
+                    return [
+                        'user' => $user,
+                        'user_phone' => $user->phone,
+                        'user_email' => $user->email,
+                        'wallet_balance' => $wallet ? (float) $wallet->balance : 0,
+                        'last_success_payment_at' => $lastSuccess ? $lastSuccess->created_at : null,
+                        'total_pending_amount' => (float) $txs->where('status', 'pending')->sum('amount'),
+                        'total_failed_amount' => (float) $txs->where('status', 'failed')->sum('amount'),
+                        'pending_count' => $txs->where('status', 'pending')->count(),
+                        'failed_count' => $txs->where('status', 'failed')->count(),
+                        'follow_up_status' => $latestFollowUp?->follow_up_status ?? 'not_contacted',
+                        'follow_up_response' => $latestFollowUp?->follow_up_response,
+                        'transactions' => $txs,
+                    ];
+                });
 
-            return response()->json($transactions);
+            return response()->json($users);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch abandoned payments',
