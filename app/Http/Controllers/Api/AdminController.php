@@ -1618,27 +1618,29 @@ class AdminController extends Controller
     }
 
     /**
-     * Update follow-up status for a transaction
+     * Update follow-up status for all pending/failed transactions of a user
      */
-    public function updateFollowUp(Request $request, $id)
+    public function updateFollowUp(Request $request)
     {
         try {
             $request->validate([
+                'user_id' => 'required|exists:users,id',
                 'follow_up_status' => 'required|in:not_contacted,reached_out,payment_done,not_interested,follow_up_later,wrong_number,no_response',
                 'follow_up_response' => 'nullable|string|max:1000',
             ]);
 
-            $transaction = Transaction::findOrFail($id);
-            $transaction->update([
-                'follow_up_status' => $request->follow_up_status,
-                'follow_up_response' => $request->follow_up_response,
-                'follow_up_contacted_at' => now(),
-            ]);
+            $updated = Transaction::where('user_id', $request->user_id)
+                ->whereIn('status', ['pending', 'failed'])
+                ->update([
+                    'follow_up_status' => $request->follow_up_status,
+                    'follow_up_response' => $request->follow_up_response,
+                    'follow_up_contacted_at' => now(),
+                ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Follow-up updated',
-                'transaction' => $transaction->fresh(),
+                'message' => "Follow-up updated for {$updated} transaction(s)",
+                'updated_count' => $updated,
             ]);
         } catch (\Exception $e) {
             return response()->json([
