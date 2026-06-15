@@ -1562,6 +1562,35 @@ class AdminController extends Controller
                 ->orderBy('transactions.created_at', 'desc')
                 ->paginate(20);
 
+            // Enrich with wallet balance, last successful payment, and target user info
+            $transactions->getCollection()->transform(function ($tx) {
+                // Wallet balance
+                $wallet = Wallet::where('user_id', $tx->user_id)->first();
+                $tx->wallet_balance = $wallet ? (float) $wallet->balance : 0;
+
+                // Last successful payment
+                $lastSuccess = Transaction::where('user_id', $tx->user_id)
+                    ->where('status', 'success')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                $tx->last_success_payment_at = $lastSuccess ? $lastSuccess->created_at : null;
+
+                // Target user info for contact_unlock
+                if ($tx->type === 'contact_unlock' && preg_match('/#(\d+)$/', $tx->description, $m)) {
+                    $targetUser = User::with('userProfile')->find((int) $m[1]);
+                    if ($targetUser) {
+                        $tx->target_user = [
+                            'id' => $targetUser->id,
+                            'matrimony_id' => $targetUser->matrimony_id,
+                            'name' => $targetUser->userProfile
+                                ? trim(($targetUser->userProfile->first_name ?? '') . ' ' . ($targetUser->userProfile->last_name ?? ''))
+                                : $targetUser->name,
+                        ];
+                    }
+                }
+                return $tx;
+            });
+
             return response()->json($transactions);
         } catch (\Exception $e) {
             return response()->json([
