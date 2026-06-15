@@ -617,9 +617,18 @@ class PaymentController extends Controller
     {
         $setting = \App\Models\AdminSetting::first();
 
-        // Get price tiers from admin settings or defaults
-        $tiers = $setting
-            ? $setting->getRechargeTiers()
+        // Get price tiers from DB directly
+        $dbTiers = \App\Models\RechargeTier::where('is_active', true)
+            ->orderBy('priority_order')
+            ->get()
+            ->map(fn($tier) => [
+                'amount' => (int) $tier->amount,
+                'contacts' => $tier->contacts,
+            ])
+            ->toArray();
+
+        $tiers = count($dbTiers) > 0
+            ? $dbTiers
             : [['amount' => 199, 'contacts' => 4], ['amount' => 499, 'contacts' => 10], ['amount' => 999, 'contacts' => 20]];
 
         return response()->json([

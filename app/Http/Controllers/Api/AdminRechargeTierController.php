@@ -20,6 +20,7 @@ class AdminRechargeTierController extends Controller
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:0',
             'contacts' => 'required|integer|min:1',
+            'priority_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -27,12 +28,17 @@ class AdminRechargeTierController extends Controller
             return response()->json(['error' => 'Validation failed', 'messages' => $validator->errors()], 422);
         }
 
-        $maxPriority = RechargeTier::max('priority_order') ?? 0;
+        if ($request->has('priority_order') && $request->priority_order !== '' && $request->priority_order !== null) {
+            $priority = (int) $request->priority_order;
+            RechargeTier::where('priority_order', '>=', $priority)->increment('priority_order');
+        } else {
+            $priority = (RechargeTier::max('priority_order') ?? -1) + 1;
+        }
 
         $tier = RechargeTier::create([
             'amount' => $request->amount,
             'contacts' => $request->contacts,
-            'priority_order' => $maxPriority + 1,
+            'priority_order' => $priority,
             'is_active' => $request->is_active ?? true,
         ]);
 
@@ -49,6 +55,7 @@ class AdminRechargeTierController extends Controller
         $validator = Validator::make($request->all(), [
             'amount' => 'sometimes|numeric|min:0',
             'contacts' => 'sometimes|integer|min:1',
+            'priority_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 
@@ -56,7 +63,7 @@ class AdminRechargeTierController extends Controller
             return response()->json(['error' => 'Validation failed', 'messages' => $validator->errors()], 422);
         }
 
-        $tier->update($request->only(['amount', 'contacts', 'is_active']));
+        $tier->update($request->only(['amount', 'contacts', 'priority_order', 'is_active']));
 
         return response()->json(['message' => 'Tier updated', 'tier' => $tier]);
     }
