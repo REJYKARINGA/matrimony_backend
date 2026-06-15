@@ -235,15 +235,11 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    setStatus('Payment successful! Redirecting...', 'success');
+                    setStatus('Payment successful!', 'success');
+                    // Redirect to success page — user can choose to open app from there
                     setTimeout(function() {
-                        // Try deep link to open the app
-                        window.location.href = 'yourapp://wallet/success';
-                        // Fallback: redirect to web success page after 2s
-                        setTimeout(function() {
-                            window.location.href = API_BASE.replace('/api', '') + '/payment/success?type=' + TYPE;
-                        }, 2000);
-                    }, 1500);
+                        window.location.href = API_BASE.replace('/api', '') + '/payment/success?type=' + TYPE;
+                    }, 1200);
                 } else {
                     setStatus(data.message || 'Payment verification failed', 'error');
                     document.getElementById('payBtn').disabled = false;
