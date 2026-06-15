@@ -1583,6 +1583,20 @@ class AdminController extends Controller
                             return $tx;
                         });
 
+                    if ($txs->isEmpty()) {
+                        return null;
+                    }
+
+                    // If the user has any success transaction newer than the oldest pending/failed, skip them
+                    $oldestPendingDate = $txs->min('created_at');
+                    $newerSuccessExists = Transaction::where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->where('created_at', '>=', $oldestPendingDate)
+                        ->exists();
+                    if ($newerSuccessExists) {
+                        return null;
+                    }
+
                     $wallet = Wallet::where('user_id', $user->id)->first();
                     $lastSuccess = Transaction::where('user_id', $user->id)
                         ->where('status', 'success')
