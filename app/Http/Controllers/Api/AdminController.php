@@ -1634,6 +1634,7 @@ class AdminController extends Controller
                             'status' => $paymentVerification->status,
                             'amount' => (float) $paymentVerification->amount,
                             'proof_image' => $paymentVerification->proof_image,
+                            'notes' => $paymentVerification->notes,
                             'created_at' => $paymentVerification->created_at,
                         ] : null,
                         'transactions' => $txs,
