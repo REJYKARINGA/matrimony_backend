@@ -1804,6 +1804,14 @@ class AdminController extends Controller
             $perPage = $request->per_page ?? 20;
             $verifications = $query->paginate($perPage);
 
+            $verifications->getCollection()->transform(function ($v) {
+                $v->is_reinitiated = PaymentVerification::where('user_id', $v->user_id)
+                    ->where('status', 'rejected')
+                    ->where('created_at', '<', $v->created_at)
+                    ->exists();
+                return $v;
+            });
+
             return response()->json($verifications);
         } catch (\Exception $e) {
             return response()->json([
