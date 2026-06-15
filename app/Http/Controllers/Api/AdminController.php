@@ -12,6 +12,7 @@ use App\Models\Preference;
 use App\Models\Education;
 use App\Models\Occupation;
 use App\Models\Transaction;
+use App\Models\PaymentVerification;
 use App\Models\Wallet;
 use App\Models\Notification;
 use App\Models\Religion;
@@ -1670,6 +1671,180 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to update follow-up',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function storePaymentVerification(Request $request)
+    {
+        try {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'amount' => 'required|numeric|min:1',
+                'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
+                'notes' => 'nullable|string|max:2000',
+                'transaction_id' => 'nullable|exists:transactions,id',
+            ]);
+
+            $image = $request->file('proof_image');
+            if (env('CLOUDINARY_URL')) {
+                $uploadResult = cloudinary()->uploadApi()->upload($image->getRealPath(), [
+                    'folder' => 'matrimony/payment_verifications',
+                ]);
+                $proofUrl = $uploadResult['secure_url'];
+            } else {
+                $path = $image->store('payment_verifications', 'public');
+                $proofUrl = '/storage/' . $path;
+            }
+
+            $verification = PaymentVerification::create([
+                'user_id' => $request->user_id,
+                'transaction_id' => $request->transaction_id,
+                'amount' => $request->amount,
+                'proof_image' => $proofUrl,
+                'notes' => $request->notes,
+                'status' => 'pending',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verification request submitted',
+                'data' => $verification->load('user.userProfile'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to submit verification',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getPaymentVerifications(Request $request)
+    {
+        try {
+            $query = PaymentVerification::with(['user.userProfile', 'transaction', 'verifier.userProfile'])
+                ->orderBy('created_at', 'desc');
+
+            if ($request->has('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
+            $perPage = $request->per_page ?? 20;
+            $verifications = $query->paginate($perPage);
+
+            return response()->json($verifications);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch verifications',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function verifyPaymentVerification($id)
+    {
+        try {
+            $verification = PaymentVerification::findOrFail($id);
+
+            if ($verification->status !== 'pending') {
+                return response()->json([
+                    'error' => 'Verification already ' . $verification->status,
+                ], 400);
+            }
+
+            \DB::beginTransaction();
+
+            $wallet = Wallet::firstOrCreate(['user_id' => $verification->user_id]);
+            $wallet->increment('balance', (float) $verification->amount);
+
+            $transaction = Transaction::create([
+                'user_id' => $verification->user_id,
+                'type' => 'wallet_recharge',
+                'amount' => $verification->amount,
+                'status' => 'success',
+                'description' => 'Manual wallet credit via payment verification',
+            ]);
+
+            $verification->update([
+                'status' => 'verified',
+                'verified_by' => auth()->id(),
+                'verified_at' => now(),
+            ]);
+
+            \App\Models\Notification::create([
+                'user_id' => $verification->user_id,
+                'sender_id' => auth()->id(),
+                'type' => 'wallet_credited',
+                'title' => 'Wallet Credited',
+                'message' => "₹{$verification->amount} has been credited to your wallet after payment verification.",
+                'reference_id' => $transaction->id,
+            ]);
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verified and wallet credited with ₹' . $verification->amount,
+                'data' => $verification->fresh()->load(['user.userProfile', 'verifier.userProfile']),
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'error' => 'Failed to verify payment',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function rejectPaymentVerification(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string|max:2000',
+            ]);
+
+            $verification = PaymentVerification::findOrFail($id);
+
+            if ($verification->status !== 'pending') {
+                return response()->json([
+                    'error' => 'Verification already ' . $verification->status,
+                ], 400);
+            }
+
+            $verification->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+                'verified_by' => auth()->id(),
+                'verified_at' => now(),
+            ]);
+
+            \App\Models\Notification::create([
+                'user_id' => $verification->user_id,
+                'sender_id' => auth()->id(),
+                'type' => 'payment_rejected',
+                'title' => 'Payment Verification Rejected',
+                'message' => "Your payment verification of ₹{$verification->amount} was rejected. Reason: {$request->rejection_reason}",
+                'reference_id' => $verification->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verification rejected',
+                'data' => $verification->fresh()->load(['user.userProfile', 'verifier.userProfile']),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to reject verification',
                 'message' => $e->getMessage(),
             ], 500);
         }

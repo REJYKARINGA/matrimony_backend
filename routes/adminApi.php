@@ -94,6 +94,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::get('/wallet/abandoned', [AdminController::class, 'getAbandonedPayments']);
     Route::put('/wallet/abandoned/follow-up', [AdminController::class, 'updateFollowUp']);
 
+    // Payment Verifications
+    Route::post('/payment-verifications', [AdminController::class, 'storePaymentVerification']);
+    Route::get('/payment-verifications', [AdminController::class, 'getPaymentVerifications']);
+    Route::post('/payment-verifications/{id}/verify', [AdminController::class, 'verifyPaymentVerification']);
+    Route::post('/payment-verifications/{id}/reject', [AdminController::class, 'rejectPaymentVerification']);
+
     // Admin Settings
     Route::get('/admin-settings', [AdminSettingController::class, 'index']);
     Route::put('/admin-settings', [AdminSettingController::class, 'update']);
