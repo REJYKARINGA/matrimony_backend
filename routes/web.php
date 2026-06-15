@@ -19,6 +19,27 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Public profile view by matrimony ID
+Route::get('/profile/{matrimonyId}', function ($matrimonyId) {
+    $user = \App\Models\User::where('matrimony_id', $matrimonyId)->with('userProfile')->first();
+    if (!$user || !$user->userProfile) {
+        return response()->json(['error' => 'Profile not found'], 404);
+    }
+    $profile = $user->userProfile;
+    return response()->json([
+        'id' => $user->matrimony_id,
+        'name' => trim("{$profile->first_name} {$profile->last_name}"),
+        'age' => $profile->date_of_birth ? \Carbon\Carbon::parse($profile->date_of_birth)->age : null,
+        'gender' => $profile->gender,
+        'city' => $profile->city,
+        'state' => $profile->state,
+        'religion' => $profile->religionModel?->name,
+        'caste' => $profile->casteModel?->name,
+        'education' => $profile->educationModel?->name,
+        'occupation' => $profile->occupationModel?->name,
+    ]);
+});
+
 // Test email route - Remove this in production
 Route::middleware('throttle:2,2')->get('/test-email', function () {
     try {
