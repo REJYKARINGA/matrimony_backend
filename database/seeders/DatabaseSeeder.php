@@ -24,5 +24,6 @@ class DatabaseSeeder extends Seeder
         $this->call(LocationSeeder::class);
         $this->call(InterestsHobbiesSeeder::class);
         $this->call(PersonalitySeeder::class);
+        $this->call(RechargeTierSeeder::class);
     }
 }
