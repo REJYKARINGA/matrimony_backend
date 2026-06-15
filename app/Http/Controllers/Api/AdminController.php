@@ -1613,6 +1613,10 @@ class AdminController extends Controller
                         return null;
                     }
 
+                    $paymentVerification = PaymentVerification::where('user_id', $user->id)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+
                     return [
                         'user' => $user,
                         'user_phone' => $user->phone,
@@ -1625,6 +1629,13 @@ class AdminController extends Controller
                         'failed_count' => $txs->where('status', 'failed')->count(),
                         'follow_up_status' => $latestStatus,
                         'follow_up_response' => $latestFollowUp?->follow_up_response,
+                        'payment_verification' => $paymentVerification ? [
+                            'id' => $paymentVerification->id,
+                            'status' => $paymentVerification->status,
+                            'amount' => (float) $paymentVerification->amount,
+                            'proof_image' => $paymentVerification->proof_image,
+                            'created_at' => $paymentVerification->created_at,
+                        ] : null,
                         'transactions' => $txs,
                     ];
                 });
