@@ -73,6 +73,17 @@ class PaymentController extends Controller
                     'message' => 'Free unlock is active. Use the free unlock option instead.',
                 ]);
             }
+
+            // If already successfully unlocked, just refresh
+            $alreadyUnlocked = ContactUnlock::where('user_id', $user->id)
+                ->where('unlocked_user_id', $request->unlocked_user_id)
+                ->exists();
+            if ($alreadyUnlocked) {
+                return response()->json([
+                    'already_unlocked' => true,
+                    'message' => 'Contact already unlocked.',
+                ]);
+            }
         }
 
         $amount = $request->amount * 100; // Convert to paise
