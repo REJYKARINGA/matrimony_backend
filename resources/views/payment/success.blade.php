@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Payment Successful - Vivah Matrimony</title>
+    <title>Payment Successful - Nikkah Match</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -227,7 +227,7 @@
             </button>
         </div>
 
-        <div class="secure-badge">Vivah Matrimony</div>
+        <div class="secure-badge">Nikkah Match</div>
     </div>
 
     <!-- Custom Modal -->
@@ -238,7 +238,7 @@
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
             </div>
-            <div class="modal-title">Open in Vivah Matrimony?</div>
+            <div class="modal-title">Open in Nikkah Match?</div>
             <div class="modal-desc">
                 You'll be taken to the app where your updated balance will be reflected.
             </div>

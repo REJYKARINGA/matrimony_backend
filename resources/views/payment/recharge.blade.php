@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Wallet Recharge - Vivah Matrimony</title>
+    <title>Wallet Recharge - Nikkah Match</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -133,7 +133,7 @@
         @if($festivalName && $originalPrice > 0)
             <div class="offer-ribbon">OFFER</div>
         @endif
-        <div class="logo">Vivah Matrimony</div>
+        <div class="logo">Nikkah Match</div>
         <div class="subtitle">Secure wallet recharge</div>
 
         @if($festivalName && $originalPrice > 0)
@@ -197,7 +197,7 @@
                 key: RAZORPAY_KEY,
                 amount: AMOUNT,
                 currency: 'INR',
-                name: 'Vivah Matrimony',
+                name: 'Nikkah Match',
                 description: description,
                 order_id: ORDER_ID,
                 theme: { color: '#00C897' },
