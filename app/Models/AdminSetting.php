@@ -16,6 +16,9 @@ class AdminSetting extends Model
         'mandatory_permission_for_unlock',
         'free_unlock_enabled',
         'free_unlock_expires_at',
+        'wallet_is_active',
+        'wallet_in_maintenance_ios',
+        'wallet_in_maintenance_android',
     ];
 
     protected $casts = [
@@ -25,6 +28,9 @@ class AdminSetting extends Model
         'mandatory_permission_for_unlock' => 'boolean',
         'free_unlock_enabled' => 'boolean',
         'free_unlock_expires_at' => 'datetime',
+        'wallet_is_active' => 'boolean',
+        'wallet_in_maintenance_ios' => 'boolean',
+        'wallet_in_maintenance_android' => 'boolean',
     ];
 
     public function isFreeUnlockActive(): bool

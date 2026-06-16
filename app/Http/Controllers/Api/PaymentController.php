@@ -675,6 +675,9 @@ class PaymentController extends Controller
             'pricing' => [
                 'tiers' => $tiers,
                 'daily_limit' => config('services.daily_unlock_limit', 20),
+                'wallet_is_active' => $setting ? (bool) $setting->wallet_is_active : true,
+                'wallet_in_maintenance_ios' => $setting ? (bool) $setting->wallet_in_maintenance_ios : false,
+                'wallet_in_maintenance_android' => $setting ? (bool) $setting->wallet_in_maintenance_android : false,
             ],
             'filters' => [
                 'all' => 'All',

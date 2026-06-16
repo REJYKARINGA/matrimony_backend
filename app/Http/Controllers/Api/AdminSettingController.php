@@ -20,6 +20,9 @@ class AdminSettingController extends Controller
                 'mandatory_permission_for_unlock' => false,
                 'free_unlock_enabled' => false,
                 'free_unlock_expires_at' => null,
+                'wallet_is_active' => true,
+                'wallet_in_maintenance_ios' => false,
+                'wallet_in_maintenance_android' => false,
             ]);
         }
         return response()->json(['setting' => $setting]);
@@ -34,6 +37,9 @@ class AdminSettingController extends Controller
             'mandatory_permission_for_unlock' => 'sometimes|boolean',
             'free_unlock_enabled' => 'sometimes|boolean',
             'free_unlock_expires_at' => 'nullable|date',
+            'wallet_is_active' => 'sometimes|boolean',
+            'wallet_in_maintenance_ios' => 'sometimes|boolean',
+            'wallet_in_maintenance_android' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -49,6 +55,9 @@ class AdminSettingController extends Controller
                 'mandatory_permission_for_unlock',
                 'free_unlock_enabled',
                 'free_unlock_expires_at',
+                'wallet_is_active',
+                'wallet_in_maintenance_ios',
+                'wallet_in_maintenance_android',
             ]));
         } else {
             $setting->update($request->only([
@@ -58,6 +67,9 @@ class AdminSettingController extends Controller
                 'mandatory_permission_for_unlock',
                 'free_unlock_enabled',
                 'free_unlock_expires_at',
+                'wallet_is_active',
+                'wallet_in_maintenance_ios',
+                'wallet_in_maintenance_android',
             ]));
         }
 
