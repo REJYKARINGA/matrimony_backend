@@ -23,6 +23,10 @@ class AdminSettingController extends Controller
                 'wallet_is_active' => true,
                 'wallet_in_maintenance_ios' => false,
                 'wallet_in_maintenance_android' => false,
+                'review_enabled' => true,
+                'review_unlock_threshold' => 10,
+                'review_min_days_between' => 90,
+                'review_max_prompts' => 3,
             ]);
         }
         return response()->json(['setting' => $setting]);
@@ -40,37 +44,37 @@ class AdminSettingController extends Controller
             'wallet_is_active' => 'sometimes|boolean',
             'wallet_in_maintenance_ios' => 'sometimes|boolean',
             'wallet_in_maintenance_android' => 'sometimes|boolean',
+            'review_enabled' => 'sometimes|boolean',
+            'review_unlock_threshold' => 'sometimes|integer|min:1',
+            'review_min_days_between' => 'sometimes|integer|min:0',
+            'review_max_prompts' => 'sometimes|integer|min:1',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => 'Validation failed', 'messages' => $validator->errors()], 422);
         }
 
+        $allowed = [
+            'daily_contact_unlock_limit',
+            'contact_unlock_price',
+            'user_contact_permission_unlock',
+            'mandatory_permission_for_unlock',
+            'free_unlock_enabled',
+            'free_unlock_expires_at',
+            'wallet_is_active',
+            'wallet_in_maintenance_ios',
+            'wallet_in_maintenance_android',
+            'review_enabled',
+            'review_unlock_threshold',
+            'review_min_days_between',
+            'review_max_prompts',
+        ];
+
         $setting = AdminSetting::first();
         if (!$setting) {
-            $setting = AdminSetting::create($request->only([
-                'daily_contact_unlock_limit',
-                'contact_unlock_price',
-                'user_contact_permission_unlock',
-                'mandatory_permission_for_unlock',
-                'free_unlock_enabled',
-                'free_unlock_expires_at',
-                'wallet_is_active',
-                'wallet_in_maintenance_ios',
-                'wallet_in_maintenance_android',
-            ]));
+            $setting = AdminSetting::create($request->only($allowed));
         } else {
-            $setting->update($request->only([
-                'daily_contact_unlock_limit',
-                'contact_unlock_price',
-                'user_contact_permission_unlock',
-                'mandatory_permission_for_unlock',
-                'free_unlock_enabled',
-                'free_unlock_expires_at',
-                'wallet_is_active',
-                'wallet_in_maintenance_ios',
-                'wallet_in_maintenance_android',
-            ]));
+            $setting->update($request->only($allowed));
         }
 
         return response()->json([

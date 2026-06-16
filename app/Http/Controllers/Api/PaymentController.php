@@ -692,4 +692,16 @@ class PaymentController extends Controller
             ],
         ]);
     }
+
+    public function getReviewLabels(Request $request)
+    {
+        $setting = \App\Models\AdminSetting::first();
+
+        return response()->json([
+            'enabled' => $setting ? (bool) $setting->review_enabled : true,
+            'unlock_threshold' => $setting ? (int) $setting->review_unlock_threshold : 10,
+            'min_days_between' => $setting ? (int) $setting->review_min_days_between : 90,
+            'max_prompts' => $setting ? (int) $setting->review_max_prompts : 3,
+        ]);
+    }
 }

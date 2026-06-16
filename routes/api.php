@@ -60,6 +60,9 @@ Route::get('app-version', function () {
 // Payment display labels (no auth needed - loaded at app startup to avoid hardcoded strings)
 Route::get('config/payment-labels', [App\Http\Controllers\Api\PaymentController::class, 'getPaymentLabels']);
 
+// Rating/review config (no auth needed - loaded at app startup)
+Route::get('config/review', [App\Http\Controllers\Api\PaymentController::class, 'getReviewLabels']);
+
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
     $path = $request->query('path');

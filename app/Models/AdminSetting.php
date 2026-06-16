@@ -19,6 +19,10 @@ class AdminSetting extends Model
         'wallet_is_active',
         'wallet_in_maintenance_ios',
         'wallet_in_maintenance_android',
+        'review_enabled',
+        'review_unlock_threshold',
+        'review_min_days_between',
+        'review_max_prompts',
     ];
 
     protected $casts = [
@@ -31,6 +35,10 @@ class AdminSetting extends Model
         'wallet_is_active' => 'boolean',
         'wallet_in_maintenance_ios' => 'boolean',
         'wallet_in_maintenance_android' => 'boolean',
+        'review_enabled' => 'boolean',
+        'review_unlock_threshold' => 'integer',
+        'review_min_days_between' => 'integer',
+        'review_max_prompts' => 'integer',
     ];
 
     public function isFreeUnlockActive(): bool
