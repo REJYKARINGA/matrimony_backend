@@ -182,4 +182,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     // Theme Settings
     Route::get('/theme-settings', [\App\Http\Controllers\Api\ThemeSettingController::class, 'index']);
     Route::put('/theme-settings', [\App\Http\Controllers\Api\ThemeSettingController::class, 'update']);
+
+    // Theme Presets
+    Route::get('/theme-presets', [\App\Http\Controllers\Api\ThemePresetController::class, 'index']);
+    Route::post('/theme-presets', [\App\Http\Controllers\Api\ThemePresetController::class, 'store']);
+    Route::put('/theme-presets/{id}', [\App\Http\Controllers\Api\ThemePresetController::class, 'update']);
+    Route::delete('/theme-presets/{id}', [\App\Http\Controllers\Api\ThemePresetController::class, 'destroy']);
+    Route::post('/theme-presets/{id}/apply', [\App\Http\Controllers\Api\ThemePresetController::class, 'apply']);
 });
