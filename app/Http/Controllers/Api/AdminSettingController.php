@@ -27,6 +27,15 @@ class AdminSettingController extends Controller
                 'review_unlock_threshold' => 10,
                 'review_min_days_between' => 90,
                 'review_max_prompts' => 3,
+                'theme_primary_color' => '#00C897',
+                'theme_secondary_color' => '#00A87D',
+                'theme_background_color' => '#F5FBF9',
+                'theme_surface_color' => '#FFFFFF',
+                'theme_text_color' => '#212121',
+                'theme_gradient_start' => '#00C897',
+                'theme_gradient_end' => '#00A87D',
+                'theme_dark_primary' => '#42A5F5',
+                'theme_dark_secondary' => '#64B5F6',
             ]);
         }
         return response()->json(['setting' => $setting]);
@@ -48,6 +57,15 @@ class AdminSettingController extends Controller
             'review_unlock_threshold' => 'sometimes|integer|min:1',
             'review_min_days_between' => 'sometimes|integer|min:0',
             'review_max_prompts' => 'sometimes|integer|min:1',
+            'theme_primary_color' => 'sometimes|string|max:20',
+            'theme_secondary_color' => 'sometimes|string|max:20',
+            'theme_background_color' => 'sometimes|string|max:20',
+            'theme_surface_color' => 'sometimes|string|max:20',
+            'theme_text_color' => 'sometimes|string|max:20',
+            'theme_gradient_start' => 'sometimes|string|max:20',
+            'theme_gradient_end' => 'sometimes|string|max:20',
+            'theme_dark_primary' => 'sometimes|string|max:20',
+            'theme_dark_secondary' => 'sometimes|string|max:20',
         ]);
 
         if ($validator->fails()) {
@@ -68,6 +86,15 @@ class AdminSettingController extends Controller
             'review_unlock_threshold',
             'review_min_days_between',
             'review_max_prompts',
+            'theme_primary_color',
+            'theme_secondary_color',
+            'theme_background_color',
+            'theme_surface_color',
+            'theme_text_color',
+            'theme_gradient_start',
+            'theme_gradient_end',
+            'theme_dark_primary',
+            'theme_dark_secondary',
         ];
 
         $setting = AdminSetting::first();
