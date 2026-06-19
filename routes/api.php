@@ -64,33 +64,7 @@ Route::get('config/payment-labels', [App\Http\Controllers\Api\PaymentController:
 Route::get('config/review', [App\Http\Controllers\Api\PaymentController::class, 'getReviewLabels']);
 
 // Theme config (no auth needed - loaded at app startup)
-Route::get('config/theme', function () {
-    $setting = \App\Models\AdminSetting::first();
-    if (!$setting) {
-        return response()->json([
-            'primary_color' => '#00C897',
-            'secondary_color' => '#00A87D',
-            'background_color' => '#F5FBF9',
-            'surface_color' => '#FFFFFF',
-            'text_color' => '#212121',
-            'gradient_start' => '#00C897',
-            'gradient_end' => '#00A87D',
-            'dark_primary' => '#42A5F5',
-            'dark_secondary' => '#64B5F6',
-        ]);
-    }
-    return response()->json([
-        'primary_color' => $setting->theme_primary_color,
-        'secondary_color' => $setting->theme_secondary_color,
-        'background_color' => $setting->theme_background_color,
-        'surface_color' => $setting->theme_surface_color,
-        'text_color' => $setting->theme_text_color,
-        'gradient_start' => $setting->theme_gradient_start,
-        'gradient_end' => $setting->theme_gradient_end,
-        'dark_primary' => $setting->theme_dark_primary,
-        'dark_secondary' => $setting->theme_dark_secondary,
-    ]);
-});
+Route::get('config/theme', [App\Http\Controllers\Api\ThemeSettingController::class, 'getPublic']);
 
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {

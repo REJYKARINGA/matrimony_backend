@@ -3,32 +3,26 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\AdminSetting;
+use App\Models\ThemeSetting;
 
 class ThemeSettingsSeeder extends Seeder
 {
     public function run(): void
     {
-        $setting = AdminSetting::first();
+        ThemeSetting::truncate();
 
-        $themeData = [
-            'theme_primary_color' => '#00C897',
-            'theme_secondary_color' => '#00A87D',
-            'theme_background_color' => '#F5FBF9',
-            'theme_surface_color' => '#FFFFFF',
-            'theme_text_color' => '#212121',
-            'theme_gradient_start' => '#00C897',
-            'theme_gradient_end' => '#00A87D',
-            'theme_dark_primary' => '#42A5F5',
-            'theme_dark_secondary' => '#64B5F6',
-        ];
+        ThemeSetting::create([
+            'primary_color' => '#00C897',
+            'secondary_color' => '#00A87D',
+            'background_color' => '#F5FBF9',
+            'surface_color' => '#FFFFFF',
+            'text_color' => '#212121',
+            'gradient_start' => '#00C897',
+            'gradient_end' => '#00A87D',
+            'dark_primary' => '#42A5F5',
+            'dark_secondary' => '#64B5F6',
+        ]);
 
-        if ($setting) {
-            $setting->update($themeData);
-            $this->command->info('Theme settings updated successfully.');
-        } else {
-            AdminSetting::create($themeData);
-            $this->command->info('Admin settings created with theme colors.');
-        }
+        $this->command->info('Theme settings seeded successfully!');
     }
 }

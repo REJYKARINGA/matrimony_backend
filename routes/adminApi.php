@@ -178,4 +178,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::delete('/recharge-tiers/{id}', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'destroy']);
     Route::post('/recharge-tiers/reorder', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'reorder']);
     Route::put('/recharge-tiers/{id}/toggle-active', [\App\Http\Controllers\Api\AdminRechargeTierController::class, 'toggleActive']);
+
+    // Theme Settings
+    Route::get('/theme-settings', [\App\Http\Controllers\Api\ThemeSettingController::class, 'index']);
+    Route::put('/theme-settings', [\App\Http\Controllers\Api\ThemeSettingController::class, 'update']);
 });

@@ -23,15 +23,6 @@ class AdminSetting extends Model
         'review_unlock_threshold',
         'review_min_days_between',
         'review_max_prompts',
-        'theme_primary_color',
-        'theme_secondary_color',
-        'theme_background_color',
-        'theme_surface_color',
-        'theme_text_color',
-        'theme_gradient_start',
-        'theme_gradient_end',
-        'theme_dark_primary',
-        'theme_dark_secondary',
     ];
 
     protected $casts = [
