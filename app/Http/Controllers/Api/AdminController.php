@@ -20,8 +20,10 @@ use App\Models\Caste;
 use App\Models\SubCaste;
 use App\Models\UserReport;
 use App\Models\ProfilePhoto;
+use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AdminController extends Controller
@@ -310,7 +312,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users',
             'phone' => 'required',
             'password' => 'required|min:6',
-            'role' => 'required|in:user,admin,mediator',
+            'role' => ['required', Rule::in(array_merge(['user'], Role::pluck('name')->toArray()))],
             'status' => 'required|in:active,blocked',
             'first_name' => 'required',
             'last_name' => 'nullable',
@@ -350,7 +352,7 @@ class AdminController extends Controller
         $request->validate([
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'required',
-            'role' => 'required|in:user,admin,mediator',
+            'role' => ['required', Rule::in(array_merge(['user'], Role::pluck('name')->toArray()))],
             'status' => 'required|in:active,blocked',
             'first_name' => 'required',
         ]);
@@ -448,6 +450,11 @@ class AdminController extends Controller
         // Handle trashed tab
         if ($request->trashed == '1') {
             $query->onlyTrashed();
+        }
+
+        // Role filter
+        if ($request->has('role') && $request->role !== 'all' && $request->role !== '') {
+            $query->where('users.role', $request->role);
         }
 
         // Search by name (first+last concat), email, matrimony_id
