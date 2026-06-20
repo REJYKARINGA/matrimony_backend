@@ -16,7 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with([
+        $users = User::regularUser()->with([
                 'userProfile.religionModel',
                 'userProfile.casteModel',
                 'userProfile.subCasteModel',
@@ -48,7 +48,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with([
+        $user = User::regularUser()->with([
             'userProfile.religionModel',
             'userProfile.casteModel',
             'userProfile.subCasteModel',
@@ -121,7 +121,7 @@ class UserController extends Controller
     public function blockUser(Request $request, $userId)
     {
         $currentUser = $request->user();
-        $targetUser = User::find($userId);
+        $targetUser = User::regularUser()->find($userId);
 
         if (!$targetUser) {
             return response()->json([
@@ -262,7 +262,7 @@ class UserController extends Controller
             // Penalty check: 10 reports = deactivation
             $count = \App\Models\UserReport::where('reported_id', $userId)->count();
             if ($count >= 10) {
-                $user = \App\Models\User::find($userId);
+                $user = \App\Models\User::regularUser()->find($userId);
                 if ($user && $user->status !== 'deactivated') {
                     $user->update(['status' => 'deactivated']);
                 }

@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $query->where('status', 'active');
     }
 
+    public function scopeRegularUser($query)
+    {
+        return $query->where('role', 'user');
+    }
+
     /**
      * The "booted" method of the model.
      */

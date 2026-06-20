@@ -69,7 +69,7 @@ class LocationController extends Controller
         $lon = $userProfile->longitude;
 
         // Haversine formula to find nearby users
-        $query = User::with([
+        $query = User::regularUser()->with([
             'userProfile.religionModel',
             'userProfile.casteModel',
             'userProfile.subCasteModel',

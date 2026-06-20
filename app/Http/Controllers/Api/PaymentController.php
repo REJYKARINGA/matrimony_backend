@@ -421,7 +421,7 @@ class PaymentController extends Controller
                     ->first();
 
                 if ($contactUnlock) {
-                    $unlockedUser = \App\Models\User::with('userProfile:id,user_id,first_name,last_name')
+                    $unlockedUser = \App\Models\User::regularUser()->with('userProfile:id,user_id,first_name,last_name')
                         ->select('id', 'matrimony_id')
                         ->find($contactUnlock->unlocked_user_id);
 
@@ -463,7 +463,7 @@ class PaymentController extends Controller
         $request->validate(['query' => 'required|string|min:3']);
         $query = $request->input('query');
 
-        $users = User::withoutGlobalScope('active')
+        $users = User::withoutGlobalScope('active')->regularUser()
             ->where(function($q) use ($query) {
                 $q->where('matrimony_id', 'LIKE', "%$query%")
                   ->orWhere('phone', 'LIKE', "%$query%");
@@ -492,7 +492,7 @@ class PaymentController extends Controller
         ]);
 
         $sender = $request->user();
-        $recipient = User::findOrFail($request->recipient_id);
+        $recipient = User::regularUser()->findOrFail($request->recipient_id);
         
         if ($sender->id === $recipient->id) {
             return response()->json(['error' => 'You cannot transfer to yourself'], 400);
@@ -542,7 +542,7 @@ class PaymentController extends Controller
         ]);
 
         $sender = $request->user();
-        $recipient = User::findOrFail($request->recipient_id);
+        $recipient = User::regularUser()->findOrFail($request->recipient_id);
 
         $transferOtp = WalletTransferOtp::where([
             'sender_id' => $sender->id,

@@ -23,7 +23,7 @@ class MatchingController extends Controller
         $user = $request->user();
         $preferences = $user->preferences;
 
-        $query = User::active()->with([
+        $query = User::active()->regularUser()->with([
             'userProfile.casteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
@@ -187,8 +187,11 @@ class MatchingController extends Controller
         // Check if we already have a pick for today
         $pick = DailyTopPick::where('user_id', $user->id)
             ->where('picked_date', $today)
-            ->whereHas('pickedUser')
-            ->with(['pickedUser.userProfile.casteModel', 'pickedUser.userProfile.educationModel', 'pickedUser.userProfile.occupationModel'])
+            ->whereHas('pickedUser', fn($q) => $q->where('role', 'user'))
+            ->with(['pickedUser' => fn($q) => $q->where('role', 'user'),
+                'pickedUser.userProfile.casteModel',
+                'pickedUser.userProfile.educationModel',
+                'pickedUser.userProfile.occupationModel'])
             ->first();
 
         if (!$pick) {
@@ -206,7 +209,10 @@ class MatchingController extends Controller
             ]);
 
             // Reload with relations
-            $pick->load(['pickedUser.userProfile.casteModel', 'pickedUser.userProfile.educationModel', 'pickedUser.userProfile.occupationModel']);
+            $pick->load(['pickedUser' => fn($q) => $q->where('role', 'user'),
+                'pickedUser.userProfile.casteModel',
+                'pickedUser.userProfile.educationModel',
+                'pickedUser.userProfile.occupationModel']);
         }
 
         return new UserCardResource($pick->pickedUser);
@@ -220,7 +226,7 @@ class MatchingController extends Controller
         $preferences = $user->preferences;
         
         // Basic query for potential matches
-        $query = User::active()->where('users.id', '!=', $user->id)
+        $query = User::active()->regularUser()->where('users.id', '!=', $user->id)
             
             ->whereHas('userProfile', function ($q) use ($user) {
                 $q->where('is_profile_active', true);
@@ -289,7 +295,7 @@ class MatchingController extends Controller
     public function createMatch($userId, Request $request)
     {
         $currentUser = $request->user();
-        $targetUser = User::find($userId);
+        $targetUser = User::regularUser()->find($userId);
 
         if (!$targetUser) {
             return response()->json([
@@ -343,7 +349,7 @@ class MatchingController extends Controller
 
         $totalUserIds = $matchedUserIds->merge($unlockedUserIds)->unique();
 
-        $chattableUsers = User::active()->whereIn('id', $totalUserIds)
+        $chattableUsers = User::active()->regularUser()->whereIn('id', $totalUserIds)
             ->with([
                 'userProfile.casteModel',
                 'userProfile.educationModel',
@@ -394,7 +400,7 @@ class MatchingController extends Controller
     public function sendInterest($userId, Request $request)
     {
         $currentUser = $request->user();
-        $targetUser = User::find($userId);
+        $targetUser = User::regularUser()->find($userId);
 
         if (!$targetUser) {
             return response()->json([
@@ -443,8 +449,9 @@ class MatchingController extends Controller
         $user = $request->user();
 
         $interests = InterestSent::where('sender_id', $user->id)
-            ->whereHas('receiver')
+            ->whereHas('receiver', fn($q) => $q->where('role', 'user'))
             ->with([
+                'receiver' => fn($q) => $q->where('role', 'user'),
                 'receiver.userProfile.casteModel',
                 'receiver.userProfile.educationModel',
                 'receiver.userProfile.occupationModel',
@@ -496,8 +503,9 @@ class MatchingController extends Controller
         $user = $request->user();
 
         $interests = InterestSent::where('receiver_id', $user->id)
-            ->whereHas('sender')
+            ->whereHas('sender', fn($q) => $q->where('role', 'user'))
             ->with([
+                'sender' => fn($q) => $q->where('role', 'user'),
                 'sender.userProfile.casteModel',
                 'sender.userProfile.educationModel',
                 'sender.userProfile.occupationModel',

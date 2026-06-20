@@ -595,7 +595,7 @@ class ProfileController extends Controller
      */
     public function show($id)
     {
-        $user = User::with([
+        $user = User::regularUser()->with([
             'userProfile.religionModel',
             'userProfile.casteModel',
             'userProfile.subCasteModel',
@@ -679,7 +679,7 @@ class ProfileController extends Controller
      */
     public function getRelatedProfiles($id)
     {
-        $viewedUser = User::with('userProfile')->find($id);
+        $viewedUser = User::regularUser()->with('userProfile')->find($id);
         if (!$viewedUser || !$viewedUser->userProfile) {
             return response()->json(['error' => 'User not found'], 404);
         }
@@ -687,7 +687,7 @@ class ProfileController extends Controller
         $viewedProfile = $viewedUser->userProfile;
         $currentUser = request()->user();
 
-        $query = User::with([
+        $query = User::regularUser()->with([
             'userProfile.casteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
@@ -780,7 +780,7 @@ class ProfileController extends Controller
         // Get user's preferences to filter profiles
         $preferences = $user->preferences;
 
-        $query = User::with([
+        $query = User::regularUser()->with([
             'userProfile.casteModel',
             'userProfile.educationModel',
             'userProfile.occupationModel',
