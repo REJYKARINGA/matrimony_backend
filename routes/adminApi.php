@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\Admin\InterestHobbyController;
 use App\Http\Controllers\Api\Admin\PersonalityController;
 use App\Http\Controllers\Api\Admin\ReligionController;
 
-Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum', 'menu_permission'])->group(function () {
     // Dashboard
     Route::get('/dashboard/stats', [AdminController::class, 'getDashboardStats']);
 
