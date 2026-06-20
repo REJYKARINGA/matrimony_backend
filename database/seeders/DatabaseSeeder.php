@@ -26,5 +26,8 @@ class DatabaseSeeder extends Seeder
         $this->call(PersonalitySeeder::class);
         $this->call(RechargeTierSeeder::class);
         $this->call(ThemeSettingsSeeder::class);
+        $this->call(RoleSeeder::class);
+        $this->call(MenuSeeder::class);
+        $this->call(RoleMenuPermissionSeeder::class);
     }
 }

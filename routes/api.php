@@ -66,6 +66,7 @@ Route::get('config/review', [App\Http\Controllers\Api\PaymentController::class, 
 // Theme config (no auth needed - loaded at app startup)
 Route::get('config/theme', [App\Http\Controllers\Api\ThemeSettingController::class, 'getPublic']);
 
+
 // Image proxy route to bypass CORS for Flutter Web
 Route::middleware('throttle:60,2')->get('images/proxy', function (Request $request) {
     $path = $request->query('path');
@@ -93,6 +94,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('auth/update-info', [AuthController::class , 'updateInfo']);
     Route::get('auth/login-history', [AuthController::class , 'loginHistory']);
     Route::delete('auth/delete-account', [AuthController::class , 'deleteAccount']);
+
+    // Role menu permissions (requires auth - used by admin panel sidebar)
+    Route::get('config/role-permissions/{roleName}', [App\Http\Controllers\Api\RoleMenuPermissionController::class, 'getByRoleName']);
 
     // Additional user routes - MUST be declared BEFORE apiResource to avoid
     // 'blocked' being captured as a {user} wildcard parameter

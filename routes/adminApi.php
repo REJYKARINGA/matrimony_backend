@@ -189,4 +189,20 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::put('/theme-presets/{id}', [\App\Http\Controllers\Api\ThemePresetController::class, 'update']);
     Route::delete('/theme-presets/{id}', [\App\Http\Controllers\Api\ThemePresetController::class, 'destroy']);
     Route::post('/theme-presets/{id}/apply', [\App\Http\Controllers\Api\ThemePresetController::class, 'apply']);
+
+    // Roles
+    Route::get('/roles', [\App\Http\Controllers\Api\RoleController::class, 'index']);
+    Route::post('/roles', [\App\Http\Controllers\Api\RoleController::class, 'store']);
+    Route::put('/roles/{id}', [\App\Http\Controllers\Api\RoleController::class, 'update']);
+    Route::delete('/roles/{id}', [\App\Http\Controllers\Api\RoleController::class, 'destroy']);
+
+    // Menus
+    Route::get('/menus', [\App\Http\Controllers\Api\MenuController::class, 'index']);
+    Route::post('/menus', [\App\Http\Controllers\Api\MenuController::class, 'store']);
+    Route::put('/menus/{id}', [\App\Http\Controllers\Api\MenuController::class, 'update']);
+    Route::delete('/menus/{id}', [\App\Http\Controllers\Api\MenuController::class, 'destroy']);
+
+    // Role Menu Permissions
+    Route::get('/role-permissions', [\App\Http\Controllers\Api\RoleMenuPermissionController::class, 'index']);
+    Route::put('/role-permissions', [\App\Http\Controllers\Api\RoleMenuPermissionController::class, 'update']);
 });
