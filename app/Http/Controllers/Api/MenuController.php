@@ -55,4 +55,19 @@ class MenuController extends Controller
 
         return response()->json(['message' => 'Menu deleted successfully']);
     }
+
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer|exists:menus,id',
+            'items.*.sort_order' => 'required|integer',
+        ]);
+
+        foreach ($data['items'] as $item) {
+            Menu::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
+        }
+
+        return response()->json(['message' => 'Menus reordered successfully']);
+    }
 }

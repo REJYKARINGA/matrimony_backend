@@ -10,6 +10,7 @@ class Role extends Model
         'name',
         'label',
         'description',
+        'sort_order',
     ];
 
     public function menus()

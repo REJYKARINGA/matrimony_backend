@@ -54,4 +54,19 @@ class RoleController extends Controller
 
         return response()->json(['message' => 'Role deleted successfully']);
     }
+
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer|exists:roles,id',
+            'items.*.sort_order' => 'required|integer',
+        ]);
+
+        foreach ($data['items'] as $item) {
+            Role::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
+        }
+
+        return response()->json(['message' => 'Roles reordered successfully']);
+    }
 }

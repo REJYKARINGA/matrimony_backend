@@ -195,12 +195,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'is_admin'])->group(function
     Route::post('/roles', [\App\Http\Controllers\Api\RoleController::class, 'store']);
     Route::put('/roles/{id}', [\App\Http\Controllers\Api\RoleController::class, 'update']);
     Route::delete('/roles/{id}', [\App\Http\Controllers\Api\RoleController::class, 'destroy']);
+    Route::post('/roles/reorder', [\App\Http\Controllers\Api\RoleController::class, 'reorder']);
 
     // Menus
     Route::get('/menus', [\App\Http\Controllers\Api\MenuController::class, 'index']);
     Route::post('/menus', [\App\Http\Controllers\Api\MenuController::class, 'store']);
     Route::put('/menus/{id}', [\App\Http\Controllers\Api\MenuController::class, 'update']);
     Route::delete('/menus/{id}', [\App\Http\Controllers\Api\MenuController::class, 'destroy']);
+    Route::post('/menus/reorder', [\App\Http\Controllers\Api\MenuController::class, 'reorder']);
 
     // Role Menu Permissions
     Route::get('/role-permissions', [\App\Http\Controllers\Api\RoleMenuPermissionController::class, 'index']);
