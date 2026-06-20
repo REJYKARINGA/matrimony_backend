@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('auth/update-info', [AuthController::class , 'updateInfo']);
     Route::get('auth/login-history', [AuthController::class , 'loginHistory']);
     Route::delete('auth/delete-account', [AuthController::class , 'deleteAccount']);
+    Route::post('auth/update-profile-picture', [AuthController::class , 'updateProfilePicture']);
 
     // Role menu permissions (requires auth - used by admin panel sidebar)
     Route::get('config/role-permissions/{roleName}', [App\Http\Controllers\Api\RoleMenuPermissionController::class, 'getByRoleName']);

@@ -720,4 +720,28 @@ class AuthController extends Controller
             'history' => $history
         ]);
     }
+
+    /**
+     * Update profile picture for the authenticated admin panel user
+     */
+    public function updateProfilePicture(Request $request)
+    {
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+
+        $user->userProfile()->update(['profile_picture' => $path]);
+
+        $user->load('userProfile');
+
+        return response()->json([
+            'message' => 'Profile picture updated successfully',
+            'user' => $user,
+            'profile_picture_url' => asset('storage/' . $path),
+        ]);
+    }
 }
