@@ -727,21 +727,64 @@ class AuthController extends Controller
     public function updateProfilePicture(Request $request)
     {
         $request->validate([
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $user = $request->user();
+        $file = $request->file('profile_picture');
+        $ext = $file->extension();
 
-        $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+        // Square crop (avatar) — center-cropped to 400x400
+        $squareName = 'profile-pictures/' . uniqid('sq_') . '.' . $ext;
+        $squarePath = storage_path('app/public/' . $squareName);
+        [$width, $height] = getimagesize($file);
+        $size = min($width, $height);
+        $srcX = (int)(($width - $size) / 2);
+        $srcY = (int)(($height - $size) / 2);
 
-        $user->userProfile()->update(['profile_picture' => $path]);
+        $src = match ($ext) {
+            'png' => imagecreatefrompng($file),
+            'gif' => imagecreatefromgif($file),
+            default => imagecreatefromjpeg($file),
+        };
+        $square = imagecreatetruecolor(400, 400);
+        imagecopyresampled($square, $src, 0, 0, $srcX, $srcY, 400, 400, $size, $size);
+        imagejpeg($square, $squarePath, 85);
+        imagedestroy($square);
+
+        // 600x900 portrait resize — center-crop to 2:3 ratio
+        $portraitName = 'profile-pictures/' . uniqid('pt_') . '.' . $ext;
+        $portraitPath = storage_path('app/public/' . $portraitName);
+        $targetRatio = 2 / 3;
+        $origRatio = $width / $height;
+
+        if ($origRatio > $targetRatio) {
+            $cropW = (int)($height * $targetRatio);
+            $cropH = $height;
+            $cropX = (int)(($width - $cropW) / 2);
+            $cropY = 0;
+        } else {
+            $cropW = $width;
+            $cropH = (int)($width / $targetRatio);
+            $cropX = 0;
+            $cropY = (int)(($height - $cropH) / 2);
+        }
+
+        $portrait = imagecreatetruecolor(600, 900);
+        imagecopyresampled($portrait, $src, 0, 0, $cropX, $cropY, 600, 900, $cropW, $cropH);
+        imagejpeg($portrait, $portraitPath, 85);
+        imagedestroy($portrait);
+        imagedestroy($src);
+
+        $user->userProfile()->update(['profile_picture' => $squareName]);
 
         $user->load('userProfile');
 
         return response()->json([
             'message' => 'Profile picture updated successfully',
             'user' => $user,
-            'profile_picture_url' => asset('storage/' . $path),
+            'profile_picture_url' => asset('storage/' . $squareName),
+            'portrait_url' => asset('storage/' . $portraitName),
         ]);
     }
 }
