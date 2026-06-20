@@ -38,7 +38,7 @@ class RoleMenuPermissionController extends Controller
 
     public function index()
     {
-        $roles = Role::with('menus')->orderBy('name')->get();
+        $roles = Role::with('menus')->orderBy('sort_order')->get();
         $menus = Menu::orderBy('sort_order')->orderBy('group')->get()->groupBy('group');
 
         return response()->json([
