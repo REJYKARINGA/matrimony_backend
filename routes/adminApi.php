@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\ReligionController;
 Route::prefix('admin')->middleware(['auth:sanctum', 'menu_permission'])->group(function () {
     // Dashboard
     Route::get('/dashboard/stats', [AdminController::class, 'getDashboardStats']);
+    Route::get('/dashboard/export-database', [AdminController::class, 'exportDatabase']);
 
     Route::get('/verifications', [AdminController::class, 'getVerifications']);
     Route::post('/verifications/{id}/approve', [AdminController::class, 'approveVerification']);

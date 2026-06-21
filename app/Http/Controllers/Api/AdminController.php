@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AdminController extends Controller
 {
@@ -72,6 +73,42 @@ class AdminController extends Controller
         $verifications = $query->paginate(15);
 
         return response()->json($verifications);
+    }
+
+    /**
+     * Export MySQL database
+     */
+    public function exportDatabase()
+    {
+        try {
+            $databaseName = config('database.connections.mysql.database');
+            $userName = config('database.connections.mysql.username');
+            $password = config('database.connections.mysql.password');
+            $host = config('database.connections.mysql.host');
+            $port = config('database.connections.mysql.port');
+
+            $mysqldumpPath = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
+            
+            $filename = 'backup_' . date('Y_m_d_H_i_s') . '.sql';
+            $path = storage_path('app/' . $filename);
+            
+            // Note: If there's no password, don't pass --password
+            $passStr = $password ? "--password={$password}" : '';
+            
+            $command = "\"{$mysqldumpPath}\" --host={$host} --port={$port} --user={$userName} {$passStr} {$databaseName} > \"{$path}\"";
+            
+            exec($command, $output, $returnVar);
+
+            if ($returnVar !== 0) {
+                Log::error("mysqldump failed: " . implode("\n", $output));
+                return response()->json(['error' => 'Failed to export database'], 500);
+            }
+
+            return response()->download($path)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            Log::error('DB Export Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to export database'], 500);
+        }
     }
 
     /**
