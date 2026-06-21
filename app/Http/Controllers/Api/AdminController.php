@@ -96,7 +96,11 @@ class AdminController extends Controller
             // Note: If there's no password, don't pass --password
             $passStr = $password ? "--password={$password}" : '';
             
-            $command = "\"{$mysqldumpPath}\" --host={$host} --port={$port} --user={$userName} {$passStr} {$databaseName} > \"{$path}\"";
+            // Fix for importing MySQL 8 dumps into MariaDB/XAMPP
+            // MariaDB mysqldump doesn't support --set-gtid-purged=OFF, so we only add it on Linux (Live server)
+            $gtidFlag = PHP_OS_FAMILY === 'Windows' ? '' : '--set-gtid-purged=OFF';
+            
+            $command = "\"{$mysqldumpPath}\" --host={$host} --port={$port} --user={$userName} {$passStr} {$gtidFlag} {$databaseName} > \"{$path}\"";
             
             exec($command, $output, $returnVar);
 
