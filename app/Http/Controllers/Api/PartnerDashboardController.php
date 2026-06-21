@@ -124,7 +124,7 @@ class PartnerDashboardController extends Controller
     {
         $office = $this->getOfficeForUser($request);
 
-        $agents = $office->agents()->withCount(['user.givenReferences' => function ($q) use ($office) {
+        $agents = $office->agents()->with('user')->withCount(['user.givenReferences' => function ($q) use ($office) {
             $q->where('partner_office_id', $office->id);
         }])->get();
 
