@@ -87,7 +87,8 @@ class AdminController extends Controller
             $host = config('database.connections.mysql.host');
             $port = config('database.connections.mysql.port');
 
-            $mysqldumpPath = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
+            // Use system mysqldump on Linux/Live server, and XAMPP path for local Windows development
+            $mysqldumpPath = PHP_OS_FAMILY === 'Windows' ? 'C:\\xampp\\mysql\\bin\\mysqldump.exe' : 'mysqldump';
             
             $filename = 'backup_' . date('Y_m_d_H_i_s') . '.sql';
             $path = storage_path('app/' . $filename);
