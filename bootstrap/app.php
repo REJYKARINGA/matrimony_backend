@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/mediator.php'));
+
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/partner.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

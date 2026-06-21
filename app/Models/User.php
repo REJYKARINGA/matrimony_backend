@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\UserMatch;
 use App\Models\UserProfile;
@@ -42,6 +43,7 @@ class User extends Authenticatable
     protected $fillable = [
         'matrimony_id',
         'reference_code',
+        'name',
         'email',
         'phone',
         'password',
@@ -437,5 +439,15 @@ class User extends Authenticatable
     public function preferredCities(): HasMany
     {
         return $this->hasMany(UserPreferredCity::class);
+    }
+
+    public function partnerOffice(): BelongsTo
+    {
+        return $this->belongsTo(PartnerOffice::class, 'partner_office_id');
+    }
+
+    public function partnerAgent(): BelongsTo
+    {
+        return $this->belongsTo(PartnerAgent::class, 'partner_agent_id');
     }
 }

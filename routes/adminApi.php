@@ -207,4 +207,29 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'menu_permission'])->group(f
     // Role Menu Permissions
     Route::get('/role-permissions', [\App\Http\Controllers\Api\RoleMenuPermissionController::class, 'index']);
     Route::put('/role-permissions', [\App\Http\Controllers\Api\RoleMenuPermissionController::class, 'update']);
+
+    // Partner Offices
+    Route::get('/partner-offices', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'index']);
+    Route::post('/partner-offices', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'store']);
+    Route::get('/partner-offices/{id}', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'show']);
+    Route::put('/partner-offices/{id}', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'update']);
+    Route::delete('/partner-offices/{id}', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'destroy']);
+    Route::get('/partner-offices/{id}/stats', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'getStats']);
+
+    // Partner Agents
+    Route::get('/partner-agents', [\App\Http\Controllers\Api\PartnerAgentController::class, 'index']);
+    Route::post('/partner-agents', [\App\Http\Controllers\Api\PartnerAgentController::class, 'store']);
+    Route::get('/partner-agents/{id}', [\App\Http\Controllers\Api\PartnerAgentController::class, 'show']);
+    Route::put('/partner-agents/{id}', [\App\Http\Controllers\Api\PartnerAgentController::class, 'update']);
+    Route::delete('/partner-agents/{id}', [\App\Http\Controllers\Api\PartnerAgentController::class, 'destroy']);
+    Route::get('/partner-offices/{officeId}/agents', [\App\Http\Controllers\Api\PartnerAgentController::class, 'listByOffice']);
+
+    // Partner Registrations
+    Route::get('/partner-registrations', [\App\Http\Controllers\Api\PartnerOfficeController::class, 'getRegistrations']);
+
+    // Partner Payouts
+    Route::get('/partner-payouts', [\App\Http\Controllers\Api\PartnerPayoutController::class, 'index']);
+    Route::post('/partner-payouts/{id}/process', [\App\Http\Controllers\Api\PartnerPayoutController::class, 'processPayout']);
+    Route::post('/partner-payouts/{id}/reject', [\App\Http\Controllers\Api\PartnerPayoutController::class, 'rejectPayout']);
+    Route::get('/partner-payouts/pending-total', [\App\Http\Controllers\Api\PartnerPayoutController::class, 'getPendingTotal']);
 });
