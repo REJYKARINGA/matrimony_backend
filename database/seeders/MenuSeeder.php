@@ -43,10 +43,11 @@ class MenuSeeder extends Seeder
             ['path' => '/family-details', 'label' => 'Family Details', 'group' => 'Data Management', 'sort_order' => 45],
 
             // Partner Offices
-            ['path' => '/partner-offices', 'label' => 'Partner Offices', 'group' => 'Partner Offices', 'sort_order' => 46],
-            ['path' => '/partner-agents', 'label' => 'Partner Agents', 'group' => 'Partner Offices', 'sort_order' => 47],
-            ['path' => '/partner-registrations', 'label' => 'Partner Registrations', 'group' => 'Partner Offices', 'sort_order' => 48],
-            ['path' => '/partner-payouts', 'label' => 'Partner Payouts', 'group' => 'Partner Offices', 'sort_order' => 49],
+            ['path' => '/partner/dashboard', 'label' => 'Partner Dashboard', 'group' => 'Partner Offices', 'sort_order' => 46],
+            ['path' => '/partner-offices', 'label' => 'Partner Offices', 'group' => 'Partner Offices', 'sort_order' => 47],
+            ['path' => '/partner-agents', 'label' => 'Partner Agents', 'group' => 'Partner Offices', 'sort_order' => 48],
+            ['path' => '/partner-registrations', 'label' => 'Partner Registrations', 'group' => 'Partner Offices', 'sort_order' => 49],
+            ['path' => '/partner-payouts', 'label' => 'Partner Payouts', 'group' => 'Partner Offices', 'sort_order' => 50],
 
             // Settings & Logs
             ['path' => '/theme-settings', 'label' => 'Theme Settings', 'group' => 'Settings & Logs', 'sort_order' => 50],

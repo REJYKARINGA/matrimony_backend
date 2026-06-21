@@ -16,6 +16,14 @@ class PartnerDashboardController extends Controller
     private function getOfficeForUser(Request $request)
     {
         $user = $request->user();
+
+        if ($user->role === 'super_admin' || $user->role === 'admin') {
+            if ($request->office_id) {
+                return PartnerOffice::findOrFail($request->office_id);
+            }
+            abort(400, 'Office ID is required for admins to view partner dashboard.');
+        }
+
         $agent = PartnerAgent::where('user_id', $user->id)->with('office')->first();
 
         if (!$agent || !$agent->office) {
@@ -27,6 +35,19 @@ class PartnerDashboardController extends Controller
         }
 
         return $agent->office;
+    }
+
+    private function getOfficeUser(Request $request, $office)
+    {
+        $user = $request->user();
+        if ($user->role === 'super_admin' || $user->role === 'admin') {
+            $agent = $office->agents()->whereNotNull('user_id')->first();
+            if ($agent) {
+                return \App\Models\User::find($agent->user_id);
+            }
+            return $user;
+        }
+        return $user;
     }
 
     public function getStats(Request $request)
@@ -147,7 +168,8 @@ class PartnerDashboardController extends Controller
 
     public function getBankAccounts(Request $request)
     {
-        $user = $request->user();
+        $office = $this->getOfficeForUser($request);
+        $user = $this->getOfficeUser($request, $office);
         $accounts = BankAccount::where('user_id', $user->id)->get();
 
         return response()->json(['bank_accounts' => $accounts]);
@@ -155,7 +177,8 @@ class PartnerDashboardController extends Controller
 
     public function addBankAccount(Request $request)
     {
-        $user = $request->user();
+        $office = $this->getOfficeForUser($request);
+        $user = $this->getOfficeUser($request, $office);
 
         $validated = $request->validate([
             'account_name' => 'required|string|max:255',
@@ -181,7 +204,8 @@ class PartnerDashboardController extends Controller
 
     public function setPrimaryBankAccount(Request $request, $id)
     {
-        $user = $request->user();
+        $office = $this->getOfficeForUser($request);
+        $user = $this->getOfficeUser($request, $office);
         $account = BankAccount::where('user_id', $user->id)->findOrFail($id);
 
         BankAccount::where('user_id', $user->id)->update(['is_primary' => false]);
@@ -192,7 +216,8 @@ class PartnerDashboardController extends Controller
 
     public function deleteBankAccount(Request $request, $id)
     {
-        $user = $request->user();
+        $office = $this->getOfficeForUser($request);
+        $user = $this->getOfficeUser($request, $office);
         $account = BankAccount::where('user_id', $user->id)->findOrFail($id);
         $account->delete();
 
@@ -202,7 +227,7 @@ class PartnerDashboardController extends Controller
     public function requestPayout(Request $request)
     {
         $office = $this->getOfficeForUser($request);
-        $user = $request->user();
+        $user = $this->getOfficeUser($request, $office);
 
         $totalRegistrations = Reference::where('partner_office_id', $office->id)->count();
         $referredUserIds = Reference::where('partner_office_id', $office->id)->pluck('referenced_user_id');
