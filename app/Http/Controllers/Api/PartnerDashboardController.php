@@ -54,13 +54,15 @@ class PartnerDashboardController extends Controller
     {
         $office = $this->getOfficeForUser($request);
 
-        $totalRegistrations = Reference::where('partner_office_id', $office->id)->count();
-        $referredUserIds = Reference::where('partner_office_id', $office->id)->pluck('referenced_user_id');
+        $agentUserIds = $office->agents()->whereNotNull('user_id')->pluck('user_id');
+
+        $totalRegistrations = Reference::whereIn('referenced_by_id', $agentUserIds)->count();
+        $referredUserIds = Reference::whereIn('referenced_by_id', $agentUserIds)->pluck('referenced_user_id');
         $totalRevenue = Payment::whereIn('user_id', $referredUserIds)
             ->where('status', 'completed')
             ->sum('amount');
 
-        $monthlyRegistrations = Reference::where('partner_office_id', $office->id)
+        $monthlyRegistrations = Reference::whereIn('referenced_by_id', $agentUserIds)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
@@ -99,12 +101,16 @@ class PartnerDashboardController extends Controller
     public function getRegistrations(Request $request)
     {
         $office = $this->getOfficeForUser($request);
+        $agentUserIds = $office->agents()->whereNotNull('user_id')->pluck('user_id');
 
-        $query = Reference::where('partner_office_id', $office->id)
+        $query = Reference::whereIn('referenced_by_id', $agentUserIds)
             ->with(['referredUser.userProfile', 'referredBy']);
 
         if ($request->agent_id) {
-            $query->where('partner_agent_id', $request->agent_id);
+            $agent = $office->agents()->find($request->agent_id);
+            if ($agent && $agent->user_id) {
+                $query->where('referenced_by_id', $agent->user_id);
+            }
         }
 
         if ($request->from_date) {
@@ -124,9 +130,7 @@ class PartnerDashboardController extends Controller
     {
         $office = $this->getOfficeForUser($request);
 
-        $agents = $office->agents()->with('user')->withCount(['user.givenReferences' => function ($q) use ($office) {
-            $q->where('partner_office_id', $office->id);
-        }])->get();
+        $agents = $office->agents()->with('user')->withCount('user.givenReferences')->get();
 
         return response()->json(['agents' => $agents]);
     }
