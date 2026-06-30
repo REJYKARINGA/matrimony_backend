@@ -1188,10 +1188,16 @@ class AdminController extends Controller
                 ['status' => 'Pending', 'count' => $pendingMatches],
             ];
 
-            // Wallet Statistics
+            // Wallet Statistics (user wallets only, excluding admins)
             try {
-                $totalWalletBalance = DB::table('wallets')->sum('balance') ?? 0;
-                $totalWalletTransactions = DB::table('transactions')->count();
+                $totalWalletBalance = DB::table('wallets')
+                    ->join('users', 'wallets.user_id', '=', 'users.id')
+                    ->where('users.role', 'user')
+                    ->sum('wallets.balance') ?? 0;
+                $totalWalletTransactions = DB::table('transactions')
+                    ->join('users', 'transactions.user_id', '=', 'users.id')
+                    ->where('users.role', 'user')
+                    ->count();
             } catch (\Exception $e) {
                 $totalWalletBalance = 0;
                 $totalWalletTransactions = 0;
@@ -1269,6 +1275,116 @@ class AdminController extends Controller
             } catch (\Exception $e) {
                 $totalSuggestions = 0; $pendingSuggestions = 0; $inProgressSuggestions = 0;
                 $completedSuggestions = 0; $rejectedSuggestions = 0; $recentSuggestions = [];
+            }
+
+            // Partner Office Statistics
+            try {
+                $totalPartnerOffices = DB::table('partner_offices')->count();
+                $totalPartnerAgents = DB::table('partner_agents')->count();
+                $totalPartnerRegistrations = DB::table('partner_registrations')->count();
+                $pendingPartnerPayouts = DB::table('partner_payouts')->where('status', 'pending')->sum('amount') ?? 0;
+                $totalPartnerPayouts = DB::table('partner_payouts')->count();
+            } catch (\Exception $e) {
+                $totalPartnerOffices = 0; $totalPartnerAgents = 0; $totalPartnerRegistrations = 0;
+                $pendingPartnerPayouts = 0; $totalPartnerPayouts = 0;
+            }
+
+            // Photo Request Statistics
+            try {
+                $pendingPhotoRequests = DB::table('photo_requests')->where('status', 'pending')->count();
+                $totalPhotoRequests = DB::table('photo_requests')->count();
+            } catch (\Exception $e) {
+                $pendingPhotoRequests = 0; $totalPhotoRequests = 0;
+            }
+
+            // Photo Verification Statistics
+            try {
+                $pendingPhotoVerifications = DB::table('photo_verifications')->where('status', 'pending')->count();
+                $totalPhotoVerifications = DB::table('photo_verifications')->count();
+            } catch (\Exception $e) {
+                $pendingPhotoVerifications = 0; $totalPhotoVerifications = 0;
+            }
+
+            // Profile Modification (verification) Statistics
+            try {
+                $pendingProfileModifications = DB::table('profile_verifications')->where('status', 'pending')->count();
+                $totalProfileModifications = DB::table('profile_verifications')->count();
+            } catch (\Exception $e) {
+                $pendingProfileModifications = 0; $totalProfileModifications = 0;
+            }
+
+            // Payment Verification Statistics
+            try {
+                $pendingPaymentVerifications = DB::table('payment_verifications')->where('status', 'pending')->count();
+                $totalPaymentVerifications = DB::table('payment_verifications')->count();
+            } catch (\Exception $e) {
+                $pendingPaymentVerifications = 0; $totalPaymentVerifications = 0;
+            }
+
+            // Abandoned Payment Statistics
+            try {
+                $abandonedPayments = DB::table('payments')->where('status', 'failed')->count();
+            } catch (\Exception $e) {
+                $abandonedPayments = 0;
+            }
+
+            // Festival Offer Statistics
+            try {
+                $activeFestivals = DB::table('festival_offers')->where('is_active', true)->count();
+                $totalFestivals = DB::table('festival_offers')->count();
+            } catch (\Exception $e) {
+                $activeFestivals = 0; $totalFestivals = 0;
+            }
+
+            // Mediator Promotion Statistics
+            try {
+                $activeMediatorPromotions = DB::table('mediator_promotions')->where('is_active', true)->count();
+                $totalMediatorPromotions = DB::table('mediator_promotions')->count();
+            } catch (\Exception $e) {
+                $activeMediatorPromotions = 0; $totalMediatorPromotions = 0;
+            }
+
+            // System Alerts (admin settings + active festival offers)
+            try {
+                $adminSettings = DB::table('admin_settings')->first();
+                $now = now();
+
+                $freeUnlock = $adminSettings ? [
+                    'enabled' => (bool) ($adminSettings->free_unlock_enabled ?? false),
+                    'expires_at' => $adminSettings->free_unlock_expires_at,
+                    'is_expired' => $adminSettings->free_unlock_expires_at ? $now->greaterThan($adminSettings->free_unlock_expires_at) : false,
+                ] : ['enabled' => false, 'expires_at' => null, 'is_expired' => false];
+
+                $walletStatus = $adminSettings ? [
+                    'is_active' => (bool) ($adminSettings->wallet_is_active ?? true),
+                    'ios_maintenance' => (bool) ($adminSettings->wallet_in_maintenance_ios ?? false),
+                    'android_maintenance' => (bool) ($adminSettings->wallet_in_maintenance_android ?? false),
+                ] : ['is_active' => true, 'ios_maintenance' => false, 'android_maintenance' => false];
+
+                $activeFestivalOffers = DB::table('festival_occurrences')
+                    ->join('festivals', 'festival_occurrences.festival_id', '=', 'festivals.id')
+                    ->where('festivals.is_active', true)
+                    ->where('festival_occurrences.start_at', '<=', $now)
+                    ->where('festival_occurrences.end_at', '>=', $now)
+                    ->select(
+                        'festivals.id',
+                        'festivals.celebration_name',
+                        'festivals.offer_discount',
+                        'festivals.offer_discount_type',
+                        'festival_occurrences.start_at',
+                        'festival_occurrences.end_at'
+                    )
+                    ->get();
+
+                $permissionUnlock = $adminSettings ? [
+                    'enabled' => (bool) ($adminSettings->user_contact_permission_unlock ?? false),
+                    'mandatory' => (bool) ($adminSettings->mandatory_permission_for_unlock ?? false),
+                ] : ['enabled' => false, 'mandatory' => false];
+            } catch (\Exception $e) {
+                $freeUnlock = ['enabled' => false, 'expires_at' => null, 'is_expired' => false];
+                $walletStatus = ['is_active' => true, 'ios_maintenance' => false, 'android_maintenance' => false];
+                $activeFestivalOffers = collect();
+                $permissionUnlock = ['enabled' => false, 'mandatory' => false];
             }
 
             return response()->json([
@@ -1351,6 +1467,46 @@ class AdminController extends Controller
                     'completed'   => $completedSuggestions,
                     'rejected'    => $rejectedSuggestions,
                     'recent'      => $recentSuggestions,
+                ],
+                'partnerOffices' => [
+                    'total' => $totalPartnerOffices,
+                    'agents' => $totalPartnerAgents,
+                    'registrations' => $totalPartnerRegistrations,
+                    'pendingPayouts' => $pendingPartnerPayouts,
+                    'payouts' => $totalPartnerPayouts,
+                ],
+                'photoRequests' => [
+                    'pending' => $pendingPhotoRequests,
+                    'total' => $totalPhotoRequests,
+                ],
+                'photoVerifications' => [
+                    'pending' => $pendingPhotoVerifications,
+                    'total' => $totalPhotoVerifications,
+                ],
+                'profileModifications' => [
+                    'pending' => $pendingProfileModifications,
+                    'total' => $totalProfileModifications,
+                ],
+                'paymentVerifications' => [
+                    'pending' => $pendingPaymentVerifications,
+                    'total' => $totalPaymentVerifications,
+                ],
+                'abandonedPayments' => [
+                    'total' => $abandonedPayments,
+                ],
+                'festivals' => [
+                    'active' => $activeFestivals,
+                    'total' => $totalFestivals,
+                ],
+                'mediatorPromotions' => [
+                    'active' => $activeMediatorPromotions,
+                    'total' => $totalMediatorPromotions,
+                ],
+                'alerts' => [
+                    'freeUnlock' => $freeUnlock,
+                    'walletStatus' => $walletStatus,
+                    'activeFestivalOffers' => $activeFestivalOffers,
+                    'permissionUnlock' => $permissionUnlock,
                 ],
             ]);
         } catch (\Exception $e) {
